@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Sparkles, Home, Building2, Check } from "lucide-react";
+import { Home, Building2, Check } from "lucide-react";
 
 export default function ServicesOverview() {
   return (
@@ -39,7 +39,7 @@ export default function ServicesOverview() {
 
             {/* Paragraph Description */}
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8 font-medium">
-              We provide professional residential and commercial cleaning services tailored to create healthier, cleaner, and more welcoming spaces. Our experienced team uses modern equipment and eco-friendly products to deliver exceptional results with every visit.
+              ঢাকার যেকোনো রেসিডেন্সিয়াল হোম, অ্যাপার্টমেন্ট, করপোরেট অফিস, শোরুম ও রেনোভেশন পরবর্তী স্পেসের জন্য আধুনিক SaaS প্ল্যাটফর্মের মাধ্যমে নির্ভরযোগ্য স্যানিটাইজেশন ও ডিপ ক্লিনিং সুবিধা।
             </p>
 
             {/* 2 Service Feature Cards Grid */}
@@ -52,7 +52,7 @@ export default function ServicesOverview() {
                       <Home className="w-6 h-6 stroke-[2]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#001837] leading-tight">
-                      Residential <br /> Cleaning
+                      Residential <br /> Cleaning (B2C)
                     </h3>
                   </div>
 
@@ -60,23 +60,17 @@ export default function ServicesOverview() {
 
                   {/* Checklist */}
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Routine home cleaning
-                      </span>
+                      <span>Room-by-Room Deep Clean</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Deep cleaning services
-                      </span>
+                      <span>Kitchen &amp; Bathroom Reset</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Kitchen sanitizing
-                      </span>
+                      <span>Sofa &amp; Carpet Vacuuming</span>
                     </div>
                   </div>
                 </div>
@@ -86,11 +80,11 @@ export default function ServicesOverview() {
               <div className="bg-[#f4f6f9] rounded-3xl p-6 border border-slate-200/80 hover:border-[#007eff]/40 transition-all duration-300 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#0055ff] via-[#007eff] to-[#00aaff] text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/25">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#001837] to-[#0b2144] text-white flex items-center justify-center flex-shrink-0 shadow-md">
                       <Building2 className="w-6 h-6 stroke-[2]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#001837] leading-tight">
-                      Commercial <br /> Cleaning
+                      Commercial <br /> Cleaning (B2B)
                     </h3>
                   </div>
 
@@ -98,23 +92,17 @@ export default function ServicesOverview() {
 
                   {/* Checklist */}
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Office cleaning services
-                      </span>
+                      <span>Workstation Sanitization</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Retail &amp; workspace cleaning
-                      </span>
+                      <span>Off-Hour &amp; Weekend Shifts</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                      <span className="text-slate-600 text-xs sm:text-sm font-semibold">
-                        Flexible maintenance plans
-                      </span>
+                      <span>Monthly Corporate SLAs</span>
                     </div>
                   </div>
                 </div>

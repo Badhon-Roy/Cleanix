@@ -28,7 +28,7 @@ export default function ProjectsOverview() {
             {/* Pill Badge */}
             <div>
               <span className="inline-block border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-blue-50/50">
-                10K+ COMPLETED PROJECTS
+                1,200+ COMPLETED PROJECTS IN DHAKA
               </span>
             </div>
 
@@ -41,12 +41,12 @@ export default function ProjectsOverview() {
 
             {/* Paragraph 1 */}
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-4 font-normal">
-              From residential homes to commercial facilities, we provide dependable cleaning solutions tailored to every environment. Our experienced team combines modern equipment with eco-friendly products to deliver spotless results and exceptional customer satisfaction.
+              গুলশান, বনানী, উত্তরা, ধানমন্ডি ও বসুন্ধরার অভিজাত আবাসন ও কর্পোরেট হেডকোয়ার্টারে ১,২০০+ প্রজেক্ট সফলভাবে সম্পন্ন করার অভিজ্ঞতা নিয়ে Cleanix আপনার যেকোনো স্থানের জন্য নির্ভরযোগ্য স্যানিটাইজেশন নিশ্চিত করে।
             </p>
 
             {/* Paragraph 2 */}
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8 font-normal">
-              We deliver reliable cleaning solutions that connect our team with clients across homes, offices, and commercial spaces. From move-in cleaning to post-construction cleanup, every project is handled with trained staff, proven checklists, and a commitment to spotless, on-time results.
+              আবাসিক বাড়ি থেকে শুরু করে কমার্শিয়াল শোরুম ও পোস্ট-কনস্ট্রাকশন সাইট—প্রতিটি প্রজেক্টে এনআইডি ট্র্যাকিংকৃত ক্লিনার, আধুনিক ইকো-ফ্রেন্ডলি কেমিক্যালস এবং অনলাইন বিটুবি সাবস্ক্রিপশন সুবিধা প্রদান করা হয়।
             </p>
 
             {/* 4 Feature Points (2-Column Checkmark Grid) */}
@@ -74,7 +74,7 @@ export default function ProjectsOverview() {
                   <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
                 </div>
                 <span className="text-sm font-extrabold text-[#001837]">
-                  Eco-Friendly Products
+                  Eco-Friendly Safe Chemicals
                 </span>
               </div>
 
@@ -83,7 +83,7 @@ export default function ProjectsOverview() {
                   <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
                 </div>
                 <span className="text-sm font-extrabold text-[#001837]">
-                  Real-Time Job Tracking
+                  Real-Time SMS &amp; GPS Tracking
                 </span>
               </div>
             </div>
@@ -91,7 +91,7 @@ export default function ProjectsOverview() {
             {/* Start A Project CTA Button */}
             <div>
               <Link
-                href="/#quote"
+                href="/contact"
                 className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm md:text-base pl-6 pr-2 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-[0_0_20px_rgba(0,126,255,0.4)] hover:shadow-[0_0_30px_rgba(0,126,255,0.7)] hover:scale-105"
               >
                 <span>Start A Project</span>

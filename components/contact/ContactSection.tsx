@@ -217,8 +217,8 @@ export default function ContactSection() {
                 Location
               </h3>
               <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-                500 E Capitol Ave, Pierre, SD <br />
-                57501, United States
+                House 42, Road 11, Block D, Gulshan 2 <br />
+                Dhaka-1212, Bangladesh
               </p>
             </div>
           </div>
@@ -233,8 +233,8 @@ export default function ContactSection() {
                 Support Clients
               </h3>
               <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-                +88 01528-654-8569 <br />
-                +88 01894-654-2547
+                +880 1774-500815 <br />
+                +880 1894-654254
               </p>
             </div>
           </div>

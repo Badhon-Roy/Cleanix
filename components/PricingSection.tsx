@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Sparkle } from "lucide-react";

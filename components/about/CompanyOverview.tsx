@@ -32,12 +32,12 @@ export default function CompanyOverview() {
             {/* Main Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] leading-[1.15] tracking-tight mb-6">
               PROFESSIONAL CLEANING <br />
-              <span className="text-[#001837]">SERVICE NETWORK</span>
+              <span className="text-[#007eff]">SERVICE NETWORK</span>
             </h2>
 
             {/* Description */}
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl mx-auto mb-8 font-medium">
-              Transforming everyday spaces with trained cleaners, proven checklists, and reliable scheduling. We deliver spotless homes and workplaces with careful service that saves time and builds confidence.
+              ঢাকার যেকোনো রেসিডেন্সিয়াল হোম, করপোরেট অফিস, শোরুম ও স্থানান্তরিত স্পেসের জন্য এনআইডি ভেরিফাইড টিম, সার্টিফাইড কেমিক্যালস এবং অটোমেটেড অ্যাপ সাবস্ক্রিপশন সুবিধা।
             </p>
 
             {/* CTA Button */}
@@ -45,7 +45,7 @@ export default function CompanyOverview() {
               href="/#quote"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm pl-7 pr-2 py-3 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03]"
             >
-              <span>Get Start Now</span>
+              <span>Get Started Now</span>
               <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#007eff]">
                 <ChevronRight className="w-4 h-4 stroke-[3]" />
               </div>
@@ -77,7 +77,7 @@ export default function CompanyOverview() {
                   16K+
                 </h3>
                 <p className="text-slate-300 text-xs sm:text-sm font-medium mt-0.5">
-                  Cleaning completed
+                  Cleanings Completed
                 </p>
               </div>
             </div>
@@ -91,10 +91,10 @@ export default function CompanyOverview() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  1200+
+                  1,200+
                 </h3>
                 <p className="text-white/90 text-xs sm:text-sm font-medium mt-0.5">
-                  Satisfied customers
+                  Satisfied Clients
                 </p>
               </div>
             </div>
@@ -108,10 +108,10 @@ export default function CompanyOverview() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  4.9
+                  4.9 / 5
                 </h3>
                 <p className="text-slate-300 text-xs sm:text-sm font-medium mt-0.5">
-                  Average clients rating
+                  Average Client Rating
                 </p>
               </div>
             </div>

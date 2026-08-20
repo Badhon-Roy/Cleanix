@@ -31,304 +31,304 @@ export interface ServiceDetail {
 export const servicesData: Record<string, ServiceDetail> = {
   "residential-deep-cleaning": {
     slug: "residential-deep-cleaning",
-    title: "RESIDENTIAL DEEP CLEANING",
+    title: "RESIDENTIAL DEEP CLEANING (আবাসিক ডিপ ক্লিনিং)",
     category: "HOME CARE",
     badge: "B2C HOME CLEANING",
     heroImage: "/RESIDENTIAL-DEEP-CLEANING.png",
     contentImage: "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=600&height=400",
     shortDesc:
-      "Comprehensive room-by-room deep cleaning and sanitization for houses, apartments, and luxury villas.",
+      "ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ রুম-বাই-রুম ডিপ রিফ্রেশ ক্লিনিং ও অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজেশন।",
     introParagraph1:
-      "Our residential deep cleaning service is designed for homes that need more than a standard tidy up. We clean kitchens, bathrooms, bedrooms, living areas, baseboards, fixtures, and high-touch surfaces with a detailed checklist built around your home.",
+      "Cleanix-এর আবাসিক ডিপ ক্লিনিং সার্ভিস আপনার বাসা বা অ্যাপার্টমেন্টকে করে তোলে সম্পূর্ণ জীবাণুমুক্ত ও ঝকঝকে। আমরা বেডরুম, কিচেন চিমনি, বাথরুম টাইলস, সোফা ভ্যাকুয়ামিং এবং হাই-টাচ সারফেসগুলোর জন্য স্পেশাল ডাস্ট রিপেলেন্ট স্প্রে ও সেফ কেমিক্যালস ব্যবহার করি।",
     introParagraph2:
-      "Whether you are preparing for guests, resetting after a busy season, or catching up on hard-to-reach areas, our trained cleaners arrive with the right supplies, protect your surfaces, and complete a final walkthrough before leaving.",
-    offersTitle: "WHAT WE OFFER",
+      "গুলশান, বনানী, উত্তরা, ধানমন্ডি বা বসুন্ধরার যেকোনো অ্যাপার্টমেন্টের জন্য আমাদের এনআইডি ট্র্যাকিংকৃত এক্সপার্ট ক্লিনার টিম স্পেশাল কেয়ার ও রিয়েল-টাইম লাইভ আপডেটের মাধ্যমে সর্বোচ্চ কোয়ালিটি নিশ্চিত করে।",
+    offersTitle: "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
     offersDesc:
-      "We provide flexible deep cleaning for apartments, family homes, and townhouses that need careful attention without disrupting daily life. Every visit is planned around your room priorities, surface types, and preferred schedule.",
+      "ঢাকার ব্যস্ত পরিবারের জন্য নমনীয় সময়সূচী অনুযায়ী ডিপ ক্লিনিং প্যাকেজ। প্রতিটি ভিজিটে নিশ্চিত করা হয় আন্তর্জাতিক মানের হাইজিন ও ডিপ রিসেট।",
     offers: [
       {
         iconName: "Sparkles",
-        title: "Detailed Room Cleaning",
-        desc: "Bedrooms, living areas, baseboards, surfaces, mirrors, and high touch points cleaned with care.",
+        title: "Detailed Room-By-Room Cleaning",
+        desc: "বেডরুম, লিভিং রুম, ডাইনিং টেবিল, ব্যালકની ও উইন্ডো গ্লাস ডিপ ডাস্টিং ও ভ্যাকুয়ামিং।",
       },
       {
         iconName: "Utensils",
-        title: "Kitchen & Bath Reset",
-        desc: "Grease, sinks, fixtures, counters, showers, tubs, and toilets cleaned for a fresher home.",
+        title: "Kitchen & Bathroom Sanitization",
+        desc: "বাথরুম টাইলসের জেদি দাগ দূর করা এবং কিচেন ওভেন, সিঙ্ক ও ফিটিংস অ্যান্টি-ব্যাকটেরিয়াল ওয়াশ।",
       },
       {
         iconName: "Clock",
-        title: "Flexible Scheduling",
-        desc: "One-time deep cleans, seasonal refreshes, and recurring add-ons scheduled around your routine.",
+        title: "Flexible Scheduling & Monthly Subscriptions",
+        desc: "৳6,000 বা ৳14,000 মান্থলি প্যাকেজে অথবা ওয়ান-টাইম ইন্সট্যান্ট বুকিংয়ের সুবিধা।",
       },
     ],
     whyChooseTitle: "WHY CHOOSE OUR RESIDENTIAL DEEP CLEANING",
     whyChooseDesc:
-      "Residential deep cleaning is ideal when your home needs a full reset, detailed dust removal, bathroom and kitchen sanitizing, and careful cleaning of corners that regular weekly service can miss.",
+      "সাধারণ দৈনিক মোছামুছিতে বাসার গভীর ধুলোবালি ও জীবাণু দূর হয় না। Cleanix-এর ডিপ ক্লিনিং আপনার বাসার প্রতিটি কোণ সুরক্ষিত ও মেহমান-প্রস্তুত রাখে।",
     whyChoosePoints: [
       {
-        title: "Room-By-Room Checklist",
-        desc: "Every bedroom, bathroom, kitchen, and common area follows a clear cleaning plan.",
+        title: "NID Verified Staff",
+        desc: "১০০% ব্যাকগ্রাউন্ড ভেরিফাইড এবং সুসজ্জিত পোশাক পরিহিত বিশ্বস্ত ক্লিনিং টিম।",
       },
       {
-        title: "Kitchen & Bath Detail",
-        desc: "Grease, soap residue, fixtures, mirrors, sinks, and high-touch points receive focused care.",
+        title: "Eco-Friendly Safe Chemicals",
+        desc: "শিশু ও পোষা প্রাণীর জন্য সম্পূর্ণ নিরাপদ, আন্তর্জাতিক সার্টিফাইড ইকো কেমিক্যালস।",
       },
       {
-        title: "Trained Home Cleaners",
-        desc: "Friendly professionals arrive prepared, work carefully, and respect your space.",
+        title: "Real-Time Job Tracking",
+        desc: "ক্লিনার আসার সময় ও কাজের অগ্রগতি সম্পর্কে রিয়েল-টাইম এসএমএস নোটিফিকেশন।",
       },
       {
-        title: "Fresh Home Finish",
-        desc: "We complete a walkthrough so the final result feels clean, reset, and guest-ready.",
+        title: "Digital Invoice & Local Payments",
+        desc: "bKash, Nagad, SSLCommerz বা ক্যাশ অন ডেলিভারিতে ঝামেলাহীন পেমেন্ট সুবিধা।",
       },
     ],
     faqs: [
       {
         num: "01",
-        question: "How long does a residential deep clean take?",
+        question: "আবাসিক ডিপ ক্লিনিং করতে কত সময় লাগে?",
         answer:
-          "Most homes take between three and six hours depending on size, condition, and selected add-ons. We confirm timing before the shift.",
+          "সাধারণত ২ থেকে ৪ বেডরুমের অ্যাপার্টমেন্টের জন্য ৩ থেকে ৫ ঘণ্টা সময় লাগে। টিম আসার আগেই সময় নিশ্চিত করা হয়।",
       },
       {
         num: "02",
-        question: "Do I need to provide cleaning supplies?",
+        question: "আমাকে কি ক্লিনিং সলিউশন বা ভ্যাকুয়াম মেশিন দিতে হবে?",
         answer:
-          "No, our verified cleaning professionals arrive equipped with hospital-grade, eco-friendly supplies and specialized tools.",
+          "না, Cleanix টিম তাদের সাথে আধুনিক ভ্যাকুয়াম ক্লিনার, স্টিমার ও প্রয়োজনীয় কেমিক্যাল সঙ্গে নিয়ে আসে।",
       },
       {
         num: "03",
-        question: "What areas are included in deep cleaning?",
+        question: "ঢাকায় কোন কোন এলাকায় এই সার্ভিস পাওয়া যায়?",
         answer:
-          "All bedrooms, bathrooms, living rooms, kitchen surfaces, cabinets exterior, appliances exterior, baseboards, and high-touch light switches.",
+          "গুলশান, বনানী, উত্তরা, ধানমন্ডি, বসুন্ধরা, মিরপুর, মহাখালী সহ সমগ্র ঢাকা সিটিতে সার্ভিস প্রদান করা হয়।",
       },
     ],
   },
 
   "commercial-office-cleaning": {
     slug: "commercial-office-cleaning",
-    title: "COMMERCIAL OFFICE CLEANING",
+    title: "COMMERCIAL OFFICE CLEANING (কমার্শিয়াল অফিস ক্লিনিং)",
     category: "OFFICE",
     badge: "B2B CORPORATE SOLUTIONS",
     heroImage: "/COMMERCIAL-OFFICE-CLEANING.png",
     contentImage: "https://framerusercontent.com/images/71kz5iX4crWQYqbcukrbVWogYA.png?width=600&height=400",
     shortDesc:
-      "Tailored daily and weekly sanitization programs for corporate offices, retail spaces, and commercial buildings.",
+      "ঢাকার করপোরেট অফিস, আইটি হাব, ব্যাংক ও শোরুমের জন্য দৈনিক বা সাপ্তাহিক সাবস্ক্রিপশন ভিত্তিক হাইজিন স্যানিটাইজেশন।",
     introParagraph1:
-      "Our commercial office cleaning service maintains a healthy, hygienic, and professional work environment for your employees and visiting clients. We focus on high-touch office areas, workstations, conference rooms, and restrooms.",
+      "একটি পরিচ্ছন্ন অফিস পরিবেশ কর্মচারীদের উৎপাদনশীলতা বাড়ায় এবং ক্লায়েন্টদের মনে ইতিবাচক প্রভাব তৈরি করে। Cleanix B2B সাবস্ক্রিপশন মডেলে ঢাকার করপোরেট প্রতিষ্ঠানগুলোর জন্য হাই-স্পেক কমার্শিয়াল ক্লিনিং সুবিধা প্রদান করে।",
     introParagraph2:
-      "We offer after-hours and weekend cleaning shifts so your corporate operations run smoothly without any noise or workflow interruptions.",
-    offersTitle: "WHAT WE OFFER",
+      "অফিস চলাকালীন কাজের যাতে কোনো ব্যাঘাত না ঘটে, সে জন্য আমরা নাইট শিফট এবং উইকেন্ড ব্যাক-টু-ব্যাক ডিপ স্যানিটাইজেশন প্রোগ্রাম পরিচালনা করি।",
+    offersTitle: "WHAT WE OFFER (করপোরেট সেবা সমুহ)",
     offersDesc:
-      "Dedicated commercial cleaning contracts engineered for modern office spaces, tech hubs, financial institutions, and retail outlets in Dhaka.",
+      "মতিঝিল, কারওয়ান বাজার, গুলশান ও বনানীর আধুনিক অফিসগুলোর জন্য স্পেশাল সার্ভিস এগ্রিমেন্ট (SLA) ভিত্তিক চুক্তি।",
     offers: [
       {
         iconName: "Building2",
-        title: "Workstation Sanitizing",
-        desc: "Desks, keyboards, monitors, and shared office equipment disinfected thoroughly.",
+        title: "Workstation & Keyboard Sanitizing",
+        desc: "ডেস্ক, কিবোর্ড, মনিটর ও প্রিন্টার সারফেস জীবাণুমুক্ত স্প্রে দ্বারা নিখুঁত ওয়াশ।",
       },
       {
         iconName: "ShieldCheck",
-        title: "Restroom Hygiene",
-        desc: "Hospital-grade sanitization for restrooms, sinks, soap dispensers, and door handles.",
+        title: "Restroom & Pantry Deep Reset",
+        desc: "অফিস বাথরুম টাইলস, পানির ফিটিংস ও প্যান্ট্রি স্পেসের হসপিটাল-গ্রেড ডিসইনফেকশন।",
       },
       {
         iconName: "Calendar",
-        title: "Flexible Shift Hours",
-        desc: "Night shifts, early morning cleaning, or weekend contracts to fit your office hours.",
+        title: "Off-Hour & Weekend Shift Execution",
+        desc: "অফিস সময় শেষের পর বা ছুটির দিনে কাস্টমাইজড শিফট বুকিংয়ের সুবিধা।",
       },
     ],
     whyChooseTitle: "WHY CHOOSE OUR COMMERCIAL CLEANING",
     whyChooseDesc:
-      "A clean office boosts employee productivity, reduces sick leaves, and creates a stellar first impression for visiting corporate stakeholders.",
+      "Cleanix কমার্শিয়াল ক্লিনিং আপনার অফিসের কর্মপরিবেশ ফ্রেশ রাখে, স্টাফদের অসুস্থতাজনিত ছুটি কমায় এবং ব্র্যান্ড ভ্যালু বাড়ায়।",
     whyChoosePoints: [
       {
-        title: "Customized SLAs",
-        desc: "Service agreements tailored to your office floor area and staff headcounts.",
+        title: "Custom B2B Monthly SLAs",
+        desc: "৳14,000 বা ৳30,000 মান্থলি কর্পোরেট প্যাকেজে ফ্ল্যাট সাইজ অনুযায়ী কাস্টম চুক্তি।",
       },
       {
-        title: "Vetted & Uniformed Staff",
-        desc: "Background-checked cleaners trained in office confidentiality and security protocol.",
+        title: "Confidentiality & Security Protocol",
+        desc: "অফিস নথি ও ইকুইপমেন্টের নিরাপত্তা রক্ষায় বিশেষ প্রশিক্ষিত ইউনিফর্ম পরিহিত ক্লিনার।",
       },
       {
-        title: "High-Touch Point Focus",
-        desc: "Elevators, door handles, handrails, and pantry areas sanitized continuously.",
+        title: "High-Touch Elevator & Door Sanitizing",
+        desc: "লিফট বাটন, ডোর হ্যান্ডেল ও কনফারেন্স টেবিলের নিরবচ্ছিন্ন স্যানিটাইজেশন।",
       },
       {
-        title: "Monthly Hygiene Audits",
-        desc: "Quality supervisors conduct regular site inspections to ensure standards.",
+        title: "Monthly Inspection & Audit Reports",
+        desc: "প্রতি মাসে সুপারভাইজার দ্বারা সার্ভিস ইনসপেকশন ও বিস্তারিত কোয়ালিটি রিপোর্ট প্রদান।",
       },
     ],
     faqs: [
       {
         num: "01",
-        question: "Can cleaning be done after business hours?",
+        question: "অফিস ছুটির পর রাতে ক্লিনিং করানো সম্ভব কি?",
         answer:
-          "Yes! We offer flexible night and weekend shifts so your workplace is completely clean before your team arrives in the morning.",
+          "হ্যাঁ, আমাদের নাইট শিফট টিম রয়েছে যাতে অফিসের নিয়মিত কাজের কোনো ব্যাঘাত ছাড়াই সকালের আগেই সব ফ্রেশ হয়ে যায়।",
       },
       {
         num: "02",
-        question: "Are your cleaners background checked?",
+        question: "কর্পোরেট বিলিং বা ডিজিটাল ইনভয়েস পাওয়া যাবে কি?",
         answer:
-          "Yes, 100% of Cleanix field personnel undergo criminal background checks and NID verification before deployment.",
+          "হ্যাঁ, আমরা প্রতিটি সার্ভিসের পর ইমেইল ও হোয়াটসঅ্যাপে ই-ইনভয়েস পাঠাই এবং ব্যাংক ট্রান্সফার বা SSLCommerz গ্রহণ করি।",
       },
       {
         num: "03",
-        question: "Do you offer recurring corporate contracts?",
+        question: "টিম কি গোপনীয়তা ও সিকিউরিটি রুলস মেনে চলে?",
         answer:
-          "We offer daily, bi-weekly, and monthly recurring corporate contracts with customized billing options.",
+          "আমাদের সকল ক্লিনার সিকিউরিটি ভেরিফাইড এবং কর্পোরেট এথিক্স মেনে চলায় শতভাগ প্রতিশ্রুতিবদ্ধ।",
       },
     ],
   },
 
   "post-construction-cleaning": {
     slug: "post-construction-cleaning",
-    title: "POST-CONSTRUCTION CLEANING",
+    title: "POST-CONSTRUCTION CLEANING (পোস্ট-কনস্ট্রাকশন ক্লিনিং)",
     category: "RENOVATION",
     badge: "CONSTRUCTION & BUILD",
     heroImage: "https://framerusercontent.com/images/P64qFbW7sjXKqLCWX5Fd9KuqA.png?width=600&height=400",
     contentImage: "https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750",
     shortDesc:
-      "Heavy-duty dust, paint splatter, and construction debris removal for newly built or renovated properties.",
+      "নতুন বিল্ডিং বা রেনোভেশনের পর জমে থাকা সিমেন্টের ধুলোবালি, রঙের দাগ ও সিভিল কেমিক্যাল দ্রুত পরিষ্কারের জন্য হেভি-ডিউটি স্পেস ক্লিনিং।",
     introParagraph1:
-      "Newly constructed or renovated spaces leave behind heavy cement dust, paint splatters, sawdust, and residue. Our post-construction cleaning team uses heavy-duty vacuums and specialized scrubbers to transform raw sites into move-in ready spaces.",
+      "নতুন বাসা বা অফিসের সংস্কার কাজ শেষ হওয়ার পর চারদিকে রঙের ফোটা, সিমেন্ট ও ভারী ধুলোবালি জমে থাকে। সাধারণ ঝাড়ু বা মোছা দিয়ে এগুলো পরিষ্কার করা সম্ভব নয়। Cleanix-এর হেভি-ডিউটি টিম পোস্ট-কনস্ট্রাকশন স্থানকে করে তোলে শতভাগ হ্যান্ডওভার প্রস্তুত।",
     introParagraph2:
-      "We work with real estate developers, interior designers, contractors, and homeowners to ensure every inch of tile, window, and fixture shines.",
-    offersTitle: "WHAT WE OFFER",
+      "রিয়েল এস্টেট ডেভেলপার, ইন্টেরিয়র ডিজাইনার এবং বাসা মালিকদের জন্য আমাদের স্পেশালাইজড ভ্যাকুয়ামিং ও ফ্লোর বাফিং ট্রিটমেন্ট অত্যন্ত জনপ্রিয়।",
+    offersTitle: "WHAT WE OFFER (হেভি-ডিউটি সেবাসমূহ)",
     offersDesc:
-      "Three-phase post-construction cleanup including rough clean, light clean, and final touch-up polish for pristine handover.",
+      "তিন ধাপে সম্পূর্ণ ক্লিনিং—রাফ ডাস্ট ক্লিয়ারেন্স, টাইলস অ্যান্ড উইন্ডো স্ক্রাবিং এবং ফাইনাল পলিশিং হ্যান্ডওভার।",
     offers: [
       {
         iconName: "Wrench",
-        title: "Dust & Fine Particles Removal",
-        desc: "HEPA filtration vacuums suck fine drywall and concrete dust from all cracks.",
+        title: "HEPA Concrete & Fine Dust Vacuuming",
+        desc: "হেভি-ডিউটি ভ্যাকুয়াম মেশিন দিয়ে দেয়াল ও মেঝের সুক্ষ্ম সিমেন্ট ধুলো অপসারণ।",
       },
       {
         iconName: "Sparkles",
-        title: "Paint & Glue Scrubbing",
-        desc: "Careful removal of paint drops, grout residue, and sticker labels from glass and tiles.",
+        title: "Paint & Grout Residue Scrubbing",
+        desc: "টাইলস ও গ্লাসের গা থেকে কেমিক্যাল দিয়ে রঙের দাগ ও কসমেটিক কাস্টম পলিশিং।",
       },
       {
         iconName: "ShieldCheck",
-        title: "Final Handover Polish",
-        desc: "Sanitizing all fixtures, door frames, and floors for immediate client handover.",
+        title: "Instant Move-In Ready Polish",
+        desc: "দরজা, উইন্ডো ফ্রেম ও ফ্লোর বাফিং শেষে সরাসরি বাসায় শিফট হওয়ার মতো পরিবেশ।",
       },
     ],
     whyChooseTitle: "WHY CHOOSE OUR POST-CONSTRUCTION CLEANING",
     whyChooseDesc:
-      "Standard cleaning methods cannot tackle toxic fine construction dust and adhesive residues. We bring commercial power equipment.",
+      "নতুন টাইলস বা দামী ফিটিংস সাধারণ ক্ষতিকর কেমিক্যাল দিয়ে স্ক্রাব করলে দাগ পড়ে যেতে পারে। Cleanix ব্যবহার করে সারফেস-সেফ কেমিক্যালস।",
     whyChoosePoints: [
       {
-        title: "Industrial Grade Equipment",
-        desc: "Commercial wet/dry HEPA vacuums, floor buffers, and glass scraper tools.",
+        title: "Industrial Grade Scrubbers & Buffers",
+        desc: "কমার্সিয়াল ওয়েট/ড্রাই ভ্যাকুয়াম এবং স্ক্রাবিং মেশিন ব্যবহারে দ্রুত ফলাফল।",
       },
       {
-        title: "Safety First Protocol",
-        desc: "Cleaners equipped with PPE, masks, and eye protection for hazardous dust handling.",
+        title: "Safe Non-Acidic Stain Removers",
+        desc: "মার্বেল ও সিরামিক টাইলসের কোনো ক্ষতি না করে রঙের জেদি দাগ দ্রবীভূতকরণ।",
       },
       {
-        title: "Fast Turnaround Time",
-        desc: "Rapid deployment teams to meet tight property handover deadlines.",
+        title: "Fast Turnaround Deadline Support",
+        desc: "জরুরি ডেডলাইনের মধ্যে হ্যান্ডওভার দিতে দ্রুত টিম ডেসপ্যাচ সুবিধা।",
       },
       {
-        title: "Surface Protection Care",
-        desc: "Specialized non-abrasive chemicals that clean without scratching expensive marble or glass.",
+        title: "Interior Designer Approved Finish",
+        desc: "অভিজাত ইন্টেরিয়র ডিজাইন প্রজেক্টের ফিনিশিং স্ট্যান্ডার্ড অনুযায়ী কোয়ালিটি নিশ্চয়তা।",
       },
     ],
     faqs: [
       {
         num: "01",
-        question: "When should post-construction cleaning be scheduled?",
+        question: "পোস্ট-কনস্ট্রাকশন ক্লিনিং কখন বুক করা উচিত?",
         answer:
-          "Ideally after all construction, electric, and plumbing work is 100% completed and workers have vacated the site.",
+          "বিল্ডিং বা বাসার সব ধরনের সিভিল, ইলেকট্রিক ও পেইন্টিং কাজ ১০০% শেষ হওয়ার পর বুক করাই সেরা।",
       },
       {
         num: "02",
-        question: "Does it include trash and heavy debris removal?",
+        question: "টিম কি নির্মাণ সামগ্রীর ভারী ময়লা সরিয়ে দেবে?",
         answer:
-          "Yes, we remove leftover drywall pieces, cardboard, packaging materials, and fine dust.",
+          "হ্যাঁ, ধুলোবালি, মেঝের রঙের ফোটা, প্লাস্টিক প্যাকেট ও সূক্ষ্ম কণা সম্পূর্ণ পরিষ্কার করা হয়।",
       },
       {
         num: "03",
-        question: "Will cement and grout stains be completely removed?",
+        question: "টাইলসের রঙের দাগ বা সিমেন্টের আস্তর উঠবে কি?",
         answer:
-          "We use specialized acidic tiles cleaners that dissolve dried grout, cement haze, and paint drops without damaging your tiles.",
+          "আমাদের সারফেস সেফ অর্গানিক স্ক্রাবার রঙের ফোঁটা ও সিমেন্টের সূক্ষ্ম আস্তর সহজেই তুলে ফেলে।",
       },
     ],
   },
 
   "move-out-cleaning": {
     slug: "move-out-cleaning",
-    title: "MOVE-OUT CLEANING",
+    title: "MOVE-IN / MOVE-OUT CLEANING (মুভ-ইন / আউট ক্লিনিং)",
     category: "TURNOVER",
     badge: "RELOCATION & TURNOVER",
     heroImage: "/SANITIZATION-DISINFECTION.png",
     contentImage: "https://framerusercontent.com/images/gRwXdPkLkyjS5JXnK04q3ttVLk.png?width=600&height=400",
     shortDesc:
-      "Deep turnover cleaning for tenants, landlords, and property managers ensuring full security deposit refunds.",
+      "নতুন বাসায় ওঠার আগে বা পুরোনো বাসা ছাড়ার সময় সম্পূর্ণ সিকিউরিটি ডিপোজিট রিফান্ড ও জীবাণুমুক্ত হ্যান্ডওভার সার্ভিস।",
     introParagraph1:
-      "Moving out of an apartment or house is stressful. Our move-out cleaning service guarantees a spotless handover so you can get your security deposit back or prepare your property for new tenants quickly.",
+      "বাসা স্থানান্তর করা অত্যন্ত মানসিক চাপের বিষয়। নতুন বাসায় উঠার আগে পূর্বের বাসিন্দার জমে থাকা ময়লা ও জীবাণু দূর করা জরুরি। আবার বাসা ছাড়ার সময় বাড়িওয়ালার কাছে সিকিউরিটি ডিপোজিট ফেরত পেতে ঝকঝকে হ্যান্ডওভার দিতে হয়।",
     introParagraph2:
-      "We scrub inside empty kitchen cabinets, clean oven interiors, sanitize bathrooms top-to-bottom, and leave the property smelling fresh.",
-    offersTitle: "WHAT WE OFFER",
+      "Cleanix মুভ-ইন/আউট সার্ভিসে খালি বাসার ক্যাবিনেটের ভেতর, ওভেন, কিচেন হুড ও বাথরুম নিখুঁতভাবে রিফ্রেশ করে দেয়।",
+    offersTitle: "WHAT WE OFFER (স্থানান্তর বিশেষ সেবা)",
     offersDesc:
-      "Top-to-bottom turnover deep cleaning designed specifically for vacant residential and commercial rental properties.",
+      "খালি ফ্ল্যাট ও কমার্শিয়াল স্পেসের জন্য ডিজাইনকৃত টপ-টু-বটম টার্নওভার ডিপ ক্লিনিং সার্ভিস।",
     offers: [
       {
         iconName: "Home",
-        title: "Inside Cabinet & Appliance Clean",
-        desc: "Deep cleaning inside empty wardrobes, kitchen drawers, and refrigerator shelves.",
+        title: "Inside Cabinet & Drawer Deep Clean",
+        desc: "খালি আলমারি, কিচেন ড্রয়ার ও ওয়্যারড্রবের ভেতরের জীবাণুমুক্ত ডাস্টিং।",
       },
       {
         iconName: "Sparkles",
-        title: "Full Bathroom Scrub",
-        desc: "Limescale removal from tiles, taps, mirrors, and deep toilet bowl sanitization.",
+        title: "Full Kitchen Hood & Bathroom Scrub",
+        desc: "কিচেন চিমনি ও বাথরুম গ্রিজ, সাবানের দাগ দূর করে ফ্রেশ সুবাস নিশ্চিতকরণ।",
       },
       {
         iconName: "Clock",
-        title: "Same-Day Rapid Service",
-        desc: "Urgent booking availability for last-minute relocation deadlines.",
+        title: "Same-Day Emergency Booking Available",
+        desc: "জরুরি স্থানান্তর প্রয়োজনে একই দিনে ক্লিনিং সার্ভিস সুবিধা।",
       },
     ],
     whyChooseTitle: "WHY CHOOSE OUR MOVE-OUT CLEANING",
     whyChooseDesc:
-      "Property managers and landlords have strict move-out standards. We ensure your rental property passes inspection with flying colors.",
+      "বাসা পরিবর্তনের ব্যস্ততায় পরিষ্কারের জন্য সময় বের করা কঠিন। Cleanix চাবিসমেত হ্যান্ডওভারের জন্য আপনার স্থানকে প্রস্তুত করে দেয়।",
     whyChoosePoints: [
       {
-        title: "Deposit Back Guarantee",
-        desc: "Cleaning standards aligned with landlord and property manager handover checklists.",
+        title: "Full Security Deposit Back Assurance",
+        desc: "বাড়িওয়ালার ইনসপেকশনে পাশ করার উপযোগী নিখুঁত ফিনিশিং স্ট্যান্ডার্ড।",
       },
       {
-        title: "Complete Empty Space Detail",
-        desc: "Corners, light fixtures, vents, and inside closets cleaned impeccably.",
+        title: "Deep Scrubbing of Unfurnished Spaces",
+        desc: "ফার্নিচার বিহীন বাসার ফ্লোর, দেয়ালের ছোপ দাগ ও লাইট ফিটিংস ক্লিন।",
       },
       {
-        title: "Grease & Stain Dissolution",
-        desc: "Heavy degreasing for kitchen hoods, stoves, and tiles.",
+        title: "Kitchen Grease & Appliance Degreasing",
+        desc: "চুলা, কিচেন হুড ও টাইলসের দীর্ঘদিনের তেল চিটচিটে দাগ দূরীকরণ।",
       },
       {
-        title: "Key Handover Ready",
-        desc: "Final walkthrough video shared so you can hand over keys stress-free.",
+        title: "Video Walkthrough Proof of Work",
+        desc: "কাজের আগে ও পরের ছবি/ভিডিও রেকর্ড ক্লায়েন্টকে ডিজিটাল ইমেইলে প্রদান।",
       },
     ],
     faqs: [
       {
         num: "01",
-        question: "Does the property need to be completely empty?",
+        question: "বাসার সব আসবাবপত্র সরানোর পর সার্ভিস নেওয়া ভালো কি?",
         answer:
-          "Yes, for best results, all personal belongings and furniture should be removed before the move-out cleaning begins.",
+          "হ্যাঁ, ফার্নিচার সরানোর পর খালি মেঝের সব কোণা ও ড্রয়ার সহজে ও নিখুঁতভাবে পরিষ্কার করা যায়।",
       },
       {
         num: "02",
-        question: "Is electricity and running water required?",
+        question: "লুকায়ে থাকা ময়লা বা দাগ দূর করার গ্যারান্টি আছে কি?",
         answer:
-          "Yes, our cleaning equipment and scrubbing tools require functional running water and electricity at the premises.",
+          "আমাদের ২৪-ঘণ্টা রি-ক্লিন সাপোর্ট রয়েছে। ইনসপেকশনে কোনো খামতি থাকলে তা সাথে সাথে সমাধান করা হয়।",
       },
       {
         num: "03",
-        question: "What if the landlord finds something missed?",
+        question: "পেমেন্ট কীভাবে করা যায়?",
         answer:
-          "We offer a 24-hour re-clean guarantee if any checklist item needs a quick touch-up after landlord inspection.",
+          "কাজ শেষে বিকাশ (bKash), নগদ (Nagad), অনলাইন কালেকশন বা ক্যাশে পেমেন্ট করতে পারবেন।",
       },
     ],
   },

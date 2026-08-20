@@ -37,6 +37,7 @@ export default function Navbar() {
     { name: "About Us", href: "/about" },
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
+    { name: "Pricing", href: "/pricing" },
     { name: "Blog", href: "/blog" },
     { name: "Contact", href: "/contact" },
   ];
@@ -46,6 +47,7 @@ export default function Navbar() {
     if (href === "/about") return pathname === "/about";
     if (href === "/services") return pathname.startsWith("/services");
     if (href === "/projects") return pathname.startsWith("/projects");
+    if (href === "/pricing") return pathname.startsWith("/pricing");
     if (href === "/blog") return pathname.startsWith("/blog");
     if (href === "/contact") return pathname.startsWith("/contact");
     return false;
@@ -63,7 +65,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+        <div className="hidden lg:flex items-center gap-5 xl:gap-7">
           {navItems.map((item) => {
             const isActive = checkIsActive(item.href);
 
@@ -71,7 +73,7 @@ export default function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`text-[18px] transition-all duration-300 py-1 relative ${
+                className={`text-[17px] transition-all duration-300 py-1 relative ${
                   isActive
                     ? "text-[#007eff] font-extrabold"
                     : "text-slate-100 hover:text-white font-medium"

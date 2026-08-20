@@ -100,6 +100,7 @@ export default function Footer() {
                 { name: "Our Services", href: "/services" },
                 { name: "Our Projects", href: "/projects" },
                 { name: "Contact Us", href: "/contact" },
+                { name: "Pricing Plans", href: "/pricing" },
                 { name: "Latest Blog", href: "/blog" },
               ].map((item, i) => (
                 <li key={i}>
