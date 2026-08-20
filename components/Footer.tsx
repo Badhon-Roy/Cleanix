@@ -101,6 +101,7 @@ export default function Footer() {
                 { name: "Our Projects", href: "/projects" },
                 { name: "Contact Us", href: "/contact" },
                 { name: "Pricing Plans", href: "/pricing" },
+                { name: "Coverage Area", href: "/coverage" },
                 { name: "Latest Blog", href: "/blog" },
               ].map((item, i) => (
                 <li key={i}>

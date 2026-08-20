@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import PricingHero from "@/components/pricing/PricingHero";
 import PricingSection from "@/components/PricingSection";
 import EstimateCalculator from "@/components/EstimateCalculator";
-import FaqSection from "@/components/FaqSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import CtaBanner from "@/components/CtaBanner";
 
@@ -25,7 +24,6 @@ export default function PricingPage() {
       <PricingHero />
       <PricingSection />
       <EstimateCalculator />
-      <FaqSection />
       <TestimonialsSection />
       <CtaBanner />
     </>

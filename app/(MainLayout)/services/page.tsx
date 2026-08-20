@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import ServicesBanner from "@/components/services/ServicesBanner";
 import ServicesOverview from "@/components/services/ServicesOverview";
 import CoreServicesSection from "@/components/services/CoreServicesSection";
+import BeforeAfterSection from "@/components/BeforeAfterSection";
+import DhakaCoverageSection from "@/components/DhakaCoverageSection";
 import HowItWorks from "@/components/HowItWorks";
 import PricingSection from "@/components/PricingSection";
-import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
 
 export const metadata: Metadata = {
@@ -26,9 +27,10 @@ export default function ServicesPage() {
       <ServicesBanner />
       <ServicesOverview />
       <CoreServicesSection />
+      <BeforeAfterSection />
+      <DhakaCoverageSection />
       <HowItWorks />
       <PricingSection />
-      <FaqSection />
       <CtaBanner />
     </>
   );
