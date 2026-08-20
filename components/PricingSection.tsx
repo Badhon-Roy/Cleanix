@@ -103,7 +103,7 @@ export default function PricingSection() {
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                   <span className="text-[#001837] font-bold text-xs sm:text-sm">
-                    ইমেইল ও টিকেট সাপোর্ট
+                    অনলাইন কাস্টমার সাপোর্ট ও ইনভয়েস
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function PricingSection() {
                 <span className="text-3xl sm:text-4xl font-black text-[#001837] tracking-tight">
                   ৳৫০,০০০
                 </span>
-                <span className="text-slate-500 font-bold text-xs sm:text-sm ml-1">
+                <span className="text-[#001837] text-slate-500 font-bold text-xs sm:text-sm ml-1">
                   / মাস
                 </span>
               </div>
