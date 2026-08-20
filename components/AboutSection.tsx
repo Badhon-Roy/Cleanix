@@ -174,7 +174,7 @@ export default function AboutSection() {
             {/* CTA Get in Touch Button */}
             <div>
               <Link
-                href="#contact"
+                href="/about"
                 className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-6 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03]"
               >
                 <span>Get in Touch</span>

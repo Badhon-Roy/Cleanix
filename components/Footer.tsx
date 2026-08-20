@@ -124,20 +124,18 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3 text-slate-300 text-sm font-medium">
               {[
-                "Residential Deep Clean",
-                "Commercial Office Cleaning",
-                "Move-Out Cleaning",
-                "Post-Construction Clean",
-                "Sanitization & Disinfection",
-                "Window & Glass Wash",
+                { name: "Residential Deep Cleaning", href: "/services/residential-deep-cleaning" },
+                { name: "Commercial Office Cleaning", href: "/services/commercial-office-cleaning" },
+                { name: "Move-In / Move-Out Cleaning", href: "/services/move-in-move-out-cleaning" },
+                { name: "Post-Construction Cleaning", href: "/services/post-construction-cleaning" }
               ].map((service, i) => (
                 <li key={i}>
                   <Link
-                    href={`#service-${i}`}
+                    href={service.href}
                     className="hover:text-[#007eff] hover:translate-x-1 transition-all duration-300 flex items-center gap-1.5 inline-flex"
                   >
                     <ChevronRight className="w-3.5 h-3.5 text-[#007eff]" />
-                    <span>{service}</span>
+                    <span>{service.name}</span>
                   </Link>
                 </li>
               ))}

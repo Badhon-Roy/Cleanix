@@ -49,7 +49,7 @@ export default function HeroBanner() {
               <ChevronRight className="w-3.5 h-3.5 stroke-3" />
             </div>
             <span className="text-white text-xs md:text-sm font-semibold tracking-wider uppercase font-sans">
-              BANGLADESH'S #1 HYBRID CLEANING PLATFORM
+              BANGLADESH&apos;S #1 HYBRID CLEANING PLATFORM
             </span>
           </div>
 
@@ -70,7 +70,7 @@ export default function HeroBanner() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             {/* Button 1: Our Services */}
             <Link
-              href="#services"
+              href="/services"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm md:text-base pl-6 pr-2 py-2.5 rounded-full flex items-center gap-3 transition-all duration-300 shadow-[0_0_22px_rgba(0,126,255,0.5)] hover:shadow-[0_0_32px_rgba(0,126,255,0.75)] hover:scale-[1.03] group"
             >
               <span>Our Services</span>
@@ -81,7 +81,7 @@ export default function HeroBanner() {
 
             {/* Button 2: Get Free Quote */}
             <Link
-              href="#quote"
+              href="/contact"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm md:text-base pl-6 pr-2 py-2.5 rounded-full flex items-center gap-3 transition-all duration-300 shadow-[0_0_22px_rgba(0,126,255,0.5)] hover:shadow-[0_0_32px_rgba(0,126,255,0.75)] hover:scale-[1.03] group"
             >
               <span>Get Free Quote</span>

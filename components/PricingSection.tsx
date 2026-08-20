@@ -71,7 +71,7 @@ export default function PricingSection() {
 
                 {/* Select Plan Button */}
                 <Link
-                  href="#select-basic"
+                  href="/contact"
                   className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm sm:text-base py-3 px-6 rounded-full w-full flex items-center justify-between shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] mb-8"
                 >
                   <span>Select Plan</span>
@@ -144,7 +144,7 @@ export default function PricingSection() {
 
                 {/* Select Plan Button */}
                 <Link
-                  href="#select-standard"
+                  href="/contact"
                   className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between shadow-xl shadow-blue-500/35 transition-all duration-300 hover:scale-[1.03] mb-8"
                 >
                   <span>Select Standard Plan</span>
@@ -217,7 +217,7 @@ export default function PricingSection() {
 
                 {/* Select Plan Button */}
                 <Link
-                  href="#select-premium"
+                  href="/contact"
                   className="bg-[#001837] hover:bg-[#0d274c] text-white font-semibold text-sm sm:text-base py-3 px-6 rounded-full w-full flex items-center justify-between shadow-lg transition-all duration-300 hover:scale-[1.02] mb-8"
                 >
                   <span>Select Plan</span>

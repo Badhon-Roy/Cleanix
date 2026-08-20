@@ -28,7 +28,7 @@ export default function CtaBanner() {
           {/* Right Action Button */}
           <div className="z-10 flex-shrink-0">
             <Link
-              href="#book-now"
+              href="/contact"
               className="bg-[#001837] hover:bg-[#031024] text-white font-extrabold text-sm sm:text-base pl-7 pr-2.5 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-2xl hover:scale-105"
             >
               <span>Book Service Now</span>
