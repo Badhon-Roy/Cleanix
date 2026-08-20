@@ -58,7 +58,7 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="/#services"
+            href="/services"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Services
@@ -131,7 +131,7 @@ export default function Navbar() {
             About Us
           </Link>
           <Link
-            href="/#services"
+            href="/services"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
             onClick={() => setMobileMenuOpen(false)}
           >

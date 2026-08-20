@@ -97,7 +97,7 @@ export default function Footer() {
               {[
                 { name: "Home", href: "/" },
                 { name: "About Us", href: "/about" },
-                { name: "Our Services", href: "/#services" },
+                { name: "Our Services", href: "/services" },
                 { name: "Our Projects", href: "/#projects" },
                 { name: "Testimonials", href: "/#testimonials" },
                 { name: "Pricing", href: "/#pricing" },
