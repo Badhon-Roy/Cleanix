@@ -1,7 +1,7 @@
-Cleanix - Full-Stack SaaS Platform
+Cleanix - Full-Stack SaaS Platform Architecture & Functional Requirements
 
 --------------------------------------------------------------------------------
-1. EXECUTVIE SUMMARY & CORE CONCEPT
+1. EXECUTIVE SUMMARY & CORE CONCEPT
 --------------------------------------------------------------------------------
 Cleanix হলো একটি অন-ডিমান্ড B2B (Business-to-Business) এবং B2C (Business-to-Consumer) হাইব্রিড ক্লিনিং সার্ভিস অটোমেশন প্ল্যাটফর্ম।
 এটি আবাসিক বাড়ি, বাণিজ্যিক অফিস, সংস্কারাধীন স্থান এবং স্থানান্তরযোগ্য সম্পত্তির জন্য নির্ভরযোগ্য, দ্রুত এবং উচ্চ-মানের ক্লিনিং পরিষেবা প্রদান করে।
@@ -59,65 +59,144 @@ Revenue Generation Streams & Detailed Package Breakdown (গ্রাহক য�
 --------------------------------------------------------------------------------
 3. SYSTEM ARCHITECTURE & TECH STACK
 --------------------------------------------------------------------------------
-- Frontend Framework: Next.js 16 (App Router)
-- Styling & UI: Tailwind CSS + Framer Motion + Lenis Smooth Scroll
+- Frontend Framework: Next.js 16 (App Router with Server Components & Actions)
+- Styling & UI: Tailwind CSS v4 + Framer Motion + Lenis Smooth Scroll + Lucide React
 - Database: MongoDB Atlas
 - ORM / ODM Layer: Mongoose
-- Authentication: NextAuth.js (Auth.js) / Clerk (OAuth, Magic Link, RBAC Credentials)
-- Payment Engine: Stripe API / SSLCommerz / bKash (Subscriptions, Webhooks)
-- Media & Storage: Cloudinary / Uploadthing (Before/After Photo Uploads)
-- Communication API: Resend (Email) + Twilio (SMS Notifications)
+- Authentication: NextAuth.js (Auth.js) / Clerk (Credentials, Google OAuth, Magic Link, RBAC)
+- Payment Engines & Billing: Stripe API, SSLCommerz, bKash Gateway (Subscriptions, Webhooks, Dunning)
+- Media & Storage: Cloudinary / Uploadthing (Before/After Proof of Work Photos)
+- Communication APIs: Resend (Transactional Emails & PDF Invoices) + Twilio (SMS Dispatch Alerts)
+- Validation & State: Zod, React Hook Form, Zustand / React Context
 
 
 --------------------------------------------------------------------------------
-4. ROLE-BASED ACCESS CONTROL (RBAC)
+4. DATABASE SCHEMAS & DATA MODELING (MONGOOSE)
 --------------------------------------------------------------------------------
-1. Customer Role:
-   - Select service category, space size, time slot, and book instantly.
-   - Pay online via credit card or activate monthly subscription plans.
-   - Live track job status (Scheduled, Assigned, En Route, Completed).
-   - Download PDF invoices, leave ratings & reviews.
+1. User Schema:
+   - _id: ObjectId
+   - name: String (Required)
+   - email: String (Unique, Required)
+   - passwordHash: String (Optional for OAuth users)
+   - phone: String (Required)
+   - role: String (Enum: "CUSTOMER", "CLEANER", "ADMIN", Default: "CUSTOMER")
+   - address: { street: String, city: String, area: String, zipCode: String, geoCoordinates: { lat: Number, lng: Number } }
+   - avatarUrl: String
+   - createdAt, updatedAt: Date
 
-2. Cleaner / Staff Role:
-   - View assigned daily jobs, schedules, and Google Maps directions.
-   - Update job status (Check-in, In Progress, Completed).
-   - Upload Before & After photos for quality assurance.
+2. Booking Schema:
+   - _id: ObjectId
+   - bookingNumber: String (Unique, e.g., "CLN-2026-8891")
+   - customerId: ObjectId (Ref: User)
+   - cleanerTeamId: ObjectId (Ref: User, Optional until assigned)
+   - serviceType: String (Enum: "RESIDENTIAL", "COMMERCIAL", "DEEP_CLEAN", "MOVE_IN_OUT", "POST_CONSTRUCTION")
+   - propertyDetails: { sqft: Number, bedrooms: Number, bathrooms: Number }
+   - selectedAddons: [{ name: String, price: Number }]
+   - totalAmount: Number (Required)
+   - status: String (Enum: "PENDING", "ASSIGNED", "EN_ROUTE", "IN_PROGRESS", "COMPLETED", "CANCELLED")
+   - scheduledDate: Date (Required)
+   - timeSlot: String (e.g., "09:00 AM - 11:00 AM")
+   - paymentStatus: String (Enum: "UNPAID", "PAID", "REFUNDED")
+   - paymentMethod: String (Enum: "STRIPE", "SSLCOMMERZ", "BKASH", "CASH_ON_DELIVERY")
+   - createdAt, updatedAt: Date
 
-3. Admin / Dispatcher Role:
-   - Visual Schedule Calendar: Assign or re-assign jobs to staff.
-   - Dynamic Pricing Engine: Modify service fees, subscription prices, promo codes.
-   - CRM & User Management: Manage customers, cleaners, and subscription statuses.
-   - Financial Analytics Dashboard: Daily revenue, total bookings, staff payouts.
+3. Subscription Schema:
+   - _id: ObjectId
+   - customerId: ObjectId (Ref: User)
+   - planType: String (Enum: "BASIC", "STANDARD", "PREMIUM")
+   - monthlyPrice: Number
+   - stripeSubscriptionId: String
+   - status: String (Enum: "ACTIVE", "PAST_DUE", "CANCELLED")
+   - visitsPerMonth: Number
+   - remainingVisits: Number
+   - currentPeriodStart: Date
+   - currentPeriodEnd: Date
+
+4. ProofOfWork Schema:
+   - _id: ObjectId
+   - bookingId: ObjectId (Ref: Booking)
+   - cleanerId: ObjectId (Ref: User)
+   - beforePhotos: [String] (Cloudinary URLs)
+   - afterPhotos: [String] (Cloudinary URLs)
+   - notes: String
+   - customerRating: Number (1-5)
+   - customerReview: String
+   - createdAt: Date
 
 
 --------------------------------------------------------------------------------
-5. CORE FUNCTIONAL REQUIREMENTS
+5. API ROUTE ARCHITECTURE & SERVER ACTIONS
 --------------------------------------------------------------------------------
-1. Instant Booking & Dynamic Price Calculator:
-   - Real-time algorithm calculates total bill based on rooms/bathrooms & sq. ft.
-   - Time slot picker with real-time slot availability blocking.
+- Auth Routes:
+  - POST /api/auth/register (User registration)
+  - POST /api/auth/[...nextauth] (NextAuth callback & session management)
 
-2. Subscription & Auto-Billing Engine (Stripe Integration):
-   - Automated monthly subscription billing with dunning/payment recovery emails.
+- Pricing & Booking Routes:
+  - POST /api/pricing/estimate (Calculates instant quote based on sqft & rooms)
+  - POST /api/bookings (Create new booking & lock time slot)
+  - GET  /api/bookings/my-bookings (Fetch customer booking history)
+  - PATCH /api/bookings/[id]/status (Update booking status by Cleaner or Admin)
 
-3. Smart Cleaner Allocation & Dispatch:
-   - Auto-notifies nearest available cleaner team based on customer location.
+- Admin & Dispatcher Routes:
+  - GET  /api/admin/dispatch (Fetch visual schedule calendar & cleaner availability)
+  - PATCH /api/admin/assign-cleaner (Assign cleaner team to specific booking)
+  - GET  /api/admin/analytics (Fetch daily revenue, total bookings, active subscriptions)
 
-4. Proof of Work & Quality Control:
-   - Mandatory photo upload upon job completion with instant customer rating prompt.
+- Payment & Webhook Handlers:
+  - POST /api/payments/stripe/checkout (Create Stripe checkout session)
+  - POST /api/webhooks/stripe (Listen for invoice.payment_succeeded, customer.subscription.deleted)
+  - POST /api/payments/sslcommerz/init (Initialize SSLCommerz session)
+  - POST /api/payments/bkash/create (Initialize bKash payment)
 
 
 --------------------------------------------------------------------------------
-6. PROJECT DEVELOPMENT ROADMAP
+6. ROLE-BASED ACCESS CONTROL (RBAC) & DASHBOARDS
 --------------------------------------------------------------------------------
-Phase 1: Database & Auth Setup (Week 1)
-- MongoDB & Mongoose setup. Role-based auth (NextAuth.js).
+1. Customer Role & Portal:
+   - Interactive Dynamic Price Calculator & instant booking.
+   - Subscription management (Upgrade/Downgrade/Cancel plan).
+   - Live job tracking (Scheduled -> Assigned -> En Route -> Completed).
+   - Download automated PDF Invoices & leave job ratings.
 
-Phase 2: Booking Engine & Pricing Logic (Week 2)
-- Dynamic price calculator widget, time slot picker, Stripe/SSLCommerz integration.
+2. Cleaner / Field Staff Role & Mobile View:
+   - Mobile-optimized daily schedule & Google Maps navigation.
+   - One-tap status updates (Check-in, In Progress, Job Complete).
+   - Camera upload for Before & After proof photos.
 
-Phase 3: Customer & Staff Portals (Week 3)
-- Customer booking dashboard, field staff mobile dashboard with photo upload.
+3. Admin / Dispatcher Control Center:
+   - Visual drag-and-drop Dispatch Calendar.
+   - Dynamic Pricing & Promo Code engine.
+   - Customer & Cleaner CRM with job history and reviews.
+   - Real-time revenue & payout analytics.
 
-Phase 4: Admin Control Center & Deployment (Week 4)
-- Visual schedule calendar, dispatch system, financial analytics, QA testing, production deployment.
+
+--------------------------------------------------------------------------------
+7. CORE FUNCTIONAL ALGORITHMS & LOGIC
+--------------------------------------------------------------------------------
+1. Dynamic Pricing Calculation Formula:
+   Base Service Fee (৳1,500) + (SqFt * ৳2.5) + (Bedrooms * ৳500) + (Bathrooms * ৳400) + Selected Addons
+
+2. Concurrency & Time-Slot Availability Lock:
+   - Atomic database reservation for 10 minutes during payment checkout.
+   - Prevents double-booking of cleaner teams for identical dates and time slots.
+
+3. Automated Notification Triggers:
+   - Booking Confirmed -> Email PDF Invoice to Customer (Resend API)
+   - Cleaner Dispatched -> SMS alert with estimated arrival time (Twilio API)
+   - Job Completed -> Push notification & Email asking for 5-star review
+
+
+--------------------------------------------------------------------------------
+8. PROJECT DEVELOPMENT ROADMAP
+--------------------------------------------------------------------------------
+Phase 1: Database, Schema & Role Auth Setup (Week 1)
+- MongoDB Mongoose schemas, NextAuth credentials/OAuth, RBAC middleware.
+
+Phase 2: Dynamic Booking Engine & Payment Webhooks (Week 2)
+- Price calculator widget, time slot picker, Stripe & local payment gateways integration.
+
+Phase 3: Customer Portal & Field Staff Mobile Interface (Week 3)
+- Customer booking tracking dashboard, cleaner task view, Cloudinary photo upload.
+
+Phase 4: Admin Dispatch Center, Analytics & Production Deploy (Week 4)
+- Visual schedule calendar, dispatch engine, revenue analytics, SEO optimization, deployment.
