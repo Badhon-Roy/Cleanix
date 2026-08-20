@@ -1,0 +1,111 @@
+================================================================================
+Cleanix - Full-Stack SaaS Platform
+Software Requirement Specification (SRS) & Production Roadmap
+================================================================================
+
+--------------------------------------------------------------------------------
+1. EXECUTVIE SUMMARY & CORE CONCEPT
+--------------------------------------------------------------------------------
+Cleanix is an on-demand B2B (Business-to-Business) and B2C (Business-to-Consumer)
+hybrid cleaning service automation platform. It delivers reliable, fast, and 
+high-quality cleaning services for residential homes, commercial offices, 
+renovation sites, and relocation properties.
+
+The platform is not just a simple booking site; it is a full SaaS (Software-as-a-Service)
+driven field service management ecosystem where customers, service providers 
+(cleaner teams), and administrators interact seamlessly.
+
+
+--------------------------------------------------------------------------------
+2. TARGET AUDIENCE & REVENUE MODEL
+--------------------------------------------------------------------------------
+Target Audience:
+1. Residential Customers (B2C): Busy professionals and families needing regular or deep cleaning.
+2. Commercial Customers (B2B): Corporate offices, showrooms, restaurants needing daily/weekly routine cleaning.
+3. Relocating Customers (Move-in / Move-out): Property owners moving into or leaving a space.
+4. Construction & Renovation Owners (Post-Construction): Property owners needing heavy dust & debris cleanup.
+
+Revenue Generation Streams:
+1. Recurring Subscription Packages:
+   - Basic Plan ($199/month): Standard home cleaning, kitchen & bath refresh, email support.
+   - Standard Plan ($499/month): Priority deep cleaning, sanitizing, 24/7 support, multi-room pack.
+   - Premium Plan ($899/month): Master commercial & home clean, dedicated concierge, real-time tracking.
+2. Custom Instant Estimate (One-Time Booking): Dynamic pay-per-service billing calculated based on square footage, room count, and selected add-ons.
+3. Add-on Service Fees: Oven wash, fridge deep clean, interior window cleaning, pet hygiene treatment.
+
+
+--------------------------------------------------------------------------------
+3. SYSTEM ARCHITECTURE & TECH STACK
+--------------------------------------------------------------------------------
+- Frontend Framework: Next.js 16 (App Router)
+- Styling & UI: Tailwind CSS + Framer Motion + Lenis Smooth Scroll
+- Database: PostgreSQL (Supabase / Neon)
+- ORM Layer: Prisma ORM
+- Authentication: NextAuth.js (Auth.js) / Clerk (OAuth, Magic Link, RBAC Credentials)
+- Payment Engine: Stripe API (Subscriptions, Payment Intents, Webhooks)
+- Media & Storage: Uploadthing / Cloudinary (Before/After Photo Uploads)
+- Communication API: Resend (Email) + Twilio (SMS Notifications)
+
+
+--------------------------------------------------------------------------------
+4. ROLE-BASED ACCESS CONTROL (RBAC)
+--------------------------------------------------------------------------------
+1. Customer Role:
+   - Select service category, space size, time slot, and book instantly.
+   - Pay online via credit card or activate monthly subscription plans.
+   - Live track job status (Scheduled, Assigned, En Route, Completed).
+   - Download PDF invoices, leave ratings & reviews.
+
+2. Cleaner / Staff Role:
+   - View assigned daily jobs, schedules, and Google Maps directions.
+   - Update job status (Check-in, In Progress, Completed).
+   - Upload Before & After photos for quality assurance.
+
+3. Admin / Dispatcher Role:
+   - Visual Schedule Calendar: Assign or re-assign jobs to staff.
+   - Dynamic Pricing Engine: Modify service fees, subscription prices, promo codes.
+   - CRM & User Management: Manage customers, cleaners, and subscription statuses.
+   - Financial Analytics Dashboard: Daily revenue, total bookings, staff payouts.
+
+
+--------------------------------------------------------------------------------
+5. CORE FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+1. Instant Booking & Dynamic Price Calculator:
+   - Real-time algorithm calculates total bill based on rooms/bathrooms & sq. ft.
+   - Time slot picker with real-time slot availability blocking.
+
+2. Subscription & Auto-Billing Engine (Stripe Integration):
+   - Automated monthly subscription billing with dunning/payment recovery emails.
+
+3. Smart Cleaner Allocation & Dispatch:
+   - Auto-notifies nearest available cleaner team based on customer location.
+
+4. Proof of Work & Quality Control:
+   - Mandatory photo upload upon job completion with instant customer rating prompt.
+
+
+--------------------------------------------------------------------------------
+6. DATABASE SCHEMA MODELS (PRISMA ORM)
+--------------------------------------------------------------------------------
+- User Model: id, name, email, password, role (CUSTOMER, CLEANER, ADMIN), phone, address
+- Service Model: id, title, slug, basePrice, description, category
+- Booking Model: id, bookingNumber, customerId, cleanerId, serviceId, status, totalAmount, scheduledAt, address, beforePhotos, afterPhotos, paymentStatus
+- Subscription Model: id, userId, stripeSubId, planName, price, status, startDate, endDate
+- Review Model: id, userId, rating, comment, createdAt
+
+
+--------------------------------------------------------------------------------
+7. PROJECT DEVELOPMENT ROADMAP
+--------------------------------------------------------------------------------
+Phase 1: Database & Auth Setup (Week 1)
+- Prisma ORM & PostgreSQL setup. Role-based auth (NextAuth.js).
+
+Phase 2: Booking Engine & Pricing Logic (Week 2)
+- Dynamic price calculator widget, time slot picker, Stripe integration.
+
+Phase 3: Customer & Staff Portals (Week 3)
+- Customer booking dashboard, field staff mobile dashboard with photo upload.
+
+Phase 4: Admin Control Center & Deployment (Week 4)
+- Visual schedule calendar, dispatch system, financial analytics, QA testing, production deployment.
