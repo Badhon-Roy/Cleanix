@@ -2,31 +2,33 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronRight, Home, Building2, Sparkles, Wrench } from "lucide-react";
 
 const servicesList = [
   {
     id: 1,
+    slug: "residential-deep-cleaning",
     title: "RESIDENTIAL DEEP CLEANING",
     tags: ["HOME CARE", "আবাসিক বাসা"],
     icon: Home,
-    image:
-      "/RESIDENTIAL-DEEP-CLEANING.png",
+    image: "/RESIDENTIAL-DEEP-CLEANING.png",
     description:
       "ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ ডিপ রিফ্রেশ ক্লিনিং। ভ্যাকুয়ামিং, ডাস্টিং এবং কিচেন ও বাথরুম হাইজিন স্যানিটাইজেশন।",
   },
   {
     id: 2,
+    slug: "commercial-office-cleaning",
     title: "COMMERCIAL OFFICE CLEANING",
     tags: ["CORPORATE", "অফিস স্পেস"],
     icon: Building2,
-    image:
-      "/COMMERCIAL-OFFICE-CLEANING.png",
+    image: "/COMMERCIAL-OFFICE-CLEANING.png",
     description:
       "গুলশান, বনানী, মতিঝিল ও উত্তরায় যেকোনো সাইজের কর্পোরেট অফিসের জন্য দৈনিক বা সাপ্তাহিক সাবস্ক্রিপশন ভিত্তিক হাইজিন স্যানিটাইজেশন।",
   },
   {
     id: 3,
+    slug: "move-out-cleaning",
     title: "MOVE-IN / MOVE-OUT CLEANING",
     tags: ["RELOCATION", "বাসা পরিবর্তন"],
     icon: Sparkles,
@@ -37,6 +39,7 @@ const servicesList = [
   },
   {
     id: 4,
+    slug: "post-construction-cleaning",
     title: "POST-CONSTRUCTION CLEANING",
     tags: ["HEAVY DUTY", "রেনোভেশন"],
     icon: Wrench,
@@ -77,7 +80,7 @@ export default function OurServices() {
         {/* Main Grid: Left Feature Image Card + Right Interactive Service Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
           {/* Left Column: Feature Image with Glassmorphism Overlay */}
-          <div className="lg:col-span-6 relative w-full w-full min-h-[380px] sm:min-h-[420px] lg:min-h-full h-full mx-auto lg:mx-0 overflow-hidden  group rounded-[36px]">
+          <div className="lg:col-span-6 relative w-full min-h-[380px] sm:min-h-[420px] lg:min-h-full h-full mx-auto lg:mx-0 overflow-hidden group rounded-[36px]">
             <Image
               src={activeService.image}
               alt={activeService.title}
@@ -87,11 +90,22 @@ export default function OurServices() {
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
 
-            {/* Bottom Floating Glassmorphism Overlay */}
-            <div className="absolute bottom-6 left-6 right-6 bg-[#031837]/80 backdrop-blur-md border-l-4 border-[#007eff] rounded-2xl p-5 md:p-6 shadow-2xl text-white">
-              <p className="text-white/95 text-sm md:text-[15px] font-medium leading-relaxed">
+            {/* Bottom Floating Glassmorphism Overlay with View Details Button */}
+            <div className="absolute bottom-6 left-6 right-6 bg-[#031837]/80 backdrop-blur-md border-l-4 border-[#007eff] rounded-2xl p-5 md:p-6 shadow-2xl text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-white/95 text-sm md:text-[15px] font-medium leading-relaxed max-w-md line-clamp-2">
                 {activeService.description}
               </p>
+
+              {/* View Details Button */}
+              <Link
+                href={`/services/${activeService.slug}`}
+                className="bg-[#007eff] hover:bg-[#0062ee] text-white font-bold text-xs uppercase tracking-wider pl-5 pr-1.5 py-2.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg hover:scale-105 flex-shrink-0 self-start sm:self-auto"
+              >
+                <span>View Details</span>
+                <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[#007eff]">
+                  <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+              </Link>
             </div>
           </div>
 
@@ -105,10 +119,11 @@ export default function OurServices() {
                 <div
                   key={service.id}
                   onClick={() => setActiveService(service)}
-                  className={`rounded-2xl p-5 md:p-6 flex items-center justify-between border transition-all duration-300 cursor-pointer group ${isActive
+                  className={`rounded-2xl p-5 md:p-6 flex items-center justify-between border transition-all duration-300 cursor-pointer group ${
+                    isActive
                       ? "bg-[#eaf1fb] border-[#007eff]/50 shadow-md translate-x-1"
                       : "bg-[#f3f5f8] border-slate-100/90 hover:bg-[#eaf1fb]/60 hover:shadow-xs"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-4 sm:gap-5">
                     {/* Dark Navy Square Icon Box */}
@@ -135,14 +150,17 @@ export default function OurServices() {
                   </div>
 
                   {/* Circular Action Arrow Button */}
-                  <div
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs flex-shrink-0 ${isActive
+                  <Link
+                    href={`/services/${service.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs flex-shrink-0 ${
+                      isActive
                         ? "bg-[#007eff] text-white rotate-0"
                         : "bg-white text-[#031837] group-hover:bg-[#007eff] group-hover:text-white"
-                      }`}
+                    }`}
                   >
                     <ChevronRight className="w-5 h-5 stroke-[3]" />
-                  </div>
+                  </Link>
                 </div>
               );
             })}

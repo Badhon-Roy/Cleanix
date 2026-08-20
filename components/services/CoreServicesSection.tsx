@@ -9,6 +9,7 @@ export default function CoreServicesSection() {
   const services = [
     {
       num: "01",
+      slug: "residential-deep-cleaning",
       category: "HOME CARE",
       title: "RESIDENTIAL DEEP CLEANING",
       checklist: [
@@ -20,17 +21,19 @@ export default function CoreServicesSection() {
     },
     {
       num: "02",
+      slug: "commercial-office-cleaning",
       category: "OFFICE",
       title: "COMMERCIAL OFFICE CLEANING",
       checklist: [
         "Daily & Weekly Office Programs",
         "High-Touch Surface Sanitizing",
       ],
-      image: "https://framerusercontent.com/images/71kz5iX4crWQYqbcukrbVWogYA.png?width=600&height=400",
+      image: "/COMMERCIAL-OFFICE-CLEANING.png",
       imageFirst: false,
     },
     {
       num: "03",
+      slug: "move-out-cleaning",
       category: "TURNOVER",
       title: "MOVE-OUT CLEANING",
       checklist: [
@@ -42,6 +45,7 @@ export default function CoreServicesSection() {
     },
     {
       num: "04",
+      slug: "post-construction-cleaning",
       category: "RENOVATION",
       title: "POST-CONSTRUCTION CLEANING",
       checklist: [
@@ -84,17 +88,17 @@ export default function CoreServicesSection() {
               >
                 {item.imageFirst ? (
                   // Image Container
-                  <div className="relative w-full h-full min-h-[360px] group bg-slate-100">
+                  <Link href={`/services/${item.slug}`} className="relative w-full h-full min-h-[360px] block group bg-slate-100">
                     <Image
                       src={item.image}
                       alt={item.title}
                       fill
                       unoptimized
                       priority
-                      className="object-cover object-center  transition-transform duration-700"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                     />
-                  </div>
+                  </Link>
                 ) : (
                   // Dark Navy Card
                   <div className="relative w-full h-full bg-[#001837] text-white p-8 sm:p-10 md:p-12 flex flex-col justify-between overflow-hidden">
@@ -107,9 +111,11 @@ export default function CoreServicesSection() {
                       <span className="inline-block bg-gradient-to-r from-[#0055ff] via-[#007eff] to-[#00aaff] text-white font-bold text-[11px] uppercase tracking-wider px-3.5 py-1 rounded-full mb-6 shadow-xs">
                         {item.category}
                       </span>
-                      <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
-                        {item.title}
-                      </h3>
+                      <Link href={`/services/${item.slug}`} className="hover:text-[#007eff] transition-colors block">
+                        <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
+                          {item.title}
+                        </h3>
+                      </Link>
                     </div>
 
                     <div className="relative z-10">
@@ -134,7 +140,7 @@ export default function CoreServicesSection() {
               {/* Center Seam Floating Arrow Button */}
               <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
                 <Link
-                  href="/#quote"
+                  href={`/services/${item.slug}`}
                   className="pointer-events-auto w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform duration-300 group p-1.5 border border-slate-100"
                 >
                   <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#0055ff] via-[#007eff] to-[#00aaff] flex items-center justify-center text-white shadow-md">
@@ -161,9 +167,11 @@ export default function CoreServicesSection() {
                       <span className="inline-block bg-gradient-to-r from-[#0055ff] via-[#007eff] to-[#00aaff] text-white font-bold text-[11px] uppercase tracking-wider px-3.5 py-1 rounded-full mb-6 shadow-xs">
                         {item.category}
                       </span>
-                      <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
-                        {item.title}
-                      </h3>
+                      <Link href={`/services/${item.slug}`} className="hover:text-[#007eff] transition-colors block">
+                        <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
+                          {item.title}
+                        </h3>
+                      </Link>
                     </div>
 
                     <div className="relative z-10">
@@ -184,17 +192,17 @@ export default function CoreServicesSection() {
                   </div>
                 ) : (
                   // Image Container
-                  <div className="relative w-full h-full min-h-[360px] group bg-slate-100">
+                  <Link href={`/services/${item.slug}`} className="relative w-full h-full min-h-[360px] block group bg-slate-100">
                     <Image
                       src={item.image}
                       alt={item.title}
                       fill
                       unoptimized
                       priority
-                      className="object-cover object-center  transition-transform duration-700"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                     />
-                  </div>
+                  </Link>
                 )}
               </div>
             </div>
