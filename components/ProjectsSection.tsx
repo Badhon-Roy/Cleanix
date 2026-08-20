@@ -45,27 +45,7 @@ const projectsList = [
       "Reliable residential cleaning for busy homes, using trained teams, safe products, and detailed room-by-room checklists for a healthier living space.",
     image:
       "https://framerusercontent.com/images/bGhAKZiC8z0rbAf11PaNvvEUJA8.png?width=554&height=370",
-  },
-  {
-    id: 5,
-    title: "OFFICE DEEP CLEANING",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Comprehensive office cleaning that keeps workstations, meeting rooms, kitchens, and common areas fresh, hygienic, and ready for productive teams.",
-    image:
-      "https://framerusercontent.com/images/iwM5w99dnI438KMR1A53E3idQ.png?width=554&height=370",
-  },
-  {
-    id: 6,
-    title: "MOVE OUT CLEAN SERVICE",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Fast, dependable move-in and move-out cleaning designed for tight schedules, detailed turnovers, and spotless handover-ready interiors.",
-    image:
-      "https://framerusercontent.com/images/fxmPYxWX2tkvPKHFeqbLVtKSLs4.png?width=554&height=370",
-  },
+  }
 ];
 
 export default function ProjectsSection() {
