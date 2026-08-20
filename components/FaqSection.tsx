@@ -9,30 +9,30 @@ const faqList = [
   {
     id: 1,
     number: "01",
-    question: "How long does cleaning take?",
+    question: "ক্লিনিং সার্ভিস সম্পন্ন করতে কত সময় লাগে?",
     answer:
-      "Cleaning time depends on property size, room condition, selected service, and add-ons. Our team confirms a realistic schedule before arrival and keeps the visit organized throughout.",
+      "সম্পত্তির স্কয়ার ফিট (SqFt) ও রুমের ওপর ভিত্তি করে সাধারণত ৩ থেকে ৬ ঘণ্টা সময় লাগে। ক্লিনার টিম পৌঁছানোর আগেই আপনাকে নিখুঁত টাইমলাইন জানিয়ে দেওয়া হবে।",
   },
   {
     id: 2,
     number: "02",
-    question: "Do I need to provide supplies?",
+    question: "আমাকে কি পরিষ্কারের কোনো সরঞ্জাম বা কেমিক্যাল দিতে হবে?",
     answer:
-      "No, our team brings all professional cleaning supplies, eco-friendly solutions, and specialized equipment needed for the entire cleaning service.",
+      "একদমই না! আমাদের পেশাদার টিম আন্তর্জাতিক মানের সেফ কেমিক্যালস, ভ্যাকুয়াম অ্যান্ড ড্রাইয়ার এবং স্যানিটাইজিং ইক্যুইপমেন্ট নিজেদের সাথে নিয়ে আসে।",
   },
   {
     id: 3,
     number: "03",
-    question: "What types of spaces do you clean?",
+    question: "ঢাকার কোন কোন এলাকায় আপনাদের সার্ভিস চালু আছে?",
     answer:
-      "We clean residential homes, apartments, commercial offices, retail stores, post-construction sites, and move-in/move-out turnover properties.",
+      "বর্তমানে গুলশান, বনানী, উত্তরা, ধানমন্ডি, মিরপুর, মতিঝিল, বসুন্ধরা আবাসিক এলাকা এবং ঢাকা মেট্রোপলিটনের সমস্ত প্রধান বাণিজ্যিক ও আবাসিক এলাকায় সার্ভিস এভেইলএবল।",
   },
   {
     id: 4,
     number: "04",
-    question: "Can I book recurring cleaning?",
+    question: "আমি কি মাসিক সাবস্ক্রিপশন বা নিয়মিত সার্ভিস নিতে পারব?",
     answer:
-      "Yes! We offer flexible weekly, bi-weekly, and monthly recurring cleaning schedules with customized plans and discounted rates.",
+      "হ্যাঁ! আপনি আমাদের Basic (৳6,000/মাস), Standard (৳14,000/মাস) বা Premium (৳30,000/মাস) প্ল্যান বেছে নিয়ে রেগুলার সাপ্তাহিক/পাক্ষিক অটোমেটেড সার্ভিস নিতে পারেন।",
   },
 ];
 

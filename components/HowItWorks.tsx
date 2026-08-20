@@ -6,25 +6,25 @@ import Image from "next/image";
 const stepsList = [
   {
     step: "STEP 01",
-    title: "GET INSTANT ESTIMATE",
+    title: "INSTANT BOOKING & ESTIMATE",
     description:
-      "Share your rooms, schedule, and cleaning goals to receive a clear estimate for your space.",
+      "আপনার স্পেসের সাইজ (SqFt), রুম সংখ্যা এবং সুবিধাজনক সময় বেছে নিয়ে কয়েক সেকেন্ডে ডাইনামিক কোটেশন পেয়ে যান।",
     image:
       "https://framerusercontent.com/images/iP0bB1oMamNlkOzNJQUNBhTRiU.png?width=464&height=320",
   },
   {
     step: "STEP 02",
-    title: "PROFESSIONAL CLEANING VISIT",
+    title: "VERIFIED TEAM VISIT",
     description:
-      "Our trained team arrives prepared, protects surfaces, and cleans every agreed area.",
+      "আমাদের ভেরিফাইড ক্লিনার টিম নির্ধারিত সময়ে পৌঁছে আন্তর্জাতিক মানের সেফ কেমিক্যালস দিয়ে সেবা প্রদান করবে।",
     image:
       "https://framerusercontent.com/images/qQZSYnMAEFCtGMlduHTBAQmANg.png?width=464&height=320",
   },
   {
     step: "STEP 03",
-    title: "QUALITY CHECK FOLLOW-UP",
+    title: "QUALITY CHECK & INVOICE",
     description:
-      "We review the finished work, and make sure the space meets your expectations.",
+      "কাজ শেষে বিফোর/আফটার ফটো ইনসপেকশন, ইনস্ট্যান্ট কাস্টমার রেটিং এবং অ্যাপ থেকে অটোমেটেড ইনভয়েস ডাউনলোড করুন।",
     image:
       "https://framerusercontent.com/images/2Zn55hKsUUZQoQR8DfeD1PUXY78.png?width=464&height=320",
   },
@@ -39,7 +39,7 @@ export default function HowItWorks() {
           {/* Badge & Headline (Left) */}
           <div className="max-w-2xl">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4">
-              HOW IT WORK
+              HOW IT WORKS
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
               EASY STEPS TO BOOK YOUR{" "}
@@ -50,9 +50,7 @@ export default function HowItWorks() {
           {/* Subtitle Description (Right) */}
           <div className="lg:max-w-md">
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Seamlessly deliver reliable cleaning support with simple booking,
-              clear communication, trained specialists, and final walkthroughs
-              that keep every space fresh.
+              সহজ বুকিং প্রসেস, ক্লিনারদের লাইভ জিপিএস ট্র্যাকিং এবং কোয়ালিটি গ্যারান্টি নিয়ে আপনার সেবা নিশ্চিত করুন ৩টি সহজ ধাপে।
             </p>
           </div>
         </div>

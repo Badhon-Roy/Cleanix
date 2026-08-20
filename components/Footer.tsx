@@ -60,9 +60,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-slate-300 text-sm leading-relaxed mb-6">
-              Premium residential and commercial cleaning services designed to
-              keep your home, office, and commercial spaces fresh, hygienic, and
-              spotless every day.
+              বাংলাদেশের ১ নম্বর অন-ডিমান্ড প্রিমিয়াম হোম ও কর্পোরেট ক্লিনিং প্ল্যাটফর্ম। আপনার বাসা এবং অফিসকে ঝকঝকে ও জীবাণুমুক্ত রাখার সহজ ডিজিটাল সমাধান।
             </p>
 
             {/* Contact Details */}
@@ -71,20 +69,20 @@ export default function Footer() {
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#007eff] flex-shrink-0">
                   <Phone className="w-4 h-4" />
                 </div>
-                <span className="font-semibold">+1 (800) 456-7890</span>
+                <span className="font-semibold">+880 1800-253264 (+880 1800-CLEANIX)</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#007eff] flex-shrink-0">
                   <Mail className="w-4 h-4" />
                 </div>
-                <span className="font-semibold">support@claeanix.com</span>
+                <span className="font-semibold">support@cleanix.com.bd</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#007eff] flex-shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <span className="font-semibold">
-                  123 Cleaning Ave, New York, NY 10001
+                  Gulshan Avenue, Circle-2, Dhaka-1212, Bangladesh
                 </span>
               </div>
             </div>

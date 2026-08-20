@@ -49,7 +49,7 @@ export default function HeroBanner() {
               <ChevronRight className="w-3.5 h-3.5 stroke-3" />
             </div>
             <span className="text-white text-xs md:text-sm font-semibold tracking-wider uppercase font-sans">
-              SIMPLE. RELIABLE. PROFESSIONAL CLEANING
+              BANGLADESH'S #1 HYBRID CLEANING PLATFORM
             </span>
           </div>
 
@@ -61,9 +61,9 @@ export default function HeroBanner() {
 
           {/* Subheading / Description */}
           <p className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-lg mb-8 md:mb-10 text-shadow-sm">
-            Experience professional cleaning services designed save you time
+            আবাসিক বাসা এবং কর্পোরেট অফিসের জন্য প্রিমিয়াম ডিপ ক্লিনিং সার্ভিস।
             <br className="hidden sm:inline" />
-            keep your home business sparkling clean every
+            দক্ষ টিম, অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজেশন ও সহজ বুকিং।
           </p>
 
           {/* Action Buttons with Glowing Blue Shadows */}

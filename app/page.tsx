@@ -19,7 +19,6 @@ export default function Home() {
     <main className="min-h-screen bg-[#001837] text-white flex flex-col font-sans selection:bg-blue-500 selection:text-white">
       <Navbar />
       <HeroBanner />
-      <OurServices />
       <AboutSection />
       <TrustedClients />
       <ImpactSection />

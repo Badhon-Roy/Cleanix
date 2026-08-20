@@ -33,20 +33,20 @@ export default function WhyChooseUs() {
                   <Users className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  Experienced Cleaning Professionals
+                  Verified Professional Cleaners
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Fully Trained Cleaning Staff
+                    NID ও পুলিশ ব্যাকগ্রাউন্ড ভেরিফাইড
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Consistent Quality Standards
+                    আন্তর্জাতিক স্ট্যান্ডার্ড ট্রেনিংপ্রাপ্ত
                   </span>
                 </div>
               </div>
@@ -59,20 +59,20 @@ export default function WhyChooseUs() {
                   <ShieldCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  Safe &amp; Eco-Friendly Cleaning
+                  Safe &amp; Eco-Friendly Solutions
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Family &amp; Pet Safe Products
+                    শিশু ও পোষা প্রাণীর জন্য শতভাগ নিরাপদ
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
-                  <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Environmentally Responsible Solutions
+                  <span className="text-[#001837] font-medium text-xs sm:text-sm">
+                    অ্যান্টি-ব্যাকটেরিয়াল কেমিক্যাল স্যানিটাইজ
                   </span>
                 </div>
               </div>
@@ -85,20 +85,20 @@ export default function WhyChooseUs() {
                   <CalendarCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  Flexible Cleaning Plans
+                  Flexible Subscriptions &amp; Slots
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    One-Time &amp; Recurring Services
+                    মাসিক প্যাকেজ ও ইনস্ট্যান্ট এককালীন বুকিং
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Customized Cleaning Schedules
+                    আপনার সময় অনুযায়ী স্লট সিলেক্টর
                   </span>
                 </div>
               </div>
@@ -111,20 +111,20 @@ export default function WhyChooseUs() {
                   <Headset className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  Reliable Customer Support
+                  24/7 Dedicated Support
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Fast Booking &amp; Response
+                    হটলাইন, হোয়াটসঅ্যাপ ও চ্যাট সাপোর্ট
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
                   <span className="text-slate-600 font-medium text-xs sm:text-sm">
-                    Satisfaction Guaranteed
+                    ১০০% সার্ভিস স্যাটিস্ফেকশন গ্যারান্টি
                   </span>
                 </div>
               </div>

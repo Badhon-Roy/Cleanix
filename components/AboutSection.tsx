@@ -130,24 +130,16 @@ export default function AboutSection() {
 
             {/* Who We Are Subheading */}
             <h3 className="text-2xl sm:text-3xl font-extrabold text-[#001837] mb-4">
-              Who We Are ?
+              আমরা কারা? (Who We Are)
             </h3>
 
             {/* Paragraph Descriptions */}
             <div className="space-y-4 text-slate-600 text-sm sm:text-[15px] leading-relaxed mb-8">
               <p>
-                We provide dependable residential and commercial cleaning
-                services designed to keep every space fresh, hygienic, and
-                professionally maintained. Our trained cleaners use proven
-                techniques and quality products to deliver consistent results
-                you can trust.
+                Cleanix হলো বাংলাদেশের প্রথম SaaS-চালিত হাইব্রিড স্মার্ট ক্লিনিং প্ল্যাটফর্ম। আমরা আবাসিক বাসা এবং গুলশান, বনানী, মতিঝিল ও উত্তরায় যেকোনো আকারের কর্পোরেট অফিসের জন্য বিশ্বমানের জীবাণুমুক্তকরণ ও প্রিমিয়াম ডিপ ক্লিনিং সেবা প্রদান করি।
               </p>
               <p>
-                We deliver dependable cleaning services that create healthier,
-                fresher, and more welcoming spaces for homes and businesses.
-                With experienced professionals, modern equipment, and
-                eco-friendly cleaning solutions, we ensure every project is
-                completed with exceptional care and consistent quality.
+                আমাদের রয়েছে ব্যাকগ্রাউন্ড-ভেরিফাইড দক্ষ টিম, আন্তর্জাতিক মানের ইকো-ফ্রেন্ডলি সেফ কেমিক্যালস এবং লাইভ জিপিএস ট্র্যাকিং সিস্টেম—যা নিশ্চিত করে শতভাগ হাইজিন ও সময়নিষ্ঠতা।
               </p>
             </div>
 
@@ -156,25 +148,25 @@ export default function AboutSection() {
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  98% ON-TIME ARRIVAL RATE
+                  98% ON-TIME ARRIVAL IN DHAKA
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  500+ SATISFIED CLIENTS
+                  1,250+ SATISFIED CLIENTS
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  99% CUSTOMER SATISFACTION
+                  100% VERIFIED CLEANER TEAMS
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  20+ EXPERIENCED CLEANER
+                  24/7 DEDICATED SUPPORT
                 </span>
               </div>
             </div>

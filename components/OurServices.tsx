@@ -8,42 +8,42 @@ const servicesList = [
   {
     id: 1,
     title: "RESIDENTIAL DEEP CLEANING",
-    tags: ["CLEANING", "HOME CARE"],
+    tags: ["HOME CARE", "আবাসিক বাসা"],
     icon: Home,
     image:
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1000&q=80",
     description:
-      "We provide end-to-end cleaning solutions with trained teams, safe supplies, detailed checklists, and reliable service for homes and businesses of every size.",
+      "ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ ডিপ রিফ্রেশ ক্লিনিং। ভ্যাকুয়ামিং, ডাস্টিং এবং কিচেন ও বাথরুম হাইজিন স্যানিটাইজেশন।",
   },
   {
     id: 2,
     title: "COMMERCIAL OFFICE CLEANING",
-    tags: ["CLEANING", "COMMERCIAL"],
+    tags: ["CORPORATE", "অফিস স্পেস"],
     icon: Building2,
     image:
       "https://images.unsplash.com/photo-1613963931023-5dc59437c8a6?auto=format&fit=crop&w=1000&q=80",
     description:
-      "Professional office cleaning services tailored to maintain hygienic, productive, and sparkling work environments daily.",
+      "গুলশান, বনানী, মতিঝিল ও উত্তরায় যেকোনো সাইজের কর্পোরেট অফিসের জন্য দৈনিক বা সাপ্তাহিক সাবস্ক্রিপশন ভিত্তিক হাইজিন স্যানিটাইজেশন।",
   },
   {
     id: 3,
-    title: "MOVE-OUT CLEANING",
-    tags: ["CLEANING", "RELOCATION"],
+    title: "MOVE-IN / MOVE-OUT CLEANING",
+    tags: ["RELOCATION", "বাসা পরিবর্তন"],
     icon: Sparkles,
     image:
       "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1000&q=80",
     description:
-      "Thorough move-in and move-out deep cleaning routines ensuring properties look pristine for new occupants.",
+      "নতুন বাসায় শিফট হচ্ছেন বা পুরোনো বাসা ছাড়ছেন? বাসা সম্পূর্ণ জীবাণুমুক্ত ও ঝকঝকে করার জন্য আমাদের স্পেশাল মুভ-ইন/আউট সার্ভিস।",
   },
   {
     id: 4,
     title: "POST-CONSTRUCTION CLEANING",
-    tags: ["CLEANING", "HEAVY DUTY"],
+    tags: ["HEAVY DUTY", "রেনোভেশন"],
     icon: Wrench,
     image:
       "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=1000&q=80",
     description:
-      "Specialized debris removal, dust sanitization, and final polish after building, remodeling, or renovation work.",
+      "রেনোভেশন বা নতুন কনস্ট্রাকশনের পর জমে থাকা ধুলোবালি, রঙের দাগ ও সিভিল কেমিক্যাল দ্রুত পরিষ্কারের জন্য হেভি-ডিউটি স্পেস ক্লিনিং।",
   },
 ];
 
@@ -69,9 +69,7 @@ export default function OurServices() {
           {/* Subtitle Description (Right) */}
           <div className="lg:max-w-md">
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Seamlessly deliver trusted cleaning routines with trained teams,
-              safe supplies, flexible scheduling, detailed quality checks, and
-              service plans built around your space.
+              দক্ষ টিম, আন্তর্জাতিক মানের সেফ কেমিক্যালস, রিয়েল-টাইম জিপিএস ট্র্যাকিং এবং ডিজিটাল ইনভয়েসসহ প্রিমিয়াম সার্ভিস।
             </p>
           </div>
         </div>

@@ -21,8 +21,7 @@ export default function CtaBanner() {
               READY FOR A SPOTLESS &amp; HEALTHY SPACE?
             </h2>
             <p className="text-white/90 text-sm sm:text-base font-medium mt-3">
-              Book your professional cleaning team today or get a free custom
-              estimate for your home or business.
+              আজই আপনার বাসা বা অফিসের জন্য বিশ্বমানের ক্লিনিং টিম বুক করুন অথবা কয়েক সেকেন্ডে ইনস্ট্যান্ট ফ্রি এস্টিমেট নিন।
             </p>
           </div>
 

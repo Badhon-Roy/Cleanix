@@ -6,18 +6,18 @@ import Image from "next/image";
 const statsList = [
   {
     id: 1,
-    value: "$4.6M+",
-    label: "TOTAL VALUE",
+    value: "2,500+",
+    label: "ক্লিন করা বাসা ও অফিস",
   },
   {
     id: 2,
-    value: "320+",
-    label: "ACTIVE HOMES",
+    value: "150+",
+    label: "ভেরিফাইড প্রফেশনাল ক্লিনার",
   },
   {
     id: 3,
-    value: "98%",
-    label: "HAPPY CLIENTS",
+    value: "99.2%",
+    label: "সন্তোষজনক কাস্টমার রেটিং",
   },
 ];
 
@@ -31,19 +31,18 @@ export default function ImpactSection() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-slate-500 font-bold text-xs tracking-wider uppercase mb-3">
               <span className="w-2 h-2 rounded-full bg-[#007eff] inline-block" />
-              <span>OUR IMPACT</span>
+              <span>OUR IMPACT &amp; NUMBERS</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.15] tracking-tight">
-              Real insights behind <br className="hidden sm:block" />
-              every property decision
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.15] tracking-tight uppercase">
+              REAL NUMBERS BEHIND OUR <br className="hidden sm:block" />
+              <span className="text-[#007eff]">CLEANING EXCELLENCE</span>
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
           <div className="lg:max-w-md">
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Built to make modern home discovery simple, transparent, and more
-              confident for every user.
+              বাংলাদেশের প্রতিটি বাসা ও কর্পোরেট অফিস স্পেসকে শতভাগ জীবাণুমুক্ত ও ঝকঝকে রাখার নির্ভরযোগ্য ডিজিটাল সমাধান।
             </p>
           </div>
         </div>
@@ -69,10 +68,10 @@ export default function ImpactSection() {
                 key={stat.id}
                 className="flex-1 bg-[#f4f6f8] rounded-2xl p-5 sm:p-6 flex items-center justify-between border border-slate-200/60 hover:border-slate-300 transition-all duration-300 min-h-[96px]"
               >
-                <span className="text-3xl sm:text-4xl lg:text-[36px] font-black text-[#001837] tracking-tight">
+                <span className="text-3xl sm:text-4xl lg:text-[36px] font-black text-[#007eff] tracking-tight">
                   {stat.value}
                 </span>
-                <span className="text-slate-500 font-extrabold text-xs sm:text-sm tracking-wider uppercase">
+                <span className="text-slate-700 font-extrabold text-xs sm:text-base tracking-wider uppercase">
                   {stat.label}
                 </span>
               </div>
