@@ -5,6 +5,7 @@ import AboutSection from "@/components/AboutSection";
 import TeamSpecialists from "@/components/about/TeamSpecialists";
 import OurJourneyStepper from "@/components/about/OurJourneyStepper";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import TrustedClients from "@/components/TrustedClients";
 
 export const metadata: Metadata = {
   title: "About Us | Cleanix - Pioneer SaaS Cleaning Automation in Bangladesh",
@@ -26,6 +27,7 @@ export default function AboutPage() {
       <AboutHero />
       <CompanyOverview />
       <AboutSection />
+       <TrustedClients />
       <TeamSpecialists />
       <OurJourneyStepper />
       <TestimonialsSection />

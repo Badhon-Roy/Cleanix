@@ -38,7 +38,7 @@ export default function Navbar() {
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
     { name: "Blog", href: "/#blog" },
-    { name: "Contact", href: "/#contact" },
+    { name: "Contact", href: "/contact" },
   ];
 
   const checkIsActive = (href: string) => {
@@ -46,6 +46,7 @@ export default function Navbar() {
     if (href === "/about") return pathname === "/about";
     if (href === "/services") return pathname.startsWith("/services");
     if (href === "/projects") return pathname.startsWith("/projects");
+    if (href === "/contact") return pathname.startsWith("/contact");
     return false;
   };
 
@@ -87,7 +88,7 @@ export default function Navbar() {
         {/* CTA Get a Quote Button */}
         <div className="hidden sm:flex items-center">
           <Link
-            href="/#quote"
+            href="/contact"
             className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-[14px] pl-5 pr-1.5 py-1.5 rounded-full flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]"
           >
             <span>Get a Quote</span>
@@ -138,7 +139,7 @@ export default function Navbar() {
 
           <div className="pt-3 border-t border-white/10 mt-1">
             <Link
-              href="/#quote"
+              href="/contact"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-5 pr-2 py-2.5 rounded-full flex items-center justify-between w-full shadow-md"
               onClick={() => setMobileMenuOpen(false)}
             >

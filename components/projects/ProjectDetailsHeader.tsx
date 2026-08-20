@@ -16,20 +16,6 @@ export default function ProjectDetailsHeader({ project }: Props) {
       <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[450px] h-[450px] bg-[#007eff]/20 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="container mx-auto max-w-7xl relative z-10">
-        {/* Breadcrumb Navigation */}
-        <nav className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-300 mb-6 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-1.5 rounded-full uppercase tracking-wider">
-          <Link href="/" className="hover:text-[#007eff] transition-colors">
-            Home
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-[#007eff]" />
-          <Link href="/projects" className="hover:text-[#007eff] transition-colors">
-            Projects
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-[#007eff]" />
-          <span className="text-[#007eff] font-bold truncate max-w-[200px] sm:max-w-none">
-            {project.title}
-          </span>
-        </nav>
 
         {/* Category Pill Badge */}
         <div className="flex items-center gap-2 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-1.5 mb-4 shadow-lg max-w-max">
