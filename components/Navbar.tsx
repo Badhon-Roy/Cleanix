@@ -31,7 +31,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full sticky top-3 md:top-5 z-50 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto transition-all duration-300">
+    <header className="w-full sticky top-3 md:top-5 z-50 px-4 max-w-7xl mx-auto transition-all duration-300">
       <nav className="w-full bg-[#0d274c]/85 backdrop-blur-xl border border-white/15 rounded-full px-5 py-3 md:px-7 md:py-3.5 flex items-center justify-between shadow-2xl shadow-black/50">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-3 group">
