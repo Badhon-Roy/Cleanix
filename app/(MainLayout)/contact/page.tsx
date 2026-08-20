@@ -24,8 +24,6 @@ export default function ContactPage() {
       <ContactHero />
       <ContactSection />
       <MapSection />
-      <FaqSection />
-      <CtaBanner />
     </>
   );
 }

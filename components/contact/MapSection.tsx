@@ -6,7 +6,7 @@ import { MapPin, Navigation } from "lucide-react";
 export default function MapSection() {
   return (
     <section className="w-full bg-[#f4f6f9] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-200/80">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4 bg-blue-50/50">
@@ -21,7 +21,7 @@ export default function MapSection() {
         </div>
 
         {/* Map Container */}
-        <div className="w-full h-[420px] sm:h-[480px] rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 relative bg-slate-200">
+        <div className="w-full h-[420px] sm:h-[480px] rounded-lg overflow-hidden shadow-xl border border-slate-200/80 relative bg-slate-200">
           <iframe
             title="Cleanix Headquarters Location"
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.059434861217!2d90.41251807607736!3d23.78088748805995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c7a0f4477317%3A0xb1de15d97f5d944d!2sGulshan%202%2C%20Dhaka%201212!5e0!3m2!1sen!2sbd!4v1700000000000!5m2!1sen!2sbd"

@@ -2,23 +2,35 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { MapPin, Headphones, Clock, Send, Sparkles, CheckCircle2 } from "lucide-react";
+
+interface ContactFormInputs {
+  name: string;
+  number: string;
+  email: string;
+  message: string;
+}
 
 export default function ContactSection() {
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    number: "",
-    email: "",
-    message: "",
-  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormInputs>();
+
+  const onSubmit: SubmitHandler<ContactFormInputs> = async (data) => {
+    // Simulated async form submission
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    console.log("React Hook Form Submitted:", data);
     setSubmitted(true);
+    reset();
+
     setTimeout(() => {
       setSubmitted(false);
-      setFormData({ name: "", number: "", email: "", message: "" });
     }, 4000);
   };
 
@@ -70,7 +82,7 @@ export default function ContactSection() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
                   {/* Name & Phone Inputs Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
@@ -79,14 +91,19 @@ export default function ContactSection() {
                       </label>
                       <input
                         type="text"
-                        required
                         placeholder="Jane Smith"
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
-                        className="w-full bg-[#1a335a]/80 border border-white/15 focus:border-[#007eff] text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors"
+                        {...register("name", { required: "Name is required" })}
+                        className={`w-full bg-[#1a335a]/80 border text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors ${
+                          errors.name
+                            ? "border-red-500 focus:border-red-500"
+                            : "border-white/15 focus:border-[#007eff]"
+                        }`}
                       />
+                      {errors.name && (
+                        <span className="text-red-400 text-xs font-semibold mt-1 block">
+                          {errors.name.message}
+                        </span>
+                      )}
                     </div>
 
                     <div>
@@ -95,14 +112,25 @@ export default function ContactSection() {
                       </label>
                       <input
                         type="tel"
-                        required
                         placeholder="Phone No."
-                        value={formData.number}
-                        onChange={(e) =>
-                          setFormData({ ...formData, number: e.target.value })
-                        }
-                        className="w-full bg-[#1a335a]/80 border border-white/15 focus:border-[#007eff] text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors"
+                        {...register("number", {
+                          required: "Phone number is required",
+                          pattern: {
+                            value: /^[0-9+\s-]{8,}$/,
+                            message: "Enter a valid phone number",
+                          },
+                        })}
+                        className={`w-full bg-[#1a335a]/80 border text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors ${
+                          errors.number
+                            ? "border-red-500 focus:border-red-500"
+                            : "border-white/15 focus:border-[#007eff]"
+                        }`}
                       />
+                      {errors.number && (
+                        <span className="text-red-400 text-xs font-semibold mt-1 block">
+                          {errors.number.message}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -113,14 +141,25 @@ export default function ContactSection() {
                     </label>
                     <input
                       type="email"
-                      required
                       placeholder="jane@framer.com"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      className="w-full bg-[#1a335a]/80 border border-white/15 focus:border-[#007eff] text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors"
+                      {...register("email", {
+                        required: "Email is required",
+                        pattern: {
+                          value: /^\S+@\S+\.\S+$/i,
+                          message: "Enter a valid email address",
+                        },
+                      })}
+                      className={`w-full bg-[#1a335a]/80 border text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors ${
+                        errors.email
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-white/15 focus:border-[#007eff]"
+                      }`}
                     />
+                    {errors.email && (
+                      <span className="text-red-400 text-xs font-semibold mt-1 block">
+                        {errors.email.message}
+                      </span>
+                    )}
                   </div>
 
                   {/* Message Textarea */}
@@ -130,23 +169,35 @@ export default function ContactSection() {
                     </label>
                     <textarea
                       rows={4}
-                      required
                       placeholder="Write Message..."
-                      value={formData.message}
-                      onChange={(e) =>
-                        setFormData({ ...formData, message: e.target.value })
-                      }
-                      className="w-full bg-[#1a335a]/80 border border-white/15 focus:border-[#007eff] text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors resize-none"
+                      {...register("message", {
+                        required: "Message is required",
+                        minLength: {
+                          value: 10,
+                          message: "Message must be at least 10 characters",
+                        },
+                      })}
+                      className={`w-full bg-[#1a335a]/80 border text-white placeholder:text-slate-400 font-medium text-sm rounded-xl px-4 py-3.5 focus:outline-none transition-colors resize-none ${
+                        errors.message
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-white/15 focus:border-[#007eff]"
+                      }`}
                     />
+                    {errors.message && (
+                      <span className="text-red-400 text-xs font-semibold mt-1 block">
+                        {errors.message.message}
+                      </span>
+                    )}
                   </div>
 
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-[0_0_25px_rgba(0,126,255,0.4)] hover:shadow-[0_0_35px_rgba(0,126,255,0.7)] hover:scale-[1.01]"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-[0_0_25px_rgba(0,126,255,0.4)] hover:shadow-[0_0_35px_rgba(0,126,255,0.7)] hover:scale-[1.01] disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
-                    <span>Send Message</span>
+                    <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
                   </button>
                 </form>
               )}

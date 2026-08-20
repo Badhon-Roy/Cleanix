@@ -37,7 +37,7 @@ export default function Navbar() {
     { name: "About Us", href: "/about" },
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
-    { name: "Blog", href: "/#blog" },
+    { name: "Blog", href: "/blog" },
     { name: "Contact", href: "/contact" },
   ];
 
@@ -46,6 +46,7 @@ export default function Navbar() {
     if (href === "/about") return pathname === "/about";
     if (href === "/services") return pathname.startsWith("/services");
     if (href === "/projects") return pathname.startsWith("/projects");
+    if (href === "/blog") return pathname.startsWith("/blog");
     if (href === "/contact") return pathname.startsWith("/contact");
     return false;
   };
