@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronRight, Menu, X } from "lucide-react";
 
 export function SwirlLogo() {
@@ -29,6 +30,24 @@ export function SwirlLogo() {
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "About Us", href: "/about" },
+    { name: "Services", href: "/services" },
+    { name: "Projects", href: "/projects" },
+    { name: "Blog", href: "/#blog" },
+    { name: "Contact", href: "/#contact" },
+  ];
+
+  const checkIsActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/about") return pathname === "/about";
+    if (href === "/services") return pathname.startsWith("/services");
+    if (href === "/projects") return pathname.startsWith("/projects");
+    return false;
+  };
 
   return (
     <header className="w-full sticky top-3 md:top-5 z-50 px-4 max-w-7xl mx-auto transition-all duration-300">
@@ -43,47 +62,26 @@ export default function Navbar() {
 
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-          <Link
-            href="/"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            Home
-          </Link>
+          {navItems.map((item) => {
+            const isActive = checkIsActive(item.href);
 
-          <Link
-            href="/about"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            About Us
-          </Link>
-
-          <Link
-            href="/services"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            Services
-          </Link>
-
-          <Link
-            href="/#projects"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            Projects
-          </Link>
-
-          <Link
-            href="/#blog"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            Blog
-          </Link>
-
-          <Link
-            href="/#contact"
-            className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
-          >
-            Contact
-          </Link>
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-[18px] transition-all duration-300 py-1 relative ${
+                  isActive
+                    ? "text-[#007eff] font-extrabold"
+                    : "text-slate-100 hover:text-white font-medium"
+                }`}
+              >
+                <span>{item.name}</span>
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-[#007eff] rounded-full shadow-[0_0_10px_#007eff]" />
+                )}
+              </Link>
+            );
+          })}
         </div>
 
         {/* CTA Get a Quote Button */}
@@ -115,50 +113,30 @@ export default function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden mt-3 bg-[#0b2144]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
-          <Link
-            href="/"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            href="/about"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            About Us
-          </Link>
-          <Link
-            href="/services"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Services
-          </Link>
-          <Link
-            href="/#projects"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Projects
-          </Link>
-          <Link
-            href="/#blog"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Blog
-          </Link>
-          <Link
-            href="/#contact"
-            className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Contact
-          </Link>
-          <div className="pt-2">
+        <div className="lg:hidden mt-3 bg-[#0b2144]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-5 shadow-2xl flex flex-col gap-2">
+          {navItems.map((item) => {
+            const isActive = checkIsActive(item.href);
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-between ${
+                  isActive
+                    ? "bg-[#007eff]/20 text-[#007eff] font-extrabold border border-[#007eff]/40"
+                    : "text-slate-100 hover:text-white font-medium hover:bg-white/5"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>{item.name}</span>
+                {isActive && (
+                  <div className="w-2 h-2 rounded-full bg-[#007eff] shadow-[0_0_8px_#007eff]" />
+                )}
+              </Link>
+            );
+          })}
+
+          <div className="pt-3 border-t border-white/10 mt-1">
             <Link
               href="/#quote"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-5 pr-2 py-2.5 rounded-full flex items-center justify-between w-full shadow-md"
