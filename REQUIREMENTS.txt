@@ -1,37 +1,59 @@
-================================================================================
 Cleanix - Full-Stack SaaS Platform
-Software Requirement Specification (SRS) & Production Roadmap
-================================================================================
 
 --------------------------------------------------------------------------------
 1. EXECUTVIE SUMMARY & CORE CONCEPT
 --------------------------------------------------------------------------------
-Cleanix is an on-demand B2B (Business-to-Business) and B2C (Business-to-Consumer)
-hybrid cleaning service automation platform. It delivers reliable, fast, and 
-high-quality cleaning services for residential homes, commercial offices, 
-renovation sites, and relocation properties.
+Cleanix হলো একটি অন-ডিমান্ড B2B (Business-to-Business) এবং B2C (Business-to-Consumer) হাইব্রিড ক্লিনিং সার্ভিস অটোমেশন প্ল্যাটফর্ম।
+এটি আবাসিক বাড়ি, বাণিজ্যিক অফিস, সংস্কারাধীন স্থান এবং স্থানান্তরযোগ্য সম্পত্তির জন্য নির্ভরযোগ্য, দ্রুত এবং উচ্চ-মানের ক্লিনিং পরিষেবা প্রদান করে।
 
-The platform is not just a simple booking site; it is a full SaaS (Software-as-a-Service)
-driven field service management ecosystem where customers, service providers 
-(cleaner teams), and administrators interact seamlessly.
+প্ল্যাটফর্মটি শুধু একটি সাধারণ বুকিং সাইট নয়; এটি একটি সম্পূর্ণ SaaS (Software-as-a-Service) চালিত field service management ecosystem,
+যেখানে গ্রাহক, পরিষেবা প্রদানকারী (ক্লিনার টিম) এবং প্রশাসকগণ নির্বিঘ্নে যোগাযোগ করেন।
 
 
 --------------------------------------------------------------------------------
 2. TARGET AUDIENCE & REVENUE MODEL
 --------------------------------------------------------------------------------
 Target Audience:
-1. Residential Customers (B2C): Busy professionals and families needing regular or deep cleaning.
-2. Commercial Customers (B2B): Corporate offices, showrooms, restaurants needing daily/weekly routine cleaning.
-3. Relocating Customers (Move-in / Move-out): Property owners moving into or leaving a space.
-4. Construction & Renovation Owners (Post-Construction): Property owners needing heavy dust & debris cleanup.
+1. Residential Customers (আবাসিক গ্রাহক - B2C): যারা ব্যস্ততার কারণে বাড়ি পরিষ্কারের জন্য লোক খুঁজছেন বা ডিপ ক্লিনিং চান।
+2. Commercial Customers (কমার্শিয়াল গ্রাহক - B2B): বিভিন্ন অফিস বা ব্যবসা প্রতিষ্ঠান যাদের নিয়মিত পরিচ্ছন্নতা প্রয়োজন।
+3. Relocating Customers (স্থানান্তরকারী গ্রাহক - Move-in / Move-out): যারা নতুন বাসায় উঠছেন বা পুরোনো বাসা ছাড়ছেন।
+4. Construction & Renovation Owners (নির্মাণ সংস্থা বা মালিক - Post-Construction): যারা রেনোভেশন বা নতুন কনস্ট্রাকশনের পর জায়গা পরিষ্কার করতে চান।
 
-Revenue Generation Streams:
-1. Recurring Subscription Packages:
-   - Basic Plan ($199/month): Standard home cleaning, kitchen & bath refresh, email support.
-   - Standard Plan ($499/month): Priority deep cleaning, sanitizing, 24/7 support, multi-room pack.
-   - Premium Plan ($899/month): Master commercial & home clean, dedicated concierge, real-time tracking.
-2. Custom Instant Estimate (One-Time Booking): Dynamic pay-per-service billing calculated based on square footage, room count, and selected add-ons.
-3. Add-on Service Fees: Oven wash, fridge deep clean, interior window cleaning, pet hygiene treatment.
+Revenue Generation Streams & Detailed Package Breakdown (গ্রাহক যা যা সেবা পাবেন):
+
+1. BASIC PLAN - ৳14,000 / মাস (Monthly)
+   [উপযুক্ত: ছোট বাসা, ২ বেডরুম অ্যাপার্টমেন্ট বা ছোট স্টার্টআপ অফিস]
+   গ্রাহক যা যা সেবা পাবেন:
+   - মাসে ২ বার রুটিন হোম ক্লিনিং (Bi-weekly Visit)
+   - স্ট্যান্ডার্ড ফ্লোর মোছা, ভ্যাকুয়ামিং ও ডাস্টিং
+   - রান্নাঘর ও বাথরুম ডিপ রিফ্রেশ (ডাস্ট রিপেলেন্ট স্প্রেসহ)
+   - কাস্টমার ইমেইল ও টিকিট সাপোর্ট
+   - রিয়েল-টাইম সার্ভিস ট্র্যাকিং নোটিফিকেশন
+
+2. STANDARD PLAN (POPULAR) - ৳30,000 / মাস (Monthly)
+   [উপযুক্ত: মাঝারি ও বড় পরিবার, কমার্শিয়াল শোরুম ও মাঝারি অফিস স্পেস]
+   গ্রাহক যা যা সেবা পাবেন:
+   - মাসে ৪ বার (সাপ্তাহিক ১ বার) ডিপ ক্লিনিং সার্ভিস (Weekly Visit)
+   - রান্নাঘর, বাথরুম ও ব্যালકની সম্পূর্ণ অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজেশন
+   - সোফা, কার্পেট ও মেট্রেস ড্রাক্স ভ্যাকুয়াম অ্যান্ড ড্রায়ার সার্ভিস
+   - ইন্টেরিয়র গ্লাস ও উইন্ডো স্যানিটাইজিং ক্লিন
+   - ২৪/৭ ডেডিকেটেড ফোন ও চ্যাট সাপোর্ট
+
+3. PREMIUM PLAN - ৳50,000 / মাস (Monthly)
+   [উপযুক্ত: বড় করপোরেট অফিস, ডুপ্লেক্স/লাক্সারি ভিলা ও হাই-অ্যান্ড কমার্শিয়াল স্পেস]
+   গ্রাহক যা যা সেবা পাবেন:
+   - মাসে ৮ বার (সাপ্তাহিক ২ বার) মাস্টার ক্লিনিং সার্ভিস (Bi-weekly Visit)
+   - সম্পূর্ণ স্পেসের হসপিটাল-গ্রেড কেমিক্যাল অ্যান্ড স্টীম স্যানিটাইজেশন
+   - ওভেন, ফ্রিজ ও কিচেন চিমনি ডিপ কেয়ার সার্ভিস (ইনক্লুডেড)
+   - ফার্নিচার উড/লেদার পোলিশিং এবং ফ্লোর শাইন ট্রিটমেন্ট
+   - ডেডিকেটেড ভিআইপি কনসিয়ার্জ ম্যানেজার ও রিয়েল-টাইম লাইভ জিপিএস ট্র্যাকিং
+   - প্রতি সপ্তাহে বিস্তারিত কোয়ালিটি ইনসপেকশন রিপোর্ট
+
+4. Custom Instant Estimate (One-Time Booking):
+   - স্পেসের সাইজ (Square Feet), রুম সংখ্যা এবং পছন্দের অ্যাড-অন সার্ভিসের ওপর ভিত্তি করে ডাইনামিক পে-পার-সার্ভিস বিলিং।
+
+5. Add-on Service Fees:
+   - ওভেন ওয়াশ, ফ্রিজ ডিপ ক্লিন, ইন্টেরিয়র উইন্ডো ক্লিনিং, সোফা শ্যাম্পু ওয়াশ, পেট হাইজিন ট্রিটমেন্ট।
 
 
 --------------------------------------------------------------------------------
@@ -39,11 +61,11 @@ Revenue Generation Streams:
 --------------------------------------------------------------------------------
 - Frontend Framework: Next.js 16 (App Router)
 - Styling & UI: Tailwind CSS + Framer Motion + Lenis Smooth Scroll
-- Database: PostgreSQL (Supabase / Neon)
-- ORM Layer: Prisma ORM
+- Database: MongoDB Atlas
+- ORM / ODM Layer: Mongoose
 - Authentication: NextAuth.js (Auth.js) / Clerk (OAuth, Magic Link, RBAC Credentials)
-- Payment Engine: Stripe API (Subscriptions, Payment Intents, Webhooks)
-- Media & Storage: Uploadthing / Cloudinary (Before/After Photo Uploads)
+- Payment Engine: Stripe API / SSLCommerz / bKash (Subscriptions, Webhooks)
+- Media & Storage: Cloudinary / Uploadthing (Before/After Photo Uploads)
 - Communication API: Resend (Email) + Twilio (SMS Notifications)
 
 
@@ -86,23 +108,13 @@ Revenue Generation Streams:
 
 
 --------------------------------------------------------------------------------
-6. DATABASE SCHEMA MODELS (PRISMA ORM)
---------------------------------------------------------------------------------
-- User Model: id, name, email, password, role (CUSTOMER, CLEANER, ADMIN), phone, address
-- Service Model: id, title, slug, basePrice, description, category
-- Booking Model: id, bookingNumber, customerId, cleanerId, serviceId, status, totalAmount, scheduledAt, address, beforePhotos, afterPhotos, paymentStatus
-- Subscription Model: id, userId, stripeSubId, planName, price, status, startDate, endDate
-- Review Model: id, userId, rating, comment, createdAt
-
-
---------------------------------------------------------------------------------
-7. PROJECT DEVELOPMENT ROADMAP
+6. PROJECT DEVELOPMENT ROADMAP
 --------------------------------------------------------------------------------
 Phase 1: Database & Auth Setup (Week 1)
-- Prisma ORM & PostgreSQL setup. Role-based auth (NextAuth.js).
+- MongoDB & Mongoose setup. Role-based auth (NextAuth.js).
 
 Phase 2: Booking Engine & Pricing Logic (Week 2)
-- Dynamic price calculator widget, time slot picker, Stripe integration.
+- Dynamic price calculator widget, time slot picker, Stripe/SSLCommerz integration.
 
 Phase 3: Customer & Staff Portals (Week 3)
 - Customer booking dashboard, field staff mobile dashboard with photo upload.
