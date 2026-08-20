@@ -67,11 +67,10 @@ export default function FaqSection() {
                 <div
                   key={faq.id}
                   onClick={() => toggleFaq(faq.id)}
-                  className={`bg-white rounded-2xl p-5 sm:p-6 border transition-all duration-300 cursor-pointer shadow-xs ${
-                    isOpen
+                  className={`bg-white rounded-2xl p-5 sm:p-6 border transition-all duration-300 cursor-pointer shadow-xs ${isOpen
                       ? "border-[#007eff]/50 shadow-md"
                       : "border-slate-100 hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   {/* Question Header */}
                   <div className="flex items-center justify-between gap-4">

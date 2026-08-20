@@ -44,42 +44,42 @@ export default function Navbar() {
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
           <Link
-            href="#"
+            href="/"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Home
           </Link>
 
           <Link
-            href="#"
+            href="/about"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             About Us
           </Link>
 
           <Link
-            href="#"
+            href="/#services"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Services
           </Link>
 
           <Link
-            href="#"
+            href="/#projects"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Projects
           </Link>
 
           <Link
-            href="#"
+            href="/#blog"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Blog
           </Link>
 
           <Link
-            href="#"
+            href="/#contact"
             className="text-slate-100 hover:text-white text-[18px] font-medium transition-colors py-1"
           >
             Contact
@@ -89,7 +89,7 @@ export default function Navbar() {
         {/* CTA Get a Quote Button */}
         <div className="hidden sm:flex items-center">
           <Link
-            href="#quote"
+            href="/#quote"
             className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-[14px] pl-5 pr-1.5 py-1.5 rounded-full flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]"
           >
             <span>Get a Quote</span>
@@ -117,45 +117,52 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="lg:hidden mt-3 bg-[#0b2144]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
           <Link
-            href="#"
+            href="/"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             Home
           </Link>
           <Link
-            href="#"
+            href="/about"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             About Us
           </Link>
           <Link
-            href="#"
+            href="/#services"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             Services
           </Link>
           <Link
-            href="#"
+            href="/#projects"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             Projects
           </Link>
           <Link
-            href="#"
+            href="/#blog"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             Blog
           </Link>
           <Link
-            href="#"
+            href="/#contact"
             className="text-slate-100 hover:text-white font-medium py-2 border-b border-white/10"
+            onClick={() => setMobileMenuOpen(false)}
           >
             Contact
           </Link>
           <div className="pt-2">
             <Link
-              href="#quote"
+              href="/#quote"
               className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-5 pr-2 py-2.5 rounded-full flex items-center justify-between w-full shadow-md"
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>Get a Quote</span>
               <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#007eff]">

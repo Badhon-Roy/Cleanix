@@ -11,7 +11,7 @@ const servicesList = [
     tags: ["HOME CARE", "আবাসিক বাসা"],
     icon: Home,
     image:
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1000&q=80",
+      "/RESIDENTIAL-DEEP-CLEANING.png",
     description:
       "ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ ডিপ রিফ্রেশ ক্লিনিং। ভ্যাকুয়ামিং, ডাস্টিং এবং কিচেন ও বাথরুম হাইজিন স্যানিটাইজেশন।",
   },
@@ -21,7 +21,7 @@ const servicesList = [
     tags: ["CORPORATE", "অফিস স্পেস"],
     icon: Building2,
     image:
-      "https://images.unsplash.com/photo-1613963931023-5dc59437c8a6?auto=format&fit=crop&w=1000&q=80",
+      "/COMMERCIAL-OFFICE-CLEANING.png",
     description:
       "গুলশান, বনানী, মতিঝিল ও উত্তরায় যেকোনো সাইজের কর্পোরেট অফিসের জন্য দৈনিক বা সাপ্তাহিক সাবস্ক্রিপশন ভিত্তিক হাইজিন স্যানিটাইজেশন।",
   },
@@ -75,15 +75,15 @@ export default function OurServices() {
         </div>
 
         {/* Main Grid: Left Feature Image Card + Right Interactive Service Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
           {/* Left Column: Feature Image with Glassmorphism Overlay */}
-          <div className="lg:col-span-6 relative w-full h-[480px] sm:h-[560px] lg:h-[600px] rounded-3xl overflow-hidden shadow-md group">
+          <div className="lg:col-span-6 relative w-full w-full min-h-[380px] sm:min-h-[420px] lg:min-h-full h-full mx-auto lg:mx-0 overflow-hidden  group rounded-[36px]">
             <Image
               src={activeService.image}
               alt={activeService.title}
               fill
               priority
-              className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+              className="object-cover object-center transition-transform duration-700"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
 
@@ -105,11 +105,10 @@ export default function OurServices() {
                 <div
                   key={service.id}
                   onClick={() => setActiveService(service)}
-                  className={`rounded-2xl p-5 md:p-6 flex items-center justify-between border transition-all duration-300 cursor-pointer group ${
-                    isActive
+                  className={`rounded-2xl p-5 md:p-6 flex items-center justify-between border transition-all duration-300 cursor-pointer group ${isActive
                       ? "bg-[#eaf1fb] border-[#007eff]/50 shadow-md translate-x-1"
                       : "bg-[#f3f5f8] border-slate-100/90 hover:bg-[#eaf1fb]/60 hover:shadow-xs"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-4 sm:gap-5">
                     {/* Dark Navy Square Icon Box */}
@@ -137,11 +136,10 @@ export default function OurServices() {
 
                   {/* Circular Action Arrow Button */}
                   <div
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs flex-shrink-0 ${
-                      isActive
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs flex-shrink-0 ${isActive
                         ? "bg-[#007eff] text-white rotate-0"
                         : "bg-white text-[#031837] group-hover:bg-[#007eff] group-hover:text-white"
-                    }`}
+                      }`}
                   >
                     <ChevronRight className="w-5 h-5 stroke-[3]" />
                   </div>

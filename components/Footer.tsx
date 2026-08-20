@@ -95,20 +95,20 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3 text-slate-300 text-sm font-medium">
               {[
-                "Home",
-                "About Us",
-                "Our Services",
-                "Our Projects",
-                "Testimonials",
-                "Pricing",
+                { name: "Home", href: "/" },
+                { name: "About Us", href: "/about" },
+                { name: "Our Services", href: "/#services" },
+                { name: "Our Projects", href: "/#projects" },
+                { name: "Testimonials", href: "/#testimonials" },
+                { name: "Pricing", href: "/#pricing" },
               ].map((item, i) => (
                 <li key={i}>
                   <Link
-                    href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                    href={item.href}
                     className="hover:text-[#007eff] hover:translate-x-1 transition-all duration-300 flex items-center gap-1.5 inline-flex"
                   >
                     <ChevronRight className="w-3.5 h-3.5 text-[#007eff]" />
-                    <span>{item}</span>
+                    <span>{item.name}</span>
                   </Link>
                 </li>
               ))}

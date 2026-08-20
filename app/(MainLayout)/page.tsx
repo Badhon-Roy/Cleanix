@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import HeroBanner from "@/components/HeroBanner";
 import OurServices from "@/components/OurServices";
 import HowItWorks from "@/components/HowItWorks";
@@ -12,12 +11,10 @@ import FaqSection from "@/components/FaqSection";
 import BlogSection from "@/components/BlogSection";
 import ImpactSection from "@/components/ImpactSection";
 import CtaBanner from "@/components/CtaBanner";
-import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#001837] text-white flex flex-col font-sans selection:bg-blue-500 selection:text-white">
-      <Navbar />
+    <>
       <HeroBanner />
       <AboutSection />
       <TrustedClients />
@@ -31,7 +28,6 @@ export default function Home() {
       <FaqSection />
       <BlogSection />
       <CtaBanner />
-      <Footer />
-    </main>
+    </>
   );
 }
