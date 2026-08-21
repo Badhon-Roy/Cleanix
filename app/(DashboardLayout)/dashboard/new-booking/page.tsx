@@ -11,6 +11,24 @@ import {
   Sparkles,
   ArrowRight,
   Lock,
+  Home,
+  Building2,
+  Truck,
+  HardHat,
+  Sofa,
+  UtensilsCrossed,
+  Wind,
+  ShieldAlert,
+  Calendar,
+  Clock,
+  CreditCard,
+  ChevronRight,
+  Layers,
+  Check,
+  Tag,
+  BedDouble,
+  Bath,
+  Maximize2,
 } from "lucide-react";
 
 export default function NewBookingPage() {
@@ -24,6 +42,14 @@ export default function NewBookingPage() {
   const [address, setAddress] = useState<string>("House 42, Road 11, Block D, Gulshan-2, Dhaka");
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
 
+  // Service category label mapping
+  const categoryLabels: Record<string, { name: string; sub: string }> = {
+    RESIDENTIAL: { name: "Residential Home", sub: "বাসাবাড়ি ও অ্যাপার্টমেন্ট" },
+    COMMERCIAL: { name: "Commercial Office", sub: "অফিস ও কর্পোরেট স্পেস" },
+    MOVE_IN_OUT: { name: "Move-In / Out", sub: "বাসা শিফটিং ডিপ ক্লিন" },
+    POST_CONSTRUCTION: { name: "Post Construction", sub: "নতুন বিল্ডিং ফিনিশিং" },
+  };
+
   // Selected add-ons state
   const [selectedAddons, setSelectedAddons] = useState<Record<string, boolean>>({
     sofa: false,
@@ -33,12 +59,45 @@ export default function NewBookingPage() {
     pet: false,
   });
 
-  const addonPrices: Record<string, { label: string; price: number }> = {
-    sofa: { label: "Sofa & Carpet Shampoo Wash", price: 2000 },
-    oven: { label: "Kitchen Oven & Chimney Wash", price: 1200 },
-    fridge: { label: "Refrigerator Deep Sanitization", price: 1000 },
-    window: { label: "Interior Glass & Window Clean", price: 800 },
-    pet: { label: "Pet Hygiene & Odor Treatment", price: 1500 },
+  const addonPrices: Record<
+    string,
+    { label: string; price: number; icon: React.ReactNode; subLabel: string; tag: string }
+  > = {
+    sofa: {
+      label: "Sofa & Carpet Wash",
+      price: 2000,
+      icon: <Sofa className="w-6 h-6 stroke-[2]" />,
+      subLabel: "শ্যাম্পু ওয়াশ ও ডিপ মেট্রেস ড্রায়ার",
+      tag: "MOST POPULAR",
+    },
+    oven: {
+      label: "Kitchen Oven & Chimney",
+      price: 1200,
+      icon: <UtensilsCrossed className="w-6 h-6 stroke-[2]" />,
+      subLabel: "ওভেন ও কিচেন চিমনি গ্রিজ ওয়াশ",
+      tag: "KITCHEN CARE",
+    },
+    fridge: {
+      label: "Refrigerator Deep Clean",
+      price: 1000,
+      icon: <Wind className="w-6 h-6 stroke-[2]" />,
+      subLabel: "ফ্রিজ অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজ",
+      tag: "HYGIENE",
+    },
+    window: {
+      label: "Glass & Window Polish",
+      price: 800,
+      icon: <Sparkles className="w-6 h-6 stroke-[2]" />,
+      subLabel: "ইনটেরিয়র গ্লাস ও উইন্ডো স্যানিটাইজিং",
+      tag: "SHINE CARE",
+    },
+    pet: {
+      label: "Pet Hygiene & Odor Clean",
+      price: 1500,
+      icon: <ShieldAlert className="w-6 h-6 stroke-[2]" />,
+      subLabel: "পেট হেয়ার ও গন্ধ দূরীকরণ ট্রিমেন্ট",
+      tag: "PET CARE",
+    },
   };
 
   const toggleAddon = (key: string) => {
@@ -68,183 +127,354 @@ export default function NewBookingPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-          <Calculator className="w-8 h-8 text-[#007eff]" />
-          Instant Booking & Dynamic Price Calculator
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
-          Customize your cleaning parameters, pick time slots, and lock instant quotes with atomic time-slot availability.
-        </p>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+                <Calculator className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              Instant Booking & Price Calculator
+            </h1>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#007eff] border border-blue-200">
+              ⚡ DYNAMIC CALCULATION
+            </span>
+          </div>
+          <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
+            আপনার ফ্ল্যাট বা অফিসের সাইজ অনুযায়ী কাস্টমাইজড ক্লিন সার্ভিস শিডিউল করুন এবং ইনস্ট্যান্ট কোট পান।
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard/bookings"
+          className="text-xs font-bold text-[#007eff] hover:bg-blue-100 bg-blue-50 px-4 py-2.5 rounded-2xl border border-blue-200 self-start sm:self-auto transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <Layers className="w-4 h-4" />
+          <span>My Booking List দেখুন</span>
+        </Link>
       </div>
 
       {bookingSuccess ? (
-        <div className="bg-white border border-emerald-300 rounded-3xl p-8 sm:p-12 text-center space-y-6 animate-in zoom-in-95 duration-200">
-          <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
+        /* ULTRA-MODERN SUCCESS CONFIRMATION STATE */
+        <div className="bg-white border-2 border-emerald-400 rounded-3xl p-8 sm:p-12 text-center space-y-6 relative overflow-hidden">
+          <div className="w-20 h-20 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-12 h-12 stroke-[2.5]" />
           </div>
-          <div className="space-y-2">
-            <span className="text-xs font-mono text-[#007eff] bg-blue-50 px-3 py-1 rounded-full border border-blue-200 font-bold">
-              Booking Ref: #CLN-2026-9042
+
+          <div className="space-y-2 max-w-xl mx-auto">
+            <span className="text-xs font-mono text-[#007eff] bg-blue-50 px-4 py-1.5 rounded-full border border-blue-200 font-extrabold">
+              BOOKING REF: #CLN-2026-9042
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
               Booking Confirmed & Time Slot Locked! 🎉
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto font-medium">
-              Your appointment for <strong className="text-slate-900">{scheduledDate} ({timeSlot})</strong> has been reserved. A confirmation PDF invoice has been sent to your email.
+            <p className="text-sm text-slate-600 font-medium leading-relaxed">
+              আপনার শিডিউলকৃত সার্ভিস <strong className="text-slate-900 font-bold">{scheduledDate} ({timeSlot})</strong> সময়সীমার জন্য বুক করা হয়েছে। কনফার্মেশন ইনভয়েস ইমেইলে পাঠিয়ে দেওয়া হয়েছে।
             </p>
           </div>
 
           <div className="pt-4 flex flex-wrap justify-center gap-4">
             <Link
               href="/dashboard/bookings"
-              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl flex items-center gap-2"
+              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm px-6 py-3.5 rounded-2xl flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]"
             >
-              <span>Track Booking Live</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>My Booking এ স্ট্যাটাস ট্র্যাক করুন</span>
+              <ArrowRight className="w-4 h-4 stroke-[3]" />
             </Link>
             <button
               onClick={() => setBookingSuccess(false)}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm px-6 py-3 rounded-2xl border border-slate-200"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm px-6 py-3.5 rounded-2xl border border-slate-200 cursor-pointer transition-colors"
             >
-              Book Another Service
+              নতুন আর একটি সার্ভিস বুক করুন
             </button>
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Inputs (Col 8) */}
+        <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Configuration Column (8 Cols) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* 1. Service Type Selector */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-[#007eff] text-white text-xs font-extrabold flex items-center justify-center">
-                  1
+            {/* STEP 1: Service Category Selector */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-2xl bg-[#007eff] text-white text-sm font-bold flex items-center justify-center">
+                    1
+                  </span>
+                  Select Service Category (সার্ভিস ক্যাটাগরি)
+                </h3>
+                <span className="text-xs font-bold text-[#007eff] bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+                  ধাপ ১ / ৪
                 </span>
-                Select Service Category
-              </h3>
+              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Grid of 4 Category Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { id: "RESIDENTIAL", label: "Residential Home" },
-                  { id: "COMMERCIAL", label: "Commercial Office" },
-                  { id: "MOVE_IN_OUT", label: "Move-In / Out" },
-                  { id: "POST_CONSTRUCTION", label: "Post-Construction" },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setServiceType(s.id)}
-                    className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition-all ${
-                      serviceType === s.id
-                        ? "border-[#007eff] bg-blue-50 text-[#007eff]"
-                        : "border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+                  {
+                    id: "RESIDENTIAL",
+                    label: "Residential Home",
+                    sub: "বাসাবাড়ি ও অ্যাপার্টমেন্ট",
+                    tag: "POPULAR",
+                    icon: <Home className="w-6 h-6 stroke-[2]" />,
+                  },
+                  {
+                    id: "COMMERCIAL",
+                    label: "Commercial Office",
+                    sub: "অফিস ও কর্পোরেট স্পেস",
+                    tag: "CORPORATE",
+                    icon: <Building2 className="w-6 h-6 stroke-[2]" />,
+                  },
+                  {
+                    id: "MOVE_IN_OUT",
+                    label: "Move-In / Out",
+                    sub: "বাসা শিফটিং ডিপ ক্লিন",
+                    tag: "DEEP CLEAN",
+                    icon: <Truck className="w-6 h-6 stroke-[2]" />,
+                  },
+                  {
+                    id: "POST_CONSTRUCTION",
+                    label: "Post Construction",
+                    sub: "নতুন বিল্ডিং ফিনিশিং",
+                    tag: "SPECIALIST",
+                    icon: <HardHat className="w-6 h-6 stroke-[2]" />,
+                  },
+                ].map((s) => {
+                  const isSelected = serviceType === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setServiceType(s.id)}
+                      className={`group relative p-5 sm:p-6 rounded-3xl text-left transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-4 min-h-[160px] ${
+                        isSelected
+                          ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400"
+                          : "border border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-700"
+                      }`}
+                    >
+                      {/* Selected Indicator Checkmark Badge */}
+                      {isSelected ? (
+                        <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white text-[#007eff] flex items-center justify-center">
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <span className="absolute top-4 right-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                          {s.tag}
+                        </span>
+                      )}
+
+                      {/* Icon Box */}
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                          isSelected
+                            ? "bg-white/20 text-white backdrop-blur-md"
+                            : "bg-slate-100 text-slate-700 group-hover:scale-105 group-hover:bg-slate-200"
+                        }`}
+                      >
+                        {s.icon}
+                      </div>
+
+                      {/* Title & Subtitle */}
+                      <div>
+                        <p
+                          className={`text-base font-bold leading-snug ${
+                            isSelected ? "text-white" : "text-slate-900 group-hover:text-[#007eff]"
+                          }`}
+                        >
+                          {s.label}
+                        </p>
+                        <p
+                          className={`text-xs font-semibold mt-1 ${
+                            isSelected ? "text-blue-100" : "text-slate-500"
+                          }`}
+                        >
+                          {s.sub}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* 2. Property Specs (SqFt Slider & Room Steppers) */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-6">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-[#007eff] text-white text-xs font-extrabold flex items-center justify-center">
-                  2
+            {/* STEP 2: Property Specs (EDITABLE SQFT INPUT & ROOM CONFIGURATION) */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-2xl bg-[#007eff] text-white text-sm font-bold flex items-center justify-center">
+                    2
+                  </span>
+                  Property Size & Room Configuration (স্পেসের মাপ)
+                </h3>
+                <span className="text-xs font-bold text-[#007eff] bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+                  ধাপ ২ / ৪
                 </span>
-                Property Size & Room Configuration
-              </h3>
+              </div>
 
-              {/* SqFt Slider */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-700">Total Property Area:</span>
-                  <span className="text-lg font-extrabold text-[#007eff]">{sqft.toLocaleString()} SqFt</span>
+              {/* High-End SqFt Interactive Control Container */}
+              <div className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                      <Maximize2 className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                        ফ্ল্যাট বা স্পেসের আয়তন
+                      </h4>
+                      <p className="text-sm text-slate-700 font-medium mt-1">
+                        রেট: ৳২.৫ প্রতি SqFt (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* CUSTOM EDITABLE SQFT INPUT BOX */}
+                  <div className="bg-white border-2 border-[#007eff] px-4 py-2 rounded-2xl text-center flex items-center gap-2 self-start sm:self-auto focus-within:ring-2 focus-within:ring-blue-400">
+                    <input
+                      type="number"
+                      min={100}
+                      max={20000}
+                      value={sqft === 0 ? "" : sqft}
+                      onChange={(e) => {
+                        const val = e.target.value === "" ? 0 : Number(e.target.value);
+                        if (!isNaN(val)) {
+                          setSqft(val);
+                        }
+                      }}
+                      className="w-28 text-2xl sm:text-3xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
+                    />
+                    <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                      SqFt
+                    </span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={300}
-                  max={8000}
-                  step={50}
-                  value={sqft}
-                  onChange={(e) => setSqft(Number(e.target.value))}
-                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#007eff]"
-                />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono font-bold">
-                  <span>300 SqFt</span>
-                  <span>4,000 SqFt</span>
-                  <span>8,000 SqFt</span>
+
+                {/* Range Slider Track */}
+                <div className="space-y-2 pt-2">
+                  <input
+                    type="range"
+                    min={300}
+                    max={8000}
+                    step={50}
+                    value={Math.min(8000, Math.max(300, sqft))}
+                    onChange={(e) => setSqft(Number(e.target.value))}
+                    className="w-full h-3.5 bg-slate-200 rounded-xl appearance-none cursor-pointer accent-[#007eff]"
+                  />
+                  <div className="flex justify-between text-xs font-extrabold text-slate-500">
+                    <span>300 SqFt (ছোট ফ্ল্যাট)</span>
+                    <span>4,000 SqFt (মাঝারি অফিস)</span>
+                    <span>8,000 SqFt (বড় ডুপ্লেক্স)</span>
+                  </div>
+                </div>
+
+                {/* SqFt Quick Select Presets Pills */}
+                <div className="pt-2 border-t border-slate-200/80 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-slate-500 mr-1">দ্রুত নির্বাচন করুন:</span>
+                  {[
+                    { label: "600 SqFt (1 Bed)", val: 600 },
+                    { label: "1,200 SqFt (2 Bed)", val: 1200 },
+                    { label: "2,000 SqFt (3 Bed)", val: 2000 },
+                    { label: "3,500 SqFt (4 Bed)", val: 3500 },
+                    { label: "5,000 SqFt (Office)", val: 5000 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.val}
+                      type="button"
+                      onClick={() => setSqft(preset.val)}
+                      className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                        sqft === preset.val
+                          ? "bg-[#007eff] text-white border-[#007eff]"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Bedrooms & Bathrooms Steppers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Bedrooms */}
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">Bedrooms</h4>
-                    <p className="text-[11px] text-slate-500 font-medium">৳500 / Bedroom</p>
+              {/* Bedrooms & Bathrooms Modern Stepper Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Bedrooms Card */}
+                <div className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                      <BedDouble className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900">Bedrooms (বেডরুম)</h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳500 / Bedroom</p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
                     <button
                       type="button"
                       onClick={() => setBedrooms(Math.max(1, bedrooms - 1))}
-                      className="w-8 h-8 rounded-xl bg-white hover:bg-slate-200 border border-slate-200 text-slate-800 flex items-center justify-center font-bold"
+                      className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-4 h-4 stroke-[2.5]" />
                     </button>
-                    <span className="text-base font-extrabold text-slate-900 w-6 text-center">{bedrooms}</span>
+                    <span className="text-xl font-bold text-slate-900 w-8 text-center">{bedrooms}</span>
                     <button
                       type="button"
                       onClick={() => setBedrooms(bedrooms + 1)}
-                      className="w-8 h-8 rounded-xl bg-white hover:bg-slate-200 border border-slate-200 text-slate-800 flex items-center justify-center font-bold"
+                      className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
 
-                {/* Bathrooms */}
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">Bathrooms</h4>
-                    <p className="text-[11px] text-slate-500 font-medium">৳400 / Bathroom</p>
+                {/* Bathrooms Card */}
+                <div className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                      <Bath className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900">Bathrooms (বাথরুম)</h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳400 / Bathroom</p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
                     <button
                       type="button"
                       onClick={() => setBathrooms(Math.max(1, bathrooms - 1))}
-                      className="w-8 h-8 rounded-xl bg-white hover:bg-slate-200 border border-slate-200 text-slate-800 flex items-center justify-center font-bold"
+                      className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-4 h-4 stroke-[2.5]" />
                     </button>
-                    <span className="text-base font-extrabold text-slate-900 w-6 text-center">{bathrooms}</span>
+                    <span className="text-xl font-bold text-slate-900 w-8 text-center">{bathrooms}</span>
                     <button
                       type="button"
                       onClick={() => setBathrooms(bathrooms + 1)}
-                      className="w-8 h-8 rounded-xl bg-white hover:bg-slate-200 border border-slate-200 text-slate-800 flex items-center justify-center font-bold"
+                      className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 3. Add-On Services Selection */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-[#007eff] text-white text-xs font-extrabold flex items-center justify-center">
-                  3
+            {/* STEP 3: Service Add-Ons (GREEN COLOR GRADIENT WHEN SELECTED) */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-2xl bg-[#007eff] text-white text-sm font-bold flex items-center justify-center">
+                    3
+                  </span>
+                  Service Add-Ons (অতিরিক্ত সার্ভিস অপশন)
+                </h3>
+                <span className="text-xs font-bold text-[#007eff] bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+                  ধাপ ৩ / ৪
                 </span>
-                Select Service Add-Ons (Optional)
-              </h3>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Grid of 5 Add-On Cards with Emerald Green Gradient Selected State */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {Object.keys(addonPrices).map((key) => {
                   const item = addonPrices[key];
                   const isChecked = selectedAddons[key];
@@ -253,57 +483,100 @@ export default function NewBookingPage() {
                     <div
                       key={key}
                       onClick={() => toggleAddon(key)}
-                      className={`p-3.5 rounded-2xl border cursor-pointer flex items-center justify-between transition-all ${
+                      className={`group relative p-5 sm:p-6 rounded-3xl border cursor-pointer flex items-center justify-between transition-all duration-300 ${
                         isChecked
-                          ? "border-amber-400 bg-amber-50 text-slate-900"
-                          : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                          ? "bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white border-2 border-emerald-400"
+                          : "border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-700"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      {/* Left Icon + Text */}
+                      <div className="flex items-center gap-4">
                         <div
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center ${
-                            isChecked ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300"
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                            isChecked
+                              ? "bg-white/20 text-white backdrop-blur-md"
+                              : "bg-emerald-50 text-emerald-600 border border-emerald-200 group-hover:scale-105"
                           }`}
                         >
-                          {isChecked && <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />}
+                          {item.icon}
                         </div>
-                        <span className="text-xs font-bold">{item.label}</span>
+                        <div>
+                          <p
+                            className={`text-base font-bold leading-snug ${
+                              isChecked ? "text-white" : "text-slate-900 group-hover:text-emerald-600"
+                            }`}
+                          >
+                            {item.label}
+                          </p>
+                          <p
+                            className={`text-xs font-medium mt-1 ${
+                              isChecked ? "text-emerald-100" : "text-slate-500"
+                            }`}
+                          >
+                            {item.subLabel}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-xs font-extrabold text-amber-700">+৳{item.price.toLocaleString()}</span>
+
+                      {/* Right Price Badge + Checkmark */}
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                        <span
+                          className={`text-xs sm:text-sm font-extrabold px-3.5 py-1.5 rounded-xl transition-colors ${
+                            isChecked
+                              ? "bg-white text-emerald-900"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}
+                        >
+                          +৳{item.price.toLocaleString()}
+                        </span>
+
+                        {isChecked && (
+                          <div className="w-7 h-7 rounded-full bg-white text-emerald-600 flex items-center justify-center">
+                            <Check className="w-4 h-4 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* 4. Date, Time Slot & Address */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-[#007eff] text-white text-xs font-extrabold flex items-center justify-center">
-                  4
-                </span>
-                Schedule & Location Details
-              </h3>
+            {/* STEP 4: Schedule, Time Slot & Address */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-3">
+                  <span className="w-7 h-7 rounded-xl bg-[#007eff] text-white text-xs font-bold flex items-center justify-center">
+                    4
+                  </span>
+                  Schedule & Location (তারিখ ও ঠিকানা)
+                </h3>
+                <span className="text-xs font-bold text-slate-500">ধাপ ৪ / ৪</span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
                 {/* Date Picker */}
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700">Select Date:</label>
+                <div className="space-y-2">
+                  <label className="font-bold text-slate-800 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#007eff]" /> তারিখ নির্বাচন করুন:
+                  </label>
                   <input
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white cursor-pointer"
                   />
                 </div>
 
                 {/* Time Slot */}
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700">Preferred Time Slot:</label>
+                <div className="space-y-2">
+                  <label className="font-bold text-slate-800 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#007eff]" /> সময় নির্ধারণ করুন:
+                  </label>
                   <select
                     value={timeSlot}
                     onChange={(e) => setTimeSlot(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white cursor-pointer"
                   >
                     <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM Slot</option>
                     <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM Slot</option>
@@ -314,74 +587,99 @@ export default function NewBookingPage() {
               </div>
 
               {/* Service Address */}
-              <div className="space-y-1.5 text-xs pt-2">
-                <label className="font-bold text-slate-700 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-[#007eff]" /> Service Location Address:
+              <div className="space-y-2 text-xs sm:text-sm pt-2">
+                <label className="font-bold text-slate-800 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-[#007eff]" /> সার্ভিস লোকেশন ঠিকানা:
                 </label>
                 <input
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter full address in Dhaka..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white"
+                  placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন (যেমন: হাউস ৪২, রোড ১১, গুলশান-২, ঢাকা)"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white"
                 />
               </div>
             </div>
           </div>
 
-          {/* Right Summary & Checkout Box (Col 4) */}
-          <div className="lg:col-span-4">
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sticky top-28 space-y-6">
+          {/* Right Summary & Checkout Box (4 Cols) */}
+          <div className="lg:col-span-4 lg:sticky lg:top-8">
+            <div className="bg-white border-2 border-[#007eff] rounded-3xl p-6 space-y-6">
               <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-[#007eff]">
-                  Instant Quote Summary
+                <span className="text-xs font-bold uppercase tracking-wider text-[#007eff] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                  LIVE CALCULATION
                 </span>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">Live Calculation</h3>
+                <h3 className="text-2xl font-bold text-slate-900 mt-2">Instant Bill Summary</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">স্বয়ংক্রিয় রিয়েল-টাইম হিসাব</p>
               </div>
 
-              {/* Itemized Calculation Breakdown */}
-              <div className="space-y-2.5 text-xs border-y border-slate-200 py-4 font-mono">
-                <div className="flex justify-between text-slate-600">
-                  <span>Base Service Fee:</span>
-                  <span>৳{baseFee.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>SqFt Rate ({sqft} × ৳2.5):</span>
-                  <span>৳{sqftCost.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Bedrooms ({bedrooms} × ৳500):</span>
-                  <span>৳{bedroomCost.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Bathrooms ({bathrooms} × ৳400):</span>
-                  <span>৳{bathroomCost.toLocaleString()}</span>
+              {/* Itemized Calculation Breakdown Table */}
+              <div className="space-y-3 text-xs sm:text-sm border-y border-slate-100 py-4 font-medium">
+                {/* Live Selected Category Pill */}
+                <div className="flex justify-between items-center bg-blue-50/80 p-3 rounded-2xl border border-blue-200 mb-2">
+                  <span className="text-slate-700 font-bold flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-[#007eff]" /> Selected Category:
+                  </span>
+                  <span className="font-bold text-[#007eff] text-xs uppercase bg-white px-2.5 py-1 rounded-xl border border-blue-200">
+                    {categoryLabels[serviceType]?.name || serviceType}
+                  </span>
                 </div>
 
-                {addonsTotal > 0 && (
-                  <div className="flex justify-between text-amber-700 font-bold">
-                    <span>Selected Add-Ons:</span>
-                    <span>+৳{addonsTotal.toLocaleString()}</span>
+                <div className="flex justify-between text-slate-600">
+                  <span>বেসিক সার্ভিস ফি:</span>
+                  <span className="font-bold text-slate-900">৳{baseFee.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>SqFt চার্জ ({sqft} × ৳২.৫):</span>
+                  <span className="font-bold text-slate-900">৳{sqftCost.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>বেডরুম ({bedrooms} × ৳৫০০):</span>
+                  <span className="font-bold text-slate-900">৳{bedroomCost.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>বাথরুম ({bathrooms} × ৳৪০০):</span>
+                  <span className="font-bold text-slate-900">৳{bathroomCost.toLocaleString()}</span>
+                </div>
+
+                {/* INDIVIDUAL LIST OF SELECTED SERVICE ADD-ONS */}
+                {Object.keys(selectedAddons).some((k) => selectedAddons[k]) && (
+                  <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
+                    {Object.keys(selectedAddons).map((key) => {
+                      if (!selectedAddons[key]) return null;
+                      const item = addonPrices[key];
+                      return (
+                        <div
+                          key={key}
+                          className="flex justify-between text-emerald-800 font-semibold"
+                        >
+                          <span>+ {item.label}:</span>
+                          <span className="font-bold text-emerald-700">+৳{item.price.toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                <div className="border-t border-slate-200 pt-3 flex justify-between text-base font-extrabold text-slate-900 font-sans">
-                  <span>Total Amount:</span>
-                  <span className="text-[#007eff] text-xl">৳{totalAmount.toLocaleString()}</span>
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-base sm:text-lg font-bold text-slate-900">
+                  <span>মোট প্রদেয় বিল:</span>
+                  <span className="text-[#007eff] text-2xl font-bold">৳{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Time Slot Lock Notice */}
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-[11px] text-blue-800 flex items-start gap-2">
-                <Lock className="w-4 h-4 text-[#007eff] flex-shrink-0 mt-0.5" />
-                <span>
-                  <strong>10-Min Slot Reservation Lock:</strong> Completing this booking locks your cleaner team for {scheduledDate}.
+              <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl text-xs text-blue-900 flex items-start gap-2.5">
+                <Lock className="w-4 h-4 text-[#007eff]" />
+                <span className="font-semibold leading-relaxed">
+                  <strong>১০-মিনিট Time Slot Lock:</strong> বুকিং কনফার্ম করলে উক্ত সময়সূচীতে আপনার টিমের ক্লিন টিম রিজার্ভ রাখা হবে।
                 </span>
               </div>
 
               {/* Payment Method Selector */}
-              <div className="space-y-2 text-xs">
-                <label className="font-bold text-slate-700">Select Payment Method:</label>
+              <div className="space-y-2.5 text-xs sm:text-sm">
+                <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4 text-[#007eff]" /> পেমেন্ট মেথড নির্বাচন করুন:
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: "BKASH", label: "bKash" },
@@ -393,10 +691,10 @@ export default function NewBookingPage() {
                       key={p.id}
                       type="button"
                       onClick={() => setPaymentMethod(p.id)}
-                      className={`p-2.5 rounded-xl border text-[11px] font-bold text-center transition-all ${
+                      className={`p-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
                         paymentMethod === p.id
                           ? "border-[#007eff] bg-blue-50 text-[#007eff]"
-                          : "border-slate-200 bg-slate-50 text-slate-600"
+                          : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
                       }`}
                     >
                       {p.label}
@@ -408,10 +706,11 @@ export default function NewBookingPage() {
               {/* Submit CTA */}
               <button
                 type="submit"
-                className="w-full py-4 rounded-2xl bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                className="w-full py-4 rounded-2xl bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer shadow-none border border-blue-400"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
+                <Sparkles className="w-5 h-5 text-amber-300" />
                 <span>Confirm & Pay ৳{totalAmount.toLocaleString()}</span>
+                <ChevronRight className="w-5 h-5 stroke-[3]" />
               </button>
             </div>
           </div>
