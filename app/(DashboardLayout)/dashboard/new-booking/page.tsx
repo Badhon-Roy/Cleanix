@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Calculator,
@@ -19,7 +19,7 @@ import {
   UtensilsCrossed,
   Wind,
   ShieldAlert,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   CreditCard,
   ChevronRight,
@@ -29,6 +29,13 @@ import {
   BedDouble,
   Bath,
   Maximize2,
+  ChevronDown,
+  ChevronLeft,
+  Zap,
+  Sun,
+  Sunrise,
+  Sunset,
+  HelpCircle,
 } from "lucide-react";
 
 export default function NewBookingPage() {
@@ -41,6 +48,69 @@ export default function NewBookingPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>("BKASH");
   const [address, setAddress] = useState<string>("House 42, Road 11, Block D, Gulshan-2, Dhaka");
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
+
+  // Custom Calendar & Time Slot Dropdown States
+  const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
+  const [timeDropdownOpen, setTimeDropdownOpen] = useState<boolean>(false);
+  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(2026);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(7); // 0-indexed (7 = August)
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
+
+  // Time Slot Presets Definition with Dynamic Active White Icon Rendering
+  const timeSlotOptions = [
+    {
+      id: "09:00 AM - 11:00 AM",
+      label: "09:00 AM - 11:00 AM",
+      tag: "MORNING",
+      sub: "সকালের প্রথম শিফট",
+      renderIcon: (active: boolean) => (
+        <Sunrise className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`} />
+      ),
+    },
+    {
+      id: "11:00 AM - 01:00 PM",
+      label: "11:00 AM - 01:00 PM",
+      tag: "MID-DAY",
+      sub: "দুপুরের শিফট",
+      renderIcon: (active: boolean) => (
+        <Sun className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`} />
+      ),
+    },
+    {
+      id: "02:00 PM - 04:00 PM",
+      label: "02:00 PM - 04:00 PM",
+      tag: "AFTERNOON",
+      sub: "বিকেলের শিফট",
+      renderIcon: (active: boolean) => (
+        <Sun className={`w-4 h-4 ${active ? "text-white" : "text-orange-500"}`} />
+      ),
+    },
+    {
+      id: "04:00 PM - 06:00 PM",
+      label: "04:00 PM - 06:00 PM",
+      tag: "EVENING",
+      sub: "সন্ধ্যা শিফট",
+      renderIcon: (active: boolean) => (
+        <Sunset className={`w-4 h-4 ${active ? "text-white" : "text-[#007eff]"}`} />
+      ),
+    },
+  ];
+
+  // Close custom dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setCalendarOpen(false);
+      }
+      if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
+        setTimeDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Service category label mapping
   const categoryLabels: Record<string, { name: string; sub: string }> = {
@@ -125,6 +195,64 @@ export default function NewBookingPage() {
     setBookingSuccess(true);
   };
 
+  // Format YYYY-MM-DD into readable date string
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return "তারিখ নির্বাচন করুন";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  // Custom Calendar Calculation Helper
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+
+  const handlePrevMonth = () => {
+    if (currentCalendarMonth === 0) {
+      setCurrentCalendarMonth(11);
+      setCurrentCalendarYear((prev) => prev - 1);
+    } else {
+      setCurrentCalendarMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentCalendarMonth === 11) {
+      setCurrentCalendarMonth(0);
+      setCurrentCalendarYear((prev) => prev + 1);
+    } else {
+      setCurrentCalendarMonth((prev) => prev + 1);
+    }
+  };
+
+  const handleSelectDay = (day: number) => {
+    const monthStr = String(currentCalendarMonth + 1).padStart(2, "0");
+    const dayStr = String(day).padStart(2, "0");
+    const dateFormatted = `${currentCalendarYear}-${monthStr}-${dayStr}`;
+    setScheduledDate(dateFormatted);
+    setCalendarOpen(false);
+  };
+
+  // Quick Preset Handlers
+  const handleQuickPreset = (offsetDays: number) => {
+    const target = new Date(2026, 7, 21 + offsetDays); // Based on current date 21 Aug 2026
+    const mStr = String(target.getMonth() + 1).padStart(2, "0");
+    const dStr = String(target.getDate()).padStart(2, "0");
+    setScheduledDate(`${target.getFullYear()}-${mStr}-${dStr}`);
+    setCurrentCalendarYear(target.getFullYear());
+    setCurrentCalendarMonth(target.getMonth());
+    setCalendarOpen(false);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Page Header */}
@@ -153,6 +281,65 @@ export default function NewBookingPage() {
           <Layers className="w-4 h-4" />
           <span>My Booking List দেখুন</span>
         </Link>
+      </div>
+
+      {/* INFORMATIONAL GUIDE BANNER: SUBSCRIPTION VS NEW BOOKING */}
+      <div className="bg-gradient-to-r from-red-50/80 via-white to-red-50/80 border border-red-400/90 rounded p-6 sm:p-7 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <HelpCircle className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
+                কখন New Booking এবং কখন Subscription সার্ভিস নেবেন?
+              </h3>
+              <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                আপনার প্রয়োজন অনুযায়ী সবচেয়ে উপযোগী ও সাশ্রয়ী অপশনটি বেছে নিতে নিচের গাইডটি সাহায্য করবে:
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard/subscription"
+            className="text-xs sm:text-sm font-extrabold text-white bg-[#007eff] hover:bg-[#0066ee] px-5 py-3 rounded-2xl transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto flex-shrink-0 border border-blue-400"
+          >
+            <span>মাসিক প্যাকেজগুলো দেখুন</span>
+            <ArrowRight className="w-4 h-4 stroke-[3]" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {/* Option 1: New Booking */}
+          <div className="bg-white border border-blue-300/80 p-5 rounded-lg space-y-2 flex items-center gap-4 transition-all hover:border-blue-300">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+            </div>
+            <div>
+              <h4 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                New Booking (এককালীন / অন-ডিমান্ড)
+              </h4>
+              <p className="text-sm text-slate-600 font-semibold leading-relaxed mt-1">
+                হঠাৎ জরুরি প্রয়োজনে, কোনো ইভেন্টের আগে তাৎক্ষণিক ডিপ ক্লিন, বাসা শিফটিং বা অতিরিক্ত কাস্টম কাজের জন্য বুক করুন।
+              </p>
+            </div>
+          </div>
+
+          {/* Option 2: Subscription */}
+          <div className="bg-white border border-emerald-200/80 p-5 rounded-lg space-y-2 flex items-center gap-4 transition-all hover:border-emerald-300">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CalendarIcon className="w-5 h-5 text-emerald-600 stroke-[2.5]" />
+            </div>
+            <div>
+              <h4 className="ttext-base font-semibold text-slate-900 flex items-center gap-2">
+                Subscription (মাসিক রুটিন প্ল্যান)
+              </h4>
+              <p className="text-sm text-slate-600 font-semibold leading-relaxed mt-1">
+                প্রতি সপ্তাহে বা মাসে ২-৪ বার ফিক্সড শিডিউলে বাসা বা অফিস নিয়মিত পরিষ্কার রাখতে সবচেয়ে সাশ্রয়ী মাসিক প্ল্যান বেছে নিন।
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {bookingSuccess ? (
@@ -459,7 +646,7 @@ export default function NewBookingPage() {
               </div>
             </div>
 
-            {/* STEP 3: Service Add-Ons (GREEN COLOR GRADIENT WHEN SELECTED) */}
+            {/* STEP 3: Service Add-Ons */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-3">
@@ -473,7 +660,7 @@ export default function NewBookingPage() {
                 </span>
               </div>
 
-              {/* Grid of 5 Add-On Cards with Emerald Green Gradient Selected State */}
+              {/* Grid of 5 Add-On Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {Object.keys(addonPrices).map((key) => {
                   const item = addonPrices[key];
@@ -486,7 +673,7 @@ export default function NewBookingPage() {
                       className={`group relative p-5 sm:p-6 rounded-3xl border cursor-pointer flex items-center justify-between transition-all duration-300 ${
                         isChecked
                           ? "bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white border-2 border-emerald-400"
-                          : "border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-700"
+                          : "border border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-700"
                       }`}
                     >
                       {/* Left Icon + Text */}
@@ -555,34 +742,205 @@ export default function NewBookingPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
-                {/* Date Picker */}
-                <div className="space-y-2">
+                {/* COMPACT CUSTOM REACT CALENDAR CONTAINER */}
+                <div className="space-y-2 relative" ref={calendarRef}>
                   <label className="font-bold text-slate-800 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#007eff]" /> তারিখ নির্বাচন করুন:
+                    <CalendarIcon className="w-4 h-4 text-[#007eff]" /> তারিখ নির্বাচন করুন:
                   </label>
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white cursor-pointer"
-                  />
+
+                  {/* Clickable Custom Input Box */}
+                  <div
+                    onClick={() => {
+                      setCalendarOpen(!calendarOpen);
+                      setTimeDropdownOpen(false);
+                    }}
+                    className="relative bg-slate-50/90 hover:bg-white border border-slate-200 hover:border-[#007eff] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#007eff] flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <CalendarIcon className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                      <span className="font-bold text-slate-900 text-sm">
+                        {formatDisplayDate(scheduledDate)}
+                      </span>
+                    </div>
+
+                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5]" />
+                  </div>
+
+                  {/* COMPACT SLEEK CALENDAR DROPDOWN PANEL */}
+                  {calendarOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 z-50 w-72 bg-white border border-slate-200 rounded-3xl p-3.5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                      {/* Header Month / Year Switcher */}
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <button
+                          type="button"
+                          onClick={handlePrevMonth}
+                          className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                          {monthNames[currentCalendarMonth]} {currentCalendarYear}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleNextMonth}
+                          className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                      </div>
+
+                      {/* Days of Week Row */}
+                      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span>Sun</span>
+                        <span>Mon</span>
+                        <span>Tue</span>
+                        <span>Wed</span>
+                        <span>Thu</span>
+                        <span>Fri</span>
+                        <span>Sat</span>
+                      </div>
+
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 gap-1 text-center">
+                        {/* Empty padding slots before day 1 */}
+                        {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
+                          <div key={`empty-${idx}`} className="h-7" />
+                        ))}
+
+                        {/* Calendar Days */}
+                        {Array.from({ length: daysInMonth }).map((_, idx) => {
+                          const dayNum = idx + 1;
+                          const mStr = String(currentCalendarMonth + 1).padStart(2, "0");
+                          const dStr = String(dayNum).padStart(2, "0");
+                          const thisDateFormatted = `${currentCalendarYear}-${mStr}-${dStr}`;
+                          const isSelected = scheduledDate === thisDateFormatted;
+                          const isToday = thisDateFormatted === "2026-08-21";
+
+                          return (
+                            <button
+                              key={dayNum}
+                              type="button"
+                              onClick={() => handleSelectDay(dayNum)}
+                              className={`h-7 w-7 mx-auto rounded-lg flex items-center justify-center text-[11px] font-bold transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#007eff] text-white font-extrabold shadow-sm scale-105"
+                                  : isToday
+                                  ? "border border-[#007eff] text-[#007eff] font-bold bg-blue-50/50"
+                                  : "text-slate-700 hover:bg-blue-50 hover:text-[#007eff]"
+                              }`}
+                            >
+                              {dayNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* ULTRA-MODERN PRESETS */}
+                      <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleQuickPreset(0)}
+                          className="group py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-[#007eff] border border-blue-200 text-[#007eff] hover:text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 group-hover:text-amber-300 group-hover:fill-amber-300 transition-colors" />
+                          <span>আজ (Today)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleQuickPreset(1)}
+                          className="group py-1.5 px-3 rounded-xl bg-slate-50 hover:bg-[#007eff] border border-slate-200 text-slate-700 hover:text-white hover:border-[#007eff] font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <CalendarIcon className="w-3.5 h-3.5 text-[#007eff] group-hover:text-white transition-colors" />
+                          <span>আগামীকাল</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Time Slot */}
-                <div className="space-y-2">
+                {/* ULTRA-MODERN CUSTOM TIME SLOT SELECTOR DROPDOWN */}
+                <div className="space-y-2 relative" ref={timeRef}>
                   <label className="font-bold text-slate-800 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#007eff]" /> সময় নির্ধারণ করুন:
                   </label>
-                  <select
-                    value={timeSlot}
-                    onChange={(e) => setTimeSlot(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white cursor-pointer"
+
+                  {/* Clickable Custom Time Input Box */}
+                  <div
+                    onClick={() => {
+                      setTimeDropdownOpen(!timeDropdownOpen);
+                      setCalendarOpen(false);
+                    }}
+                    className="relative bg-slate-50/90 hover:bg-white border border-slate-200 hover:border-[#007eff] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all group"
                   >
-                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM Slot</option>
-                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM Slot</option>
-                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM Slot</option>
-                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM Slot</option>
-                  </select>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#007eff] flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Clock className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                      <span className="font-bold text-slate-900 text-sm">{timeSlot}</span>
+                    </div>
+
+                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5]" />
+                  </div>
+
+                  {/* UPWARD FLOATING TIME SLOT DROPDOWN PANEL */}
+                  {timeDropdownOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 z-50 w-full bg-white border border-slate-200 rounded-3xl p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
+                        <span>AVAILABLE TIME SLOTS</span>
+                        <span className="text-[#007eff]">4 Slots</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {timeSlotOptions.map((option) => {
+                          const isSelected = timeSlot === option.id;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => {
+                                setTimeSlot(option.id);
+                                setTimeDropdownOpen(false);
+                              }}
+                              className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400 font-extrabold"
+                                  : "border-slate-200 bg-slate-50 hover:bg-blue-50/70 hover:border-blue-200 text-slate-800"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-7 h-7 rounded-xl flex items-center justify-center ${
+                                    isSelected
+                                      ? "bg-white/20 text-white backdrop-blur-md"
+                                      : "bg-white text-slate-700 border border-slate-200"
+                                  }`}
+                                >
+                                  {option.renderIcon(isSelected)}
+                                </div>
+                                <div>
+                                  <p className={`text-xs font-extrabold ${isSelected ? "text-[#007eff]" : "text-slate-900"}`}>
+                                    {option.label}
+                                  </p>
+                                  <p className={`text-[10px] font-medium ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
+                                    {option.sub}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {isSelected && (
+                                <div className="w-5 h-5 rounded-full bg-white text-[#007eff] flex items-center justify-center flex-shrink-0">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -602,9 +960,9 @@ export default function NewBookingPage() {
             </div>
           </div>
 
-          {/* Right Summary & Checkout Box (4 Cols) */}
-          <div className="lg:col-span-4 lg:sticky lg:top-8">
-            <div className="bg-white border-2 border-[#007eff] rounded-3xl p-6 space-y-6">
+          {/* Right Summary & Checkout Box (4 Cols - STICKY PANEL) */}
+          <div className="lg:col-span-4 lg:sticky lg:top-24 z-20">
+            <div className="bg-white border border-dashed border-[#007eff] rounded p-6 space-y-6">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#007eff] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                   LIVE CALCULATION
@@ -683,23 +1041,26 @@ export default function NewBookingPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: "BKASH", label: "bKash" },
+                    { id: "NAGAD", label: "Nagad" },
                     { id: "STRIPE", label: "Card / Stripe" },
-                    { id: "SSLCOMMERZ", label: "SSLCommerz" },
                     { id: "COD", label: "Cash on Delivery" },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(p.id)}
-                      className={`p-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
-                        paymentMethod === p.id
-                          ? "border-[#007eff] bg-blue-50 text-[#007eff]"
-                          : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+                  ].map((p) => {
+                    const isSelected = paymentMethod === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(p.id)}
+                        className={`p-3.5 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400 shadow-md"
+                            : "border border-slate-200 bg-slate-50/90 text-slate-700 hover:bg-slate-100 font-bold"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
