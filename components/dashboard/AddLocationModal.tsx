@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { MapPin, X, Home, Building, Plus, AlertCircle } from "lucide-react";
 
@@ -24,6 +25,12 @@ export default function AddLocationModal({
   onClose,
   onAddLocation,
 }: AddLocationModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -44,15 +51,15 @@ export default function AddLocationModal({
 
   const selectedType = watch("type");
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const onSubmitForm = (data: NewAddressFormData) => {
     onAddLocation(data);
     reset();
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -202,6 +209,7 @@ export default function AddLocationModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

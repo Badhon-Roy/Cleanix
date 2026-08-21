@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -24,6 +25,7 @@ interface SidebarProps {
 
 export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -133,9 +135,9 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
             <span>Main Website</span>
           </Link>
           <button
-            onClick={() => alert("Logged out successfully")}
+            onClick={() => setIsLogoutModalOpen(true)}
             title="Log out"
-            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 transition-colors"
+            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -161,6 +163,15 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
           <div className="relative z-10">{sidebarContent}</div>
         </div>
       )}
+
+      {/* Logout Confirmation Popup Modal */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={() => {
+          alert("Logged out successfully!");
+        }}
+      />
     </>
   );
 }

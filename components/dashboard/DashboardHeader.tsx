@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
   Bell,
   Search,
@@ -23,6 +24,7 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -242,8 +244,11 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
 
               <div className="border-t border-slate-100 my-1 pt-1">
                 <button
-                  onClick={() => alert("Logged out")}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-bold"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    setIsLogoutModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-red-600 hover:bg-red-50 text-left font-bold cursor-pointer"
                 >
                   <ShieldAlert className="w-4 h-4" />
                   <span>Log Out</span>
@@ -253,6 +258,15 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
           )}
         </div>
       </div>
+
+      {/* Logout Confirmation Popup Modal */}
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={() => {
+          alert("Logged out successfully!");
+        }}
+      />
     </header>
   );
 }
