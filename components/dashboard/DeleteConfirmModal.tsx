@@ -1,0 +1,80 @@
+"use client";
+
+import React from "react";
+import { AlertTriangle, Trash2, X } from "lucide-react";
+
+interface DeleteConfirmModalProps {
+  isOpen: boolean;
+  title?: string;
+  message?: string;
+  itemTitle?: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export default function DeleteConfirmModal({
+  isOpen,
+  title = "Delete Saved Location",
+  message = "Are you sure you want to delete this address from your saved service locations? This action cannot be undone.",
+  itemTitle,
+  onClose,
+  onConfirm,
+}: DeleteConfirmModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+      <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-5 animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+          {itemTitle && (
+            <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-xs font-bold text-slate-800">
+              📍 {itemTitle}
+            </div>
+          )}
+          <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+            {message}
+          </p>
+        </div>
+
+        {/* Buttons */}
+        <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="py-3 px-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors flex items-center gap-1.5 border border-red-500"
+          >
+            <Trash2 className="w-4 h-4 stroke-[2.5]" />
+            <span>Yes, Delete Location</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
