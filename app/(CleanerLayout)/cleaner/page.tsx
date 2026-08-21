@@ -144,11 +144,10 @@ export default function CleanerDashboardPage() {
           <button
             type="button"
             onClick={() => setIsOnDuty(!isOnDuty)}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer shadow-xs ${
-              isOnDuty
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer shadow-xs ${isOnDuty
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400"
                 : "bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300"
-            }`}
+              }`}
           >
             {isOnDuty ? "অফলাইন যান" : "অনলাইন যান"}
           </button>
@@ -307,13 +306,12 @@ export default function CleanerDashboardPage() {
             return (
               <div
                 key={job.id}
-                className={`p-6 rounded-3xl border transition-all space-y-5 ${
-                  job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
+                className={`p-6 rounded-3xl border transition-all space-y-5 ${job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
                     ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-sm"
                     : job.status === "COMPLETED"
-                    ? "bg-slate-50/70 border-slate-200"
-                    : "bg-white border-slate-200 hover:border-slate-300"
-                }`}
+                      ? "bg-slate-50/70 border-slate-200"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
               >
                 {/* Row Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">

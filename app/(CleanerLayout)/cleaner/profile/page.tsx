@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useForm } from "react-hook-form";
 import {
   UserCheck,
   Truck,
@@ -15,11 +16,52 @@ import {
   Sliders,
   Wrench,
   Users,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  KeyRound,
 } from "lucide-react";
+
+interface PasswordFormData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 export default function CleanerProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Password Visibility Toggle State
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordSavedSuccess, setPasswordSavedSuccess] = useState(false);
+
+  // React Hook Form for Password Security
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    watch: watchPassword,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors },
+  } = useForm<PasswordFormData>({
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const newPasswordValue = watchPassword("newPassword");
+
+  const onPasswordSubmit = (data: PasswordFormData) => {
+    console.log("Cleaner Password Submitted via React Hook Form:", data);
+    setPasswordSavedSuccess(true);
+    resetPasswordForm();
+    setTimeout(() => setPasswordSavedSuccess(false), 4000);
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,14 +88,14 @@ export default function CleanerProfilePage() {
               <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
                 <UserCheck className="w-6 h-6 stroke-[2.5]" />
               </div>
-              Cleaner Supervisor Profile & Equipment
+              Cleaner Supervisor Profile & Security
             </h1>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               ⚡ CERTIFIED PRO CLEANER
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            Manage your supervisor profile, assigned team members, vehicle details, and industrial cleaning equipment inventory.
+            Manage your supervisor profile, security password credentials, assigned team members, and equipment inventory.
           </p>
         </div>
       </div>
@@ -178,8 +220,8 @@ export default function CleanerProfilePage() {
               <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-[#007eff]" /> Team Delta Members (3 Staff)
               </h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Cleaners assigned under Supervisor Rahat Karim.
+              <p className="text-sm text-slate-600 font-semibold mt-1">
+                Supervisor Rahat Karim-এর আন্ডারে কাজ করা সার্ভিস টিম মেম্বারবৃন্দ।
               </p>
             </div>
 
@@ -202,8 +244,147 @@ export default function CleanerProfilePage() {
           </div>
         </div>
 
-        {/* Right Column: Equipment & Vehicle Specs (4 Cols) */}
+        {/* Right Column: Password Security & Equipment (4 Cols) */}
         <div className="lg:col-span-4 space-y-8">
+          {/* Change Password & Security Card */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5">
+            <div className="border-b border-slate-100 pb-4">
+              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <Lock className="w-5 h-5 text-[#007eff]" /> Password & Security
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                ক্লিনার ড্যাশবোর্ড সিকিউরিটির জন্য নতুন পাসওয়ার্ড আপডেট করুন।
+              </p>
+            </div>
+
+            {passwordSavedSuccess && (
+              <div className="bg-emerald-50 border border-emerald-300 p-3.5 rounded-2xl text-emerald-800 text-xs font-extrabold flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে! (Password Updated Successfully)</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4 text-xs sm:text-sm">
+              {/* Current Password Field */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800">Current Password:</label>
+                <div className="relative mt-2">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    placeholder="বর্তমান পাসওয়ার্ড লিখুন"
+                    {...registerPassword("currentPassword", {
+                      required: "বর্তমান পাসওয়ার্ড আবশ্যক",
+                    })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
+                      passwordErrors.currentPassword
+                        ? "border-red-400 focus:border-red-500 bg-red-50/30"
+                        : "border-slate-200 focus:border-[#007eff]"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCurrentPassword((prev) => !prev);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5 z-10"
+                    title={showCurrentPassword ? "Hide password" : "Show password"}
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.currentPassword && (
+                  <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.currentPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* New Password Field */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800">New Password:</label>
+                <div className="relative mt-2">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="নতুন পাসওয়ার্ড লিখুন"
+                    {...registerPassword("newPassword", {
+                      required: "নতুন পাসওয়ার্ড আবশ্যক",
+                      minLength: { value: 6, message: "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে" },
+                    })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
+                      passwordErrors.newPassword
+                        ? "border-red-400 focus:border-red-500 bg-red-50/30"
+                        : "border-slate-200 focus:border-[#007eff]"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowNewPassword((prev) => !prev);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5 z-10"
+                    title={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.newPassword && (
+                  <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.newPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800">Confirm New Password:</label>
+                <div className="relative mt-2">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="নতুন পাসওয়ার্ডটি পুনরায় লিখুন"
+                    {...registerPassword("confirmPassword", {
+                      required: "পাসওয়ার্ড নিশ্চিতকরণ আবশ্যক",
+                      validate: (val) => val === newPasswordValue || "পাসওয়ার্ড দুটি মিলছে না",
+                    })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
+                      passwordErrors.confirmPassword
+                        ? "border-red-400 focus:border-red-500 bg-red-50/30"
+                        : "border-slate-200 focus:border-[#007eff]"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowConfirmPassword((prev) => !prev);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5 z-10"
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.confirmPassword && (
+                  <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-500 via-[#007eff] to-blue-700 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 mt-2"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>পাসওয়ার্ড আপডেট করুন (Update Password)</span>
+              </button>
+            </form>
+          </div>
+
           {/* Vehicle & Equipment Inventory */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5">
             <div className="border-b border-slate-100 pb-4">

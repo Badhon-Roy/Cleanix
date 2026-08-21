@@ -130,7 +130,11 @@ export default function CleanerSchedulePage() {
           {filteredSchedule.map((item) => (
             <div
               key={item.id}
-              className="p-5 rounded-3xl border border-slate-200 hover:border-slate-300 bg-white transition-all space-y-4"
+              className={`p-5 rounded-3xl border transition-all space-y-4 ${
+                item.date.includes("Today")
+                  ? "bg-gradient-to-r from-blue-50/90 via-blue-50/40 to-white border-2 border-[#007eff]/50 shadow-sm"
+                  : "bg-white border-slate-200 hover:border-slate-300"
+              }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
                 <div className="flex items-center gap-3">
@@ -140,8 +144,14 @@ export default function CleanerSchedulePage() {
                   <h4 className="text-base font-extrabold text-slate-900">{item.service}</h4>
                 </div>
 
-                <span className="text-xs font-extrabold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-1.5 self-start sm:self-auto">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <span
+                  className={`text-xs font-extrabold px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto ${
+                    item.date.includes("Today")
+                      ? "bg-gradient-to-r from-blue-500 via-[#007eff] to-blue-700 text-white border border-blue-400 shadow-md shadow-blue-500/20"
+                      : "text-slate-700 bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  <Calendar className={`w-3.5 h-3.5 ${item.date.includes("Today") ? "text-white" : "text-blue-600"}`} />
                   {item.date}
                 </span>
               </div>

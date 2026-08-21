@@ -77,30 +77,86 @@ export default function CleanerEarningsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">Monthly Earnings</span>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">৳42,500</p>
-          <span className="text-[11px] text-emerald-700 font-bold">+18% vs last month</span>
+      {/* KPI Cards Grid - Modern Gradient & Dashed Border Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Monthly Earnings Card */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30 border-2 border-dashed border-emerald-300 rounded-3xl p-6 sm:p-7 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+              Monthly Earnings
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 stroke-[2.5]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳42,500</p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full border border-emerald-300 inline-block">
+                 +18% vs last month
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">Completed Jobs</span>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">18 Jobs</p>
-          <span className="text-[11px] text-blue-700 font-bold">100% On-time</span>
+        {/* Completed Jobs Card */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 border-2 border-dashed border-blue-300 rounded-3xl p-6 sm:p-7 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+              Completed Jobs
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">18 Jobs</p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-blue-800 bg-blue-100/90 px-3 py-1 rounded-full border border-blue-300 inline-block">
+                ✓ 100% On-time Dispatch
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">Pending Payout</span>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">৳3,520</p>
-          <span className="text-[11px] text-amber-700 font-bold">Processing Friday</span>
+        {/* Pending Payout Card */}
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30 border-2 border-dashed border-amber-300 rounded-3xl p-6 sm:p-7 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+              Pending Payout
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-5 h-5 stroke-[2.5]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳3,520</p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-amber-800 bg-amber-100/90 px-3 py-1 rounded-full border border-amber-300 inline-block">
+                ⏱ Processing Friday
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">5-Star VIP Bonus</span>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">৳3,500</p>
-          <span className="text-[11px] text-purple-700 font-bold">Performance reward</span>
+        {/* 5-Star VIP Bonus Card */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-purple-50/30 border-2 border-dashed border-purple-300 rounded-3xl p-6 sm:p-7 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+              5-Star VIP Bonus
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center flex-shrink-0">
+              <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳3,500</p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-purple-800 bg-purple-100/90 px-3 py-1 rounded-full border border-purple-300 inline-block">
+                ⭐ Performance Reward
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

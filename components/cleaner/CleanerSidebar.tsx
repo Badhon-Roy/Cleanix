@@ -37,7 +37,7 @@ export default function CleanerSidebar({
     { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
-    { name: "Cleaner Profile", href: "/cleaner/profile", icon: UserCheck },
+    { name: "Profile & Settings", href: "/cleaner/profile", icon: UserCheck },
   ];
 
   const checkIsActive = (href: string) => {
@@ -60,7 +60,7 @@ export default function CleanerSidebar({
                 PRO CLEANER
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">ফিল্ড স্টাফ ডিসপ্যাচ পোর্টাল</p>
+            <p className="text-sm text-slate-500 font-medium">Field Staff Dispatch Portal</p>
           </div>
         </Link>
       </div>
