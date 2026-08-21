@@ -138,7 +138,7 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/new-booking"
-              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm sm:text-base px-6 py-3.5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer"
+              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer"
             >
               <Plus className="w-5 h-5 stroke-[3]" />
               <span>Book New Service</span>
@@ -155,11 +155,11 @@ export default function CustomerDashboardPage() {
           className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
-            <p className="text-sm font-black text-[#007eff] uppercase tracking-wider">
+            <p className="text-sm font-bold text-[#007eff] uppercase tracking-wider">
               Total Bookings
             </p>
-            <h3 className="text-3xl font-black text-slate-900 mt-1">12 Jobs</h3>
-            <span className="text-xs text-emerald-600 font-extrabold mt-1 block">100% On-time completion ➔</span>
+            <h3 className="text-3xl font-bold text-slate-900 mt-1">12 Jobs</h3>
+            <span className="text-xs text-emerald-600 font-bold mt-1 block">100% On-time completion ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-blue-50 border border-blue-100 text-[#007eff] flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <Calendar className="w-7 h-7" />
@@ -172,11 +172,11 @@ export default function CustomerDashboardPage() {
           className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
-            <p className="text-sm font-black text-amber-600 uppercase tracking-wider">
+            <p className="text-sm font-bold text-amber-600 uppercase tracking-wider">
               Active Plan
             </p>
-            <h3 className="text-3xl font-black text-slate-900 mt-1">Standard</h3>
-            <span className="text-xs text-blue-600 font-extrabold mt-1 block">৳14,000 / Month ➔</span>
+            <h3 className="text-3xl font-bold text-slate-900 mt-1">Standard</h3>
+            <span className="text-xs text-blue-600 font-bold mt-1 block">৳14,000 / Month ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <CreditCard className="w-7 h-7" />
@@ -189,11 +189,11 @@ export default function CustomerDashboardPage() {
           className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
-            <p className="text-sm font-black text-emerald-600 uppercase tracking-wider">
+            <p className="text-sm font-bold text-emerald-600 uppercase tracking-wider">
               Visits Left
             </p>
-            <h3 className="text-3xl font-black text-slate-900 mt-1">1 / 4 Visits</h3>
-            <span className="text-xs text-amber-700 font-extrabold mt-1 block">Renews in 5 days ➔</span>
+            <h3 className="text-3xl font-bold text-slate-900 mt-1">1 / 4 Visits</h3>
+            <span className="text-xs text-amber-700 font-bold mt-1 block">Renews in 5 days ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <Clock className="w-7 h-7" />
@@ -206,11 +206,11 @@ export default function CustomerDashboardPage() {
           className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
-            <p className="text-sm font-black text-purple-600 uppercase tracking-wider">
+            <p className="text-sm font-bold text-purple-600 uppercase tracking-wider">
               Clean Area
             </p>
-            <h3 className="text-3xl font-black text-slate-900 mt-1">4,800 SqFt</h3>
-            <span className="text-xs text-slate-600 font-extrabold mt-1 block">Eco-chem Certified ➔</span>
+            <h3 className="text-3xl font-bold text-slate-900 mt-1">4,800 SqFt</h3>
+            <span className="text-xs text-slate-600 font-bold mt-1 block">Eco-chem Certified ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <ShieldCheck className="w-7 h-7" />
@@ -232,21 +232,21 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-slate-900">My Active Subscription</h3>
+                <h3 className="text-xl font-bold text-slate-900">My Active Subscription</h3>
                 <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   ACTIVE
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 font-semibold mt-1">Standard Monthly Plan • 4 Weekly Deep Cleans</p>
             </div>
-            <span className="text-xl font-black text-[#007eff]">৳14,000 <span className="text-xs text-slate-400 font-normal">/mo</span></span>
+            <span className="text-xl font-bold text-[#007eff]">৳14,000 <span className="text-xs text-slate-400 font-normal">/mo</span></span>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-xs sm:text-sm font-bold">
                 <span className="text-slate-700">Monthly Usage: 3 of 4 visits used</span>
-                <span className="text-[#007eff] font-extrabold">75% Complete</span>
+                <span className="text-[#007eff] font-bold">75% Complete</span>
               </div>
               <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden p-0.5 border border-slate-200">
                 <div className="bg-gradient-to-r from-[#007eff] to-cyan-400 h-full rounded-full w-[75%]" />
@@ -256,11 +256,11 @@ export default function CustomerDashboardPage() {
             <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                 <span className="text-slate-500 block text-xs font-semibold">Next Scheduled Clean:</span>
-                <strong className="text-slate-900 font-extrabold">Today at 09:00 AM</strong>
+                <strong className="text-slate-900 font-bold">Today at 09:00 AM</strong>
               </div>
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                 <span className="text-slate-500 block text-xs font-semibold">Billing Renewal:</span>
-                <strong className="text-slate-900 font-extrabold">26 August 2026</strong>
+                <strong className="text-slate-900 font-bold">26 August 2026</strong>
               </div>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center justify-between pt-2">
             <Link
               href="/dashboard/subscription"
-              className="text-xs sm:text-sm text-[#007eff] hover:underline font-extrabold flex items-center gap-1.5 cursor-pointer"
+              className="text-xs sm:text-sm text-[#007eff] hover:underline font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <span>Manage Subscription & Upgrade Plan</span>
               <ArrowRight className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function CustomerDashboardPage() {
         {/* Recommend Add-ons (Col 5) */}
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between space-y-4">
           <div>
-            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-500" /> Popular Add-On Upgrades
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 font-semibold mt-1">
@@ -293,11 +293,11 @@ export default function CustomerDashboardPage() {
               className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group cursor-pointer"
             >
               <div>
-                <p className="font-extrabold text-slate-900 group-hover:text-[#007eff] transition-colors">Sofa & Carpet Steam Wash</p>
+                <p className="font-bold text-slate-900 group-hover:text-[#007eff] transition-colors">Sofa & Carpet Steam Wash</p>
                 <p className="text-xs text-slate-500 font-medium">Deep anti-allergen extraction</p>
               </div>
               <div className="flex items-center gap-1">
-                <span className="font-black text-amber-600">+৳1,500</span>
+                <span className="font-bold text-amber-600">+৳1,500</span>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#007eff]" />
               </div>
             </Link>
@@ -307,11 +307,11 @@ export default function CustomerDashboardPage() {
               className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group cursor-pointer"
             >
               <div>
-                <p className="font-extrabold text-slate-900 group-hover:text-[#007eff] transition-colors">Kitchen Oven & Chimney Care</p>
+                <p className="font-bold text-slate-900 group-hover:text-[#007eff] transition-colors">Kitchen Oven & Chimney Care</p>
                 <p className="text-xs text-slate-500 font-medium">Grease-free sparkling finish</p>
               </div>
               <div className="flex items-center gap-1">
-                <span className="font-black text-amber-600">+৳1,200</span>
+                <span className="font-bold text-amber-600">+৳1,200</span>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#007eff]" />
               </div>
             </Link>
@@ -319,7 +319,7 @@ export default function CustomerDashboardPage() {
 
           <Link
             href="/dashboard/new-booking"
-            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs sm:text-sm text-center border border-slate-200 transition-colors block cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm text-center border border-slate-200 transition-colors block cursor-pointer"
           >
             Customize Service Add-Ons
           </Link>
@@ -330,13 +330,13 @@ export default function CustomerDashboardPage() {
       <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-slate-900">Recent Service History</h3>
+            <h3 className="text-xl font-bold text-slate-900">Recent Service History</h3>
             <p className="text-xs sm:text-sm text-slate-600 font-medium">Click any row or ID to inspect job specs, or view invoices.</p>
           </div>
 
           <Link
             href="/dashboard/bookings"
-            className="text-xs sm:text-sm font-extrabold text-[#007eff] hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs sm:text-sm font-bold text-[#007eff] hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>View All Bookings</span>
             <ArrowRight className="w-4 h-4" />
@@ -359,7 +359,7 @@ export default function CustomerDashboardPage() {
             <tbody className="divide-y divide-slate-100 text-slate-800">
               {recentBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 pl-4 font-mono font-extrabold text-[#007eff]">
+                  <td className="p-4 pl-4 font-mono font-bold text-[#007eff]">
                     <button
                       onClick={() => setSelectedJobSpec(b)}
                       className="hover:underline font-bold text-[#007eff] cursor-pointer"
@@ -367,7 +367,7 @@ export default function CustomerDashboardPage() {
                       {b.id}
                     </button>
                   </td>
-                  <td className="p-4 font-extrabold text-slate-900">
+                  <td className="p-4 font-bold text-slate-900">
                     <button
                       onClick={() => setSelectedJobSpec(b)}
                       className="hover:text-[#007eff] text-left cursor-pointer"
@@ -377,9 +377,9 @@ export default function CustomerDashboardPage() {
                   </td>
                   <td className="p-4 text-slate-600 font-semibold">{b.date}</td>
                   <td className="p-4 text-slate-600 font-semibold">{b.location}</td>
-                  <td className="p-4 font-black text-slate-900">{b.amount}</td>
+                  <td className="p-4 font-bold text-slate-900">{b.amount}</td>
                   <td className="p-4">
-                    <span className={`text-xs font-extrabold uppercase px-3 py-1 rounded-full border ${b.badgeClass}`}>
+                    <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full border ${b.badgeClass}`}>
                       {b.statusText}
                     </span>
                   </td>
@@ -389,7 +389,7 @@ export default function CustomerDashboardPage() {
                         const inv = mockInvoices[b.id] || mockInvoices["CLN-2026-8891"];
                         setSelectedInvoice(inv);
                       }}
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#007eff] hover:underline bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#007eff] hover:underline bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" /> Invoice
                     </button>

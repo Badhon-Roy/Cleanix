@@ -4,14 +4,19 @@ import React, { useState } from "react";
 import {
   FileText,
   Download,
-  CheckCircle,
+  CheckCircle2,
   ShieldCheck,
   CreditCard,
+  Search,
+  ExternalLink,
+  Printer,
+  Sparkles,
 } from "lucide-react";
 import InvoiceModal, { InvoiceData } from "@/components/dashboard/InvoiceModal";
 
 export default function CustomerInvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const invoicesList: InvoiceData[] = [
     {
@@ -94,100 +99,189 @@ export default function CustomerInvoicesPage() {
     },
   ];
 
+  const filteredInvoices = invoicesList.filter(
+    (inv) =>
+      inv.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.bookingNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.serviceTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.paymentMethod.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-8 pb-12">
-      {/* Header */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <FileText className="w-8 h-8 text-[#007eff]" />
-            Invoices & Payment Receipts
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              Invoices & Payment Receipts
+            </h1>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#007eff] border border-blue-200">
+              ⚡ AUTOMATED BILLING
+            </span>
+          </div>
+          <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
             Download automated PDF invoices, view payment transaction receipts, and track tax documentation.
           </p>
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl flex items-center justify-between">
+      {/* KPI Stats Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        {/* Stat 1 */}
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
           <div>
-            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Receipts</p>
-            <h3 className="text-2xl font-extrabold text-slate-900 mt-1">12 Paid Invoices</h3>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Total Receipts
+            </p>
+            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">12 Paid Invoices</h3>
+            <span className="text-xs text-emerald-600 font-bold mt-1 block">100% Tax Compliant ✓</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold">
-            <CheckCircle className="w-6 h-6" />
+          <div className="w-13 h-13 p-3.5 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl flex items-center justify-between">
+        {/* Stat 2 */}
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
           <div>
-            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Spent</p>
-            <h3 className="text-2xl font-extrabold text-slate-900 mt-1">৳142,500</h3>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Total Spent
+            </p>
+            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">৳142,500</h3>
+            <span className="text-xs text-blue-600 font-bold mt-1 block">Verified Transactions ➔</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-bold">
-            <CreditCard className="w-6 h-6" />
+          <div className="w-13 h-13 p-3.5 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+            <CreditCard className="w-7 h-7 stroke-[2.5]" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl flex items-center justify-between">
+        {/* Stat 3 */}
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
           <div>
-            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Latest Invoice</p>
-            <h3 className="text-xl font-mono font-extrabold text-[#007eff] mt-1">INV-2026-8891</h3>
+            <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Latest Invoice
+            </p>
+            <h3 className="text-xl sm:text-2xl font-mono font-bold text-[#007eff] mt-1">INV-2026-8891</h3>
+            <span className="text-xs text-slate-500 font-bold mt-1 block">Issued on 21 Aug 2026</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="w-13 h-13 p-3.5 rounded-2xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center flex-shrink-0">
+            <ShieldCheck className="w-7 h-7 stroke-[2.5]" />
           </div>
         </div>
       </div>
 
-      {/* Invoices List Table */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-extrabold text-slate-900">All Billing Statements</h3>
-          <span className="text-xs text-slate-500 font-mono font-bold">Auto-generated by Resend API</span>
+      {/* Main Billing Table Panel */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900">All Billing Statements</h3>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+              ইনভয়েস বা পেমেন্ট দেখার জন্য যেকোনো সারিতে বা PDF ডাউনলোডে ক্লিক করুন।
+            </p>
+          </div>
+
+          {/* Search Box Filter */}
+          <div className="relative self-start sm:self-auto w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search Invoice # or Service..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-[#007eff] focus:bg-white"
+            />
+          </div>
         </div>
 
+        {/* Larger & Readable Billing Table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase tracking-wider text-[11px]">
-                <th className="p-3.5 pl-4 font-bold">Invoice ID</th>
-                <th className="p-3.5 font-bold">Booking Ref</th>
-                <th className="p-3.5 font-bold">Date</th>
-                <th className="p-3.5 font-bold">Service Package</th>
-                <th className="p-3.5 font-bold">Payment Method</th>
-                <th className="p-3.5 font-bold">Amount Paid</th>
-                <th className="p-3.5 font-bold">Status</th>
-                <th className="p-3.5 text-right pr-4 font-bold">PDF Action</th>
+              <tr className="bg-slate-100/80 text-slate-700 border-b border-slate-200 uppercase tracking-wider text-xs sm:text-sm font-extrabold">
+                <th className="p-4 sm:p-5 pl-5">Invoice ID</th>
+                <th className="p-4 sm:p-5">Booking Ref</th>
+                <th className="p-4 sm:p-5">Date</th>
+                <th className="p-4 sm:p-5">Service Package</th>
+                <th className="p-4 sm:p-5">Payment Method</th>
+                <th className="p-4 sm:p-5">Amount Paid</th>
+                <th className="p-4 sm:p-5">Status</th>
+                <th className="p-4 sm:p-5 text-right pr-5">PDF Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
-              {invoicesList.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 pl-4 font-mono font-extrabold text-slate-900">{inv.invoiceNumber}</td>
-                  <td className="p-3.5 font-mono font-bold text-[#007eff]">#{inv.bookingNumber}</td>
-                  <td className="p-3.5 text-slate-600 font-medium">{inv.date}</td>
-                  <td className="p-3.5 font-extrabold text-slate-900">{inv.serviceTitle}</td>
-                  <td className="p-3.5 text-slate-600 font-medium">{inv.paymentMethod}</td>
-                  <td className="p-3.5 font-extrabold text-slate-900">৳{inv.totalAmount.toLocaleString()}</td>
-                  <td className="p-3.5">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      PAID
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-right pr-4">
-                    <button
-                      onClick={() => setSelectedInvoice(inv)}
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-white bg-[#007eff] hover:bg-[#0066ee] px-3 py-1.5 rounded-xl transition-all"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>View PDF</span>
-                    </button>
+            <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+              {filteredInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-500 font-bold text-sm">
+                    কোনো ইনভয়েস পাওয়া যায়নি।
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredInvoices.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-blue-50/50 transition-colors">
+                    {/* Invoice ID */}
+                    <td className="p-4 sm:p-5 pl-5 font-mono font-bold text-slate-900 text-sm sm:text-base">
+                      {inv.invoiceNumber}
+                    </td>
+
+                    {/* Booking Ref */}
+                    <td className="p-4 sm:p-5 font-mono font-bold text-[#007eff] text-sm sm:text-base">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="hover:underline text-[#007eff] cursor-pointer"
+                      >
+                        #{inv.bookingNumber}
+                      </button>
+                    </td>
+
+                    {/* Date */}
+                    <td className="p-4 sm:p-5 text-slate-600 font-bold text-sm whitespace-nowrap">
+                      {inv.date}
+                    </td>
+
+                    {/* Service Package */}
+                    <td className="p-4 sm:p-5 font-bold text-slate-900 text-sm sm:text-base min-w-[220px]">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="hover:text-[#007eff] text-left cursor-pointer"
+                      >
+                        {inv.serviceTitle}
+                      </button>
+                    </td>
+
+                    {/* Payment Method */}
+                    <td className="p-4 sm:p-5 text-slate-700 font-bold text-xs sm:text-sm whitespace-nowrap">
+                      {inv.paymentMethod}
+                    </td>
+
+                    {/* Amount Paid */}
+                    <td className="p-4 sm:p-5 font-bold text-slate-900 text-base whitespace-nowrap">
+                      ৳{inv.totalAmount.toLocaleString()}
+                    </td>
+
+                    {/* Status */}
+                    <td className="p-4 sm:p-5 whitespace-nowrap">
+                      <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                        ✓ {inv.paymentStatus}
+                      </span>
+                    </td>
+
+                    {/* Action Button */}
+                    <td className="p-4 sm:p-5 text-right pr-5 whitespace-nowrap">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold text-white bg-[#007eff] hover:bg-[#0066ee] px-4 py-2 rounded-2xl transition-all cursor-pointer shadow-sm border border-blue-400"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>View PDF</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
