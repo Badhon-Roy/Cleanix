@@ -40,7 +40,7 @@ export default function CoreServicesSection() {
         "Fast & Time-Critical Cleaning",
         "Move-In / Move-Out Deep Clean",
       ],
-      image: "https://framerusercontent.com/images/gRwXdPkLkyjS5JXnK04q3ttVLk.png?width=600&height=400",
+      image: "/MOVE-OUT-CLEANING.png",
       imageFirst: true,
     },
     {
@@ -52,7 +52,7 @@ export default function CoreServicesSection() {
         "Debris & Heavy Dust Removal",
         "Post-Renovation Deep Scrub & Polish",
       ],
-      image: "https://framerusercontent.com/images/P64qFbW7sjXKqLCWX5Fd9KuqA.png?width=600&height=400",
+      image: "/POST-CONSTRUCTION CLEANING.png",
       imageFirst: false,
     },
   ];

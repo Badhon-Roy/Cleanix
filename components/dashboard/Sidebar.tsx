@@ -13,6 +13,7 @@ import {
   LogOut,
   Sparkles,
   Home,
+  Bell,
 } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 
@@ -30,6 +31,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
     { name: "Subscription", href: "/dashboard/subscription", icon: CreditCard, badge: "Standard" },
     { name: "New Booking", href: "/dashboard/new-booking", icon: PlusCircle, highlight: true },
     { name: "Invoices & Receipts", href: "/dashboard/invoices", icon: FileText },
+    { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: "3" },
     { name: "Account Settings", href: "/dashboard/settings", icon: Settings },
   ];
 

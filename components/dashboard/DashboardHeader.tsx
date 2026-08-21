@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -23,6 +23,26 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns automatically when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const notifications = [
     {
@@ -95,46 +115,53 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
         </Link>
 
         {/* Notification Bell Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
             onClick={() => {
               setNotificationsOpen(!notificationsOpen);
               setUserMenuOpen(false);
             }}
-            className="relative p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors focus:outline-none"
+            className="relative p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors focus:outline-none cursor-pointer"
             aria-label="Notifications"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-4 h-4 text-slate-700" />
             <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[#007eff] animate-pulse" />
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 border border-slate-200">
+              {/* Header */}
               <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-slate-900">Notifications</h3>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                    2 New
+                  <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-[#007eff]" /> Notifications
+                  </h3>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                    3 New
                   </span>
                 </div>
-                <button
+                <Link
+                  href="/dashboard/notifications"
                   onClick={() => setNotificationsOpen(false)}
                   className="text-xs text-[#007eff] hover:underline font-bold"
                 >
-                  Mark all read
-                </button>
+                  Clear All
+                </Link>
               </div>
 
+              {/* List */}
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
                 {notifications.map((n) => (
-                  <div
+                  <Link
                     key={n.id}
-                    className={`p-3.5 hover:bg-slate-50 transition-colors ${
-                      n.unread ? "bg-blue-50/50" : ""
+                    href="/dashboard/notifications"
+                    onClick={() => setNotificationsOpen(false)}
+                    className={`block p-3.5 hover:bg-blue-50/50 transition-colors ${
+                      n.unread ? "bg-blue-50/40" : ""
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-lg bg-blue-100 text-blue-600">
+                      <div className="mt-0.5 p-2 rounded-xl bg-blue-100 text-[#007eff] flex-shrink-0">
                         {n.type === "info" ? (
                           <Clock className="w-4 h-4" />
                         ) : (
@@ -142,22 +169,29 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
                         )}
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-xs font-bold text-slate-900">{n.title}</h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-900">{n.title}</h4>
+                          {n.unread && (
+                            <span className="w-2 h-2 rounded-full bg-[#007eff]" />
+                          )}
+                        </div>
                         <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{n.desc}</p>
                         <span className="text-[10px] text-slate-400 mt-1 block font-medium">{n.time}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
+              {/* Footer View All Link */}
               <div className="p-3 text-center border-t border-slate-100 bg-slate-50">
                 <Link
-                  href="/dashboard/bookings"
+                  href="/dashboard/notifications"
                   onClick={() => setNotificationsOpen(false)}
-                  className="text-xs text-[#007eff] hover:underline font-bold"
+                  className="text-xs text-[#007eff] hover:bg-blue-100/70 font-bold px-4 py-2 rounded-xl border border-blue-200/80 inline-flex items-center justify-center gap-1.5 transition-all w-full"
                 >
-                  View All Activity & Bookings ➔
+                  <span>View All Notifications</span>
+                  <span>➔</span>
                 </Link>
               </div>
             </div>
@@ -165,7 +199,7 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
         </div>
 
         {/* User Profile Menu */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => {
               setUserMenuOpen(!userMenuOpen);
