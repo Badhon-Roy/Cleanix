@@ -13,6 +13,7 @@ import {
   ChevronsRight,
   Navigation,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import LiveMapModal from "@/components/dashboard/LiveMapModal";
 import JobDetailsModal from "@/components/dashboard/JobDetailsModal";
@@ -194,19 +195,31 @@ export default function LiveJobTracker({
                       </p>
                     </div>
 
-                    {/* Timestamp Footer */}
+                    {/* Modern Professional Timestamp Badge */}
                     <div className="pt-2">
-                      <span
-                        className={`text-xs font-mono font-extrabold px-3 py-1.5 rounded-xl border inline-block ${
+                      <div
+                        className={`inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl border transition-all ${
                           isPassed
-                            ? "bg-white text-emerald-800 border-emerald-200"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                             : isCurrent
-                            ? "bg-white text-[#007eff] border-blue-200"
-                            : "bg-slate-100 text-slate-400 border-slate-200"
+                            ? "bg-blue-50 text-[#007eff] border-blue-300 font-black"
+                            : "bg-slate-100/90 text-slate-500 border-slate-200"
                         }`}
                       >
-                        ⏱ {step.time}
-                      </span>
+                        {isCurrent ? (
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#007eff] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#007eff]"></span>
+                          </span>
+                        ) : (
+                          <Clock
+                            className={`w-3.5 h-3.5 flex-shrink-0 ${
+                              isPassed ? "text-emerald-600" : "text-slate-400"
+                            }`}
+                          />
+                        )}
+                        <span>{step.time}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -292,7 +305,7 @@ export default function LiveJobTracker({
                 <div className="flex items-center gap-4 pt-2">
                   <a
                     href="tel:+8801711223344"
-                    className="bg-[#007eff] hover:bg-[#0066ee] text-white text-xs sm:text-sm font-extrabold px-4 py-2 rounded-xl flex items-center gap-2 transition-all hover:scale-105"
+                    className="bg-[#007eff] hover:bg-[#0066ee] text-white text-xs sm:text-sm font-extrabold px-4 py-2 rounded-xl flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
                   >
                     <Phone className="w-4 h-4" /> <span>Call Captain (কল করুন)</span>
                   </a>
@@ -318,7 +331,7 @@ export default function LiveJobTracker({
               </div>
               <button
                 onClick={() => setMapModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 text-[#007eff] hover:underline font-extrabold text-xs sm:text-sm bg-white px-3.5 py-2 rounded-xl border border-blue-200"
+                className="hidden sm:flex items-center gap-1.5 text-[#007eff] hover:underline font-extrabold text-xs sm:text-sm bg-white px-3.5 py-2 rounded-xl border border-blue-200 cursor-pointer"
               >
                 <Navigation className="w-4 h-4" /> <span>Live Map (লাইভ ম্যাপ)</span>
               </button>
@@ -365,7 +378,7 @@ export default function LiveJobTracker({
             <div className="pt-2">
               <button
                 onClick={() => setSpecsModalOpen(true)}
-                className="w-full py-3.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:border-blue-300"
+                className="w-full py-3.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:border-blue-300 cursor-pointer"
               >
                 <span>View Detailed Job Specifications (কাজের বিস্তারিত তথ্য)</span>
                 <ChevronRight className="w-4 h-4 text-[#007eff]" />

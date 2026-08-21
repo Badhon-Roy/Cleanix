@@ -138,7 +138,7 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/new-booking"
-              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm sm:text-base px-6 py-3.5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all"
+              className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm sm:text-base px-6 py-3.5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer"
             >
               <Plus className="w-5 h-5 stroke-[3]" />
               <span>Book New Service</span>
@@ -147,19 +147,19 @@ export default function CustomerDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Stats Cards (Grid 4 Interactive Links with Larger Text) */}
+      {/* KPI Stats Cards (Grid 4 Interactive Links with Cursor Pointer) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Stat 1 ➔ Bookings */}
         <Link
           href="/dashboard/bookings"
-          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group"
+          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
             <p className="text-sm font-black text-[#007eff] uppercase tracking-wider">
               Total Bookings
             </p>
             <h3 className="text-3xl font-black text-slate-900 mt-1">12 Jobs</h3>
-            <span className="text-sm text-emerald-600 font-extrabold mt-1 block">100% On-time completion ➔</span>
+            <span className="text-xs text-emerald-600 font-extrabold mt-1 block">100% On-time completion ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-blue-50 border border-blue-100 text-[#007eff] flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <Calendar className="w-7 h-7" />
@@ -169,14 +169,14 @@ export default function CustomerDashboardPage() {
         {/* Stat 2 ➔ Subscription */}
         <Link
           href="/dashboard/subscription"
-          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group"
+          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
             <p className="text-sm font-black text-amber-600 uppercase tracking-wider">
               Active Plan
             </p>
             <h3 className="text-3xl font-black text-slate-900 mt-1">Standard</h3>
-            <span className="text-sm text-blue-600 font-extrabold mt-1 block">৳14,000 / Month ➔</span>
+            <span className="text-xs text-blue-600 font-extrabold mt-1 block">৳14,000 / Month ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <CreditCard className="w-7 h-7" />
@@ -186,14 +186,14 @@ export default function CustomerDashboardPage() {
         {/* Stat 3 ➔ Subscription */}
         <Link
           href="/dashboard/subscription"
-          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group"
+          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
             <p className="text-sm font-black text-emerald-600 uppercase tracking-wider">
               Visits Left
             </p>
             <h3 className="text-3xl font-black text-slate-900 mt-1">1 / 4 Visits</h3>
-            <span className="text-sm text-amber-700 font-extrabold mt-1 block">Renews in 5 days ➔</span>
+            <span className="text-xs text-amber-700 font-extrabold mt-1 block">Renews in 5 days ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <Clock className="w-7 h-7" />
@@ -203,14 +203,14 @@ export default function CustomerDashboardPage() {
         {/* Stat 4 ➔ Bookings */}
         <Link
           href="/dashboard/bookings"
-          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group"
+          className="bg-white hover:bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center justify-between transition-all group cursor-pointer"
         >
           <div>
             <p className="text-sm font-black text-purple-600 uppercase tracking-wider">
               Clean Area
             </p>
             <h3 className="text-3xl font-black text-slate-900 mt-1">4,800 SqFt</h3>
-            <span className="text-sm text-slate-600 font-extrabold mt-1 block">Eco-chem Certified ➔</span>
+            <span className="text-xs text-slate-600 font-extrabold mt-1 block">Eco-chem Certified ➔</span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <ShieldCheck className="w-7 h-7" />
@@ -268,7 +268,7 @@ export default function CustomerDashboardPage() {
           <div className="flex items-center justify-between pt-2">
             <Link
               href="/dashboard/subscription"
-              className="text-xs sm:text-sm text-[#007eff] hover:underline font-extrabold flex items-center gap-1.5"
+              className="text-xs sm:text-sm text-[#007eff] hover:underline font-extrabold flex items-center gap-1.5 cursor-pointer"
             >
               <span>Manage Subscription & Upgrade Plan</span>
               <ArrowRight className="w-4 h-4" />
@@ -290,7 +290,7 @@ export default function CustomerDashboardPage() {
           <div className="space-y-3">
             <Link
               href="/dashboard/new-booking"
-              className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
+              className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group cursor-pointer"
             >
               <div>
                 <p className="font-extrabold text-slate-900 group-hover:text-[#007eff] transition-colors">Sofa & Carpet Steam Wash</p>
@@ -304,7 +304,7 @@ export default function CustomerDashboardPage() {
 
             <Link
               href="/dashboard/new-booking"
-              className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
+              className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors text-xs sm:text-sm group cursor-pointer"
             >
               <div>
                 <p className="font-extrabold text-slate-900 group-hover:text-[#007eff] transition-colors">Kitchen Oven & Chimney Care</p>
@@ -319,7 +319,7 @@ export default function CustomerDashboardPage() {
 
           <Link
             href="/dashboard/new-booking"
-            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs sm:text-sm text-center border border-slate-200 transition-colors block"
+            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs sm:text-sm text-center border border-slate-200 transition-colors block cursor-pointer"
           >
             Customize Service Add-Ons
           </Link>
@@ -336,7 +336,7 @@ export default function CustomerDashboardPage() {
 
           <Link
             href="/dashboard/bookings"
-            className="text-xs sm:text-sm font-extrabold text-[#007eff] hover:underline flex items-center gap-1"
+            className="text-xs sm:text-sm font-extrabold text-[#007eff] hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>View All Bookings</span>
             <ArrowRight className="w-4 h-4" />
@@ -362,7 +362,7 @@ export default function CustomerDashboardPage() {
                   <td className="p-4 pl-4 font-mono font-extrabold text-[#007eff]">
                     <button
                       onClick={() => setSelectedJobSpec(b)}
-                      className="hover:underline font-bold text-[#007eff]"
+                      className="hover:underline font-bold text-[#007eff] cursor-pointer"
                     >
                       {b.id}
                     </button>
@@ -370,7 +370,7 @@ export default function CustomerDashboardPage() {
                   <td className="p-4 font-extrabold text-slate-900">
                     <button
                       onClick={() => setSelectedJobSpec(b)}
-                      className="hover:text-[#007eff] text-left"
+                      className="hover:text-[#007eff] text-left cursor-pointer"
                     >
                       {b.service}
                     </button>
@@ -389,7 +389,7 @@ export default function CustomerDashboardPage() {
                         const inv = mockInvoices[b.id] || mockInvoices["CLN-2026-8891"];
                         setSelectedInvoice(inv);
                       }}
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#007eff] hover:underline bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200"
+                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#007eff] hover:underline bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" /> Invoice
                     </button>
