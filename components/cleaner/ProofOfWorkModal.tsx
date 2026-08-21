@@ -145,7 +145,7 @@ export default function ProofOfWorkModal({
             <div className="bg-amber-50/50 border border-amber-200 rounded-3xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-amber-900 text-xs sm:text-sm flex items-center gap-1.5">
-                  📸 Before Cleaning Photos
+                  Before Cleaning Photos
                 </h4>
                 <span className="text-[11px] font-bold text-amber-700">
                   {beforePhotos.length} Added
@@ -202,7 +202,7 @@ export default function ProofOfWorkModal({
             <div className="bg-emerald-50/50 border border-emerald-200 rounded-3xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-emerald-900 text-xs sm:text-sm flex items-center gap-1.5">
-                  ✨ After Cleaning Photos
+                After Cleaning Photos
                 </h4>
                 <span className="text-[11px] font-bold text-emerald-700">
                   {afterPhotos.length} Added

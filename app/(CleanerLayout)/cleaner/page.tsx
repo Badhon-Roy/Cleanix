@@ -111,7 +111,7 @@ export default function CleanerDashboardPage() {
   return (
     <div className="space-y-8 pb-12 w-full">
       {/* Duty Status & Shift Banner */}
-      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
+      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
         <div className="space-y-2">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
@@ -128,16 +128,16 @@ export default function CleanerDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            Welcome back, Supervisor Rahat Karim! Manage today&apos;s assigned cleaning visits, update GPS status, and upload before/after photos.
+            স্বাগতম সুপারভাইজার রাহাত করিম! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
           </p>
         </div>
 
         {/* Shift Toggle CTA Box */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl flex items-center gap-4 self-start md:self-auto">
           <div>
-            <p className="text-xs text-slate-300 font-bold uppercase">Current Duty Status</p>
+            <p className="text-xs text-slate-300 font-bold uppercase">বর্তমান ডিউটি অবস্থা</p>
             <p className="text-sm font-extrabold text-white mt-0.5">
-              {isOnDuty ? "Online / On-Duty" : "Offline / Off-Shift"}
+              {isOnDuty ? "অন-ডিউটি চালু" : "অফ-ডিউটি বন্ধ"}
             </p>
           </div>
 
@@ -150,59 +150,103 @@ export default function CleanerDashboardPage() {
                 : "bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300"
             }`}
           >
-            {isOnDuty ? "GO OFFLINE" : "GO ONLINE"}
+            {isOnDuty ? "অফলাইন যান" : "অনলাইন যান"}
           </button>
         </div>
       </div>
 
-      {/* KPI Cards Overview Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards Overview Grid - Flat Border Clean Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Today's Jobs Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
+        <div className="bg-gradient-to-br from-blue-50/70 via-white to-slate-50/40 border border-blue-200 rounded-3xl p-6 sm:p-7 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Assigned Today</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#007eff] flex items-center justify-center">
-              <Truck className="w-4 h-4" />
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
+              আজকের মোট ডিউটি কাজ
+            </span>
+            <div className="w-12 h-12 rounded-2xl bg-blue-100/80 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <Truck className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{jobs.length}</p>
-          <span className="text-[11px] text-blue-700 font-bold">Field dispatch</span>
+
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {jobs.length} <span className="text-xl font-bold text-slate-600">টি</span>
+            </p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-blue-800 bg-blue-100/80 px-3 py-1.5 rounded-full border border-blue-300 inline-block">
+                ⚡ ফিল্ড ডিসপ্যাচ অ্যাসাইনমেন্ট
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Completed Jobs Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
+        <div className="bg-gradient-to-br from-emerald-50/70 via-white to-slate-50/40 border border-emerald-200 rounded-3xl p-6 sm:p-7 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Jobs Completed</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
+              সম্পন্নকৃত কাজ
+            </span>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-emerald-700 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{completedCount}</p>
-          <span className="text-[11px] text-emerald-700 font-bold">Verified & done</span>
+
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {completedCount} <span className="text-xl font-bold text-slate-600">টি</span>
+            </p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-full border border-emerald-300 inline-block">
+                ✓ যাচাইকৃত & সম্পন্ন
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Daily Payout Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
+        <div className="bg-gradient-to-br from-amber-50/70 via-white to-slate-50/40 border border-amber-200 rounded-3xl p-6 sm:p-7 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Est. Daily Payout</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
+              আজকের আনুমানিক আয়
+            </span>
+            <div className="w-12 h-12 rounded-2xl bg-amber-100/80 text-amber-700 border border-amber-200 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">৳6,500</p>
-          <span className="text-[11px] text-amber-700 font-bold">Commission & bonus</span>
+
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              ৳৬,৫০০
+            </p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-full border border-amber-300 inline-block">
+                💰 কমিশন ও পারফরম্যান্স বোনাস
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Customer Rating Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-2">
+        <div className="bg-gradient-to-br from-purple-50/70 via-white to-slate-50/40 border border-purple-200 rounded-3xl p-6 sm:p-7 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Cleaner Rating</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Star className="w-4 h-4 fill-purple-600" />
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
+              পারফরম্যান্স রেটিং
+            </span>
+            <div className="w-12 h-12 rounded-2xl bg-purple-100/80 text-purple-700 border border-purple-200 flex items-center justify-center flex-shrink-0">
+              <Star className="w-6 h-6 fill-purple-600 stroke-[1.5]" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">4.95 ★</p>
-          <span className="text-[11px] text-purple-700 font-bold">VIP 5-Star Average</span>
+
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              4.95 <span className="text-amber-500">★</span>
+            </p>
+            <div className="pt-2">
+              <span className="text-xs font-bold text-purple-800 bg-purple-100/80 px-3 py-1.5 rounded-full border border-purple-300 inline-block">
+                ★ ভিআইপি ৫-স্টার গড় রেটিং
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -211,15 +255,15 @@ export default function CleanerDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-              <Truck className="w-5 h-5 text-[#007eff]" /> Today&apos;s Dispatch Schedule
+              <Truck className="w-5 h-5 text-[#007eff]" /> আজকের ডিসপ্যাচ সময়সূচী
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              One-tap update job status, launch Google Maps navigation, and upload before/after photos.
+              এক ক্লিকে কাজের স্ট্যাটাস আপডেট করুন, গুগল ম্যাপস নেভিগেশন চালু করুন এবং কাজের ছবি আপলোড করুন।
             </p>
           </div>
 
           <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 self-start sm:self-auto">
-            {completedCount} of {jobs.length} Jobs Completed
+            {jobs.length} টির মধ্যে {completedCount} টি কাজ সম্পন্ন
           </span>
         </div>
 
@@ -356,7 +400,7 @@ export default function CleanerDashboardPage() {
                         className="bg-blue-50 hover:bg-blue-100 text-[#007eff] font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-blue-200 flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Truck className="w-4 h-4" />
-                        <span>Start Travel (En Route)</span>
+                        <span>রওয়ানা হয়েছি</span>
                       </button>
                     )}
 
@@ -368,7 +412,7 @@ export default function CleanerDashboardPage() {
                         className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-amber-300 flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Clock className="w-4 h-4" />
-                        <span>Check-In & Start Cleaning</span>
+                        <span>কাজে উপস্থিত হয়েছি</span>
                       </button>
                     )}
 
@@ -380,7 +424,7 @@ export default function CleanerDashboardPage() {
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-2xl border border-emerald-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs"
                       >
                         <Camera className="w-4 h-4" />
-                        <span>Upload Proof & Complete Job</span>
+                        <span>ছবি আপলোড ও কাজ সম্পূর্ণ করুন</span>
                       </button>
                     )}
 
@@ -391,7 +435,7 @@ export default function CleanerDashboardPage() {
                         className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-2xl border border-slate-200 flex items-center gap-1.5 cursor-pointer"
                       >
                         <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>View Proof Photos</span>
+                        <span>কাজের ছবি দেখুন</span>
                       </button>
                     )}
                   </div>

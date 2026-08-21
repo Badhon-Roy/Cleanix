@@ -36,7 +36,6 @@ export default function CleanerSidebar({
     { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
     { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
-    { name: "Proof of Work", href: "/cleaner/proof-of-work", icon: Camera, badge: "Photos" },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
     { name: "Cleaner Profile", href: "/cleaner/profile", icon: UserCheck },
   ];
@@ -61,7 +60,7 @@ export default function CleanerSidebar({
                 PRO CLEANER
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">Field Staff Dispatch</p>
+            <p className="text-[11px] text-slate-500 font-medium">ফিল্ড স্টাফ ডিসপ্যাচ পোর্টাল</p>
           </div>
         </Link>
       </div>
@@ -75,7 +74,7 @@ export default function CleanerSidebar({
                 isOnDuty ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
               }`}
             />
-            Shift Status
+            Duty Status
           </span>
           <button
             type="button"
@@ -89,7 +88,7 @@ export default function CleanerSidebar({
             {isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}
           </button>
         </div>
-        <p className="text-[11px] text-slate-500 font-medium leading-snug">
+        <p className="text-sm text-red-600 font-medium leading-snug">
           Team Delta • Vehicle Unit #04 • Supervisor: Rahat Karim
         </p>
       </div>

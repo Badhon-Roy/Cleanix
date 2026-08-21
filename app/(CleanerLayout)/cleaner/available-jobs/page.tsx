@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Sparkles,
   MapPin,
@@ -17,6 +17,7 @@ import {
   Home,
   Check,
   Calendar,
+  ChevronDown,
 } from "lucide-react";
 
 interface AvailableJob {
@@ -38,9 +39,34 @@ export default function AvailableJobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("all");
 
+  // Custom Dropdown State & Ref
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const areaDropdownRef = useRef<HTMLDivElement>(null);
+
   // Application note modal state
   const [applyingJob, setApplyingJob] = useState<AvailableJob | null>(null);
   const [applicationNote, setApplicationNote] = useState("");
+
+  const areaOptions = [
+    { id: "all", label: "All Service Areas" },
+    { id: "gulshan-1", label: "Gulshan-1" },
+    { id: "banani", label: "Banani" },
+    { id: "dhanmondi", label: "Dhanmondi" },
+    { id: "uttara", label: "Uttara" },
+  ];
+
+  // Close area dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (areaDropdownRef.current && !areaDropdownRef.current.contains(event.target as Node)) {
+        setAreaDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const [availableJobs, setAvailableJobs] = useState<AvailableJob[]>([
     {
@@ -144,22 +170,23 @@ export default function AvailableJobsPage() {
               <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-6 h-6 stroke-[2.5]" />
               </div>
-              New Service Booking Marketplace
+              নতুন সার্ভিস বুকিং মার্কেটপ্লেস
             </h1>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ⚡ LIVE CUSTOMER REQUESTS
+              লাইভ কাস্টমার বুকিং
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            Browse newly booked customer cleaning jobs, request job assignments, and wait for admin approval.
+            গ্রাহকদের নতুন বুকিং করা কাজগুলো দেখুন, কাজের জন্য আবেদন করুন এবং এডমিন অনুমোদনের জন্য অপেক্ষা করুন।
           </p>
         </div>
       </div>
 
       {/* Main Container */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
-        {/* Navigation Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        {/* Navigation Tabs & Filters Row */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          {/* Tabs */}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -171,7 +198,7 @@ export default function AvailableJobsPage() {
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>Available Jobs ({unassignedCount})</span>
+              <span>উপলব্ধ নতুন কাজ ({unassignedCount})</span>
             </button>
 
             <button
@@ -184,24 +211,57 @@ export default function AvailableJobsPage() {
               }`}
             >
               <Hourglass className="w-4 h-4" />
-              <span>My Requests ({appliedCount})</span>
+              <span>আমার আবেদনসমূহ ({appliedCount})</span>
             </button>
           </div>
 
-          {/* Area Filter Selector & Search */}
+          {/* Area Custom Dropdown & Search */}
           <div className="flex items-center gap-3">
-            <select
-              value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#007eff]"
-            >
-              <option value="all">All Service Areas</option>
-              <option value="gulshan-1">Gulshan-1</option>
-              <option value="banani">Banani</option>
-              <option value="dhanmondi">Dhanmondi</option>
-              <option value="uttara">Uttara</option>
-            </select>
+            {/* Custom Area Dropdown */}
+            <div className="relative flex-shrink-0" ref={areaDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setAreaDropdownOpen(!areaDropdownOpen)}
+                className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2.5 transition-all cursor-pointer focus:outline-none focus:border-[#007eff] whitespace-nowrap flex-shrink-0"
+              >
+                <MapPin className="w-4 h-4 text-[#007eff] flex-shrink-0" />
+                <span className="whitespace-nowrap">
+                  {areaOptions.find((a) => a.id === selectedArea)?.label || "All Service Areas"}
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${
+                    areaDropdownOpen ? "rotate-180 text-[#007eff]" : ""
+                  }`}
+                />
+              </button>
 
+              {areaDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-xl z-30 text-xs font-bold space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {areaOptions.map((area) => (
+                    <button
+                      key={area.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedArea(area.id);
+                        setAreaDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                        selectedArea === area.id
+                          ? "bg-blue-50 text-[#007eff] font-extrabold"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>{area.label}</span>
+                      {selectedArea === area.id && (
+                        <Check className="w-4 h-4 text-[#007eff] stroke-[3]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Search Input Box */}
             <div className="relative max-w-xs w-full">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -209,7 +269,7 @@ export default function AvailableJobsPage() {
                 placeholder="Search jobs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -301,7 +361,7 @@ export default function AvailableJobsPage() {
                       className="bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-2xl border border-blue-400 flex items-center gap-2 transition-all cursor-pointer shadow-xs"
                     >
                       <Send className="w-4 h-4 stroke-[2.5]" />
-                      <span>Apply for this Job</span>
+                      <span>কাজের জন্য আবেদন করুন</span>
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
