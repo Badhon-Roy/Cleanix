@@ -138,9 +138,6 @@ export default function ManagePlansPage() {
               </div>
               Pricing Grid & Subscription Plans Manager
             </h1>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#007eff] border border-blue-200">
-              ⚡ LIVE CATALOG ENGINE
-            </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
             Manage subscription pricing grid cards, package feature lists, rates, and active statuses.

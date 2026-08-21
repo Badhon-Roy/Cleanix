@@ -368,11 +368,10 @@ export default function AdminOverviewPage() {
                 key={st}
                 type="button"
                 onClick={() => setFilterStatus(st)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold cursor-pointer transition-all ${
-                  filterStatus === st
+                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold cursor-pointer transition-all ${filterStatus === st
                     ? "bg-slate-900 text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {st}
               </button>
