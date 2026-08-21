@@ -130,24 +130,22 @@ export default function LiveJobTracker({
                 <div key={step.id} className="relative flex flex-col justify-between">
                   {/* Step Card Container */}
                   <div
-                    className={`h-full p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between space-y-4 relative ${
-                      isPassed
+                    className={`h-full p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between space-y-4 relative ${isPassed
                         ? "bg-gradient-to-br from-emerald-50/90 to-white border-emerald-300 text-slate-900"
                         : isCurrent
-                        ? "bg-gradient-to-br from-blue-50 to-white border-[#007eff] ring-2 ring-blue-300 text-slate-900"
-                        : "bg-slate-50/70 border-slate-200 text-slate-500"
-                    }`}
+                          ? "bg-gradient-to-br from-blue-50 to-white border-[#007eff] ring-2 ring-blue-300 text-slate-900"
+                          : "bg-slate-50/70 border-slate-200 text-slate-500"
+                      }`}
                   >
                     {/* Header: Circle Icon & Status Badge */}
                     <div className="flex items-center justify-between">
                       <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm sm:text-base transition-all duration-300 ${
-                          isPassed
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm sm:text-base transition-all duration-300 ${isPassed
                             ? "bg-emerald-500 text-white"
                             : isCurrent
-                            ? "bg-[#007eff] text-white ring-4 ring-blue-100 animate-pulse"
-                            : "bg-slate-200 text-slate-400"
-                        }`}
+                              ? "bg-[#007eff] text-white ring-4 ring-blue-100 animate-pulse"
+                              : "bg-slate-200 text-slate-400"
+                          }`}
                       >
                         {isPassed ? <CheckCircle className="w-6 h-6 stroke-[2.5]" /> : idx + 1}
                       </div>
@@ -168,28 +166,25 @@ export default function LiveJobTracker({
                     {/* Step Titles & Description */}
                     <div>
                       <h4
-                        className={`text-base sm:text-lg font-black leading-tight ${
-                          isFuture ? "text-slate-500" : "text-slate-900"
-                        }`}
+                        className={`text-base sm:text-lg font-black leading-tight ${isFuture ? "text-slate-500" : "text-slate-900"
+                          }`}
                       >
                         {step.label}
                       </h4>
                       <span
-                        className={`text-xs font-extrabold block mt-0.5 ${
-                          isPassed
+                        className={`text-xs font-extrabold block mt-0.5 ${isPassed
                             ? "text-emerald-700"
                             : isCurrent
-                            ? "text-[#007eff]"
-                            : "text-slate-400"
-                        }`}
+                              ? "text-[#007eff]"
+                              : "text-slate-400"
+                          }`}
                       >
                         ({step.bnLabel})
                       </span>
 
                       <p
-                        className={`text-xs sm:text-sm mt-2 font-medium leading-snug ${
-                          isFuture ? "text-slate-400" : "text-slate-600"
-                        }`}
+                        className={`text-xs sm:text-sm mt-2 font-medium leading-snug ${isFuture ? "text-slate-400" : "text-slate-600"
+                          }`}
                       >
                         {step.desc}
                       </p>
@@ -198,13 +193,12 @@ export default function LiveJobTracker({
                     {/* Modern Professional Timestamp Badge */}
                     <div className="pt-2">
                       <div
-                        className={`inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl border transition-all ${
-                          isPassed
+                        className={`inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl border transition-all ${isPassed
                             ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                             : isCurrent
-                            ? "bg-blue-50 text-[#007eff] border-blue-300 font-black"
-                            : "bg-slate-100/90 text-slate-500 border-slate-200"
-                        }`}
+                              ? "bg-blue-50 text-[#007eff] border-blue-300 font-black"
+                              : "bg-slate-100/90 text-slate-500 border-slate-200"
+                          }`}
                       >
                         {isCurrent ? (
                           <span className="relative flex h-2 w-2">
@@ -213,9 +207,8 @@ export default function LiveJobTracker({
                           </span>
                         ) : (
                           <Clock
-                            className={`w-3.5 h-3.5 flex-shrink-0 ${
-                              isPassed ? "text-emerald-600" : "text-slate-400"
-                            }`}
+                            className={`w-3.5 h-3.5 flex-shrink-0 ${isPassed ? "text-emerald-600" : "text-slate-400"
+                              }`}
                           />
                         )}
                         <span>{step.time}</span>
@@ -227,13 +220,12 @@ export default function LiveJobTracker({
                   {!isLast && (
                     <div className="hidden md:flex absolute -right-6 top-1/2 -translate-y-1/2 z-20 items-center">
                       <div
-                        className={`pr-3 pl-2 py-1.5 flex items-center justify-center font-extrabold text-white transition-all duration-300 border-y-2 border-l-2 border-white filter drop-shadow-sm ${
-                          isPassed
+                        className={`pr-3 pl-2 py-1.5 flex items-center justify-center font-extrabold text-white transition-all duration-300 border-y-2 border-l-2 border-white filter drop-shadow-sm ${isPassed
                             ? "bg-gradient-to-r from-emerald-500 to-teal-500"
                             : isCurrent
-                            ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-cyan-500 animate-pulse"
-                            : "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700"
-                        }`}
+                              ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-cyan-500 animate-pulse"
+                              : "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700"
+                          }`}
                         style={{
                           clipPath: "polygon(0% 0%, 72% 0%, 100% 50%, 72% 100%, 0% 100%)",
                           borderRadius: "6px 0 0 6px",
@@ -248,13 +240,12 @@ export default function LiveJobTracker({
                   {!isLast && (
                     <div className="md:hidden flex justify-center py-2.5">
                       <div
-                        className={`pb-2 pt-1 px-2.5 flex items-center justify-center border-2 border-white ${
-                          isPassed
+                        className={`pb-2 pt-1 px-2.5 flex items-center justify-center border-2 border-white ${isPassed
                             ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
                             : isCurrent
-                            ? "bg-gradient-to-r from-[#007eff] to-cyan-500 text-white animate-pulse"
-                            : "bg-gradient-to-r from-slate-200 to-slate-300 text-slate-600"
-                        }`}
+                              ? "bg-gradient-to-r from-[#007eff] to-cyan-500 text-white animate-pulse"
+                              : "bg-gradient-to-r from-slate-200 to-slate-300 text-slate-600"
+                          }`}
                         style={{
                           clipPath: "polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%)",
                         }}
