@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Users,
   Search,
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   CreditCard,
   Eye,
+  Sliders,
 } from "lucide-react";
 
 export default function AdminCustomersPage() {
@@ -108,6 +110,15 @@ export default function AdminCustomersPage() {
             Manage residential & B2B commercial customer accounts, active monthly subscription plans, and lifetime spent.
           </p>
         </div>
+
+        {/* Top Right "Manage Plan" Button Redirects to Page */}
+        <Link
+          href="/admin/manage-plans"
+          className="px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-[#007eff] hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2 self-start sm:self-auto"
+        >
+          <Sliders className="w-4 h-4 stroke-[2.5]" />
+          <span>Manage Plan</span>
+        </Link>
       </div>
 
       {/* Main Container */}

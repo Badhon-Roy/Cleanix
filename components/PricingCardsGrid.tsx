@@ -102,11 +102,10 @@ export default function PricingCardsGrid({
         return (
           <div
             key={plan.id}
-            className={`rounded-3xl p-7 sm:p-9 bg-white flex flex-col justify-between relative transition-all duration-300 ${
-              isPopular
+            className={`rounded-3xl p-7 sm:p-9 bg-white flex flex-col justify-between relative transition-all duration-300 ${isPopular
                 ? "border-2 border-[#007eff] md:-translate-y-2 z-10"
                 : "border border-slate-200/90"
-            }`}
+              }`}
           >
             {/* Top Badges */}
             {isPopular && (
@@ -135,9 +134,8 @@ export default function PricingCardsGrid({
               </h3>
 
               <p
-                className={`font-extrabold text-xs sm:text-sm mb-6 ${
-                  isPopular ? "text-[#007eff]" : "text-slate-500"
-                }`}
+                className={`font-extrabold text-xs sm:text-sm mb-6 ${isPopular ? "text-[#007eff]" : "text-slate-500"
+                  }`}
               >
                 {plan.subtitleBn}
               </p>
@@ -163,19 +161,17 @@ export default function PricingCardsGrid({
               ) : onSelectPlan ? (
                 <button
                   onClick={() => onSelectPlan(plan.id)}
-                  className={`font-semibold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between transition-all duration-300 hover:scale-[1.02] mb-8 cursor-pointer ${
-                    plan.id === "PREMIUM"
+                  className={`font-semibold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between transition-all duration-300 hover:scale-[1.02] mb-8 cursor-pointer ${plan.id === "PREMIUM"
                       ? "bg-[#001837] hover:bg-[#0d274c] text-white border border-slate-800"
                       : "bg-[#007eff] hover:bg-[#0066ee] text-white border border-blue-400"
-                  }`}
+                    }`}
                 >
                   <span>{plan.ctaText}</span>
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                      plan.id === "PREMIUM"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center ${plan.id === "PREMIUM"
                         ? "bg-[#007eff] text-white"
                         : "bg-white text-[#007eff]"
-                    }`}
+                      }`}
                   >
                     <ChevronRight className="w-4 h-4 stroke-[3]" />
                   </div>
@@ -183,19 +179,17 @@ export default function PricingCardsGrid({
               ) : (
                 <Link
                   href={plan.ctaHref || "/contact"}
-                  className={`font-semibold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between transition-all duration-300 hover:scale-[1.02] mb-8 cursor-pointer ${
-                    plan.id === "PREMIUM"
+                  className={`font-semibold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between transition-all duration-300 hover:scale-[1.02] mb-8 cursor-pointer ${plan.id === "PREMIUM"
                       ? "bg-[#001837] hover:bg-[#0d274c] text-white border border-slate-800"
                       : "bg-[#007eff] hover:bg-[#0066ee] text-white border border-blue-400"
-                  }`}
+                    }`}
                 >
                   <span>{plan.ctaText}</span>
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                      plan.id === "PREMIUM"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center ${plan.id === "PREMIUM"
                         ? "bg-[#007eff] text-white"
                         : "bg-white text-[#007eff]"
-                    }`}
+                      }`}
                   >
                     <ChevronRight className="w-4 h-4 stroke-[3]" />
                   </div>
