@@ -71,7 +71,7 @@ function GoogleIcon() {
 
 type AccountType = "CUSTOMER" | "CLEANER";
 type Gender = "Male" | "Female" | "Other";
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -447,8 +447,8 @@ export default function RegisterPage() {
       </header>
 
       {/* Main Centered Container */}
-      <main className="flex-1 flex items-center justify-center my-auto py-4">
-        <div className="w-full max-w-2xl mx-auto">
+      <main className="flex-1 flex items-center justify-center my-auto py-4 sm:py-6">
+        <div className="w-full max-w-3xl lg:max-w-4xl mx-auto">
           {/* Main Card Container with Same Border & Top Glow as Login */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-9 shadow-xl shadow-slate-300/30 relative">
             {/* Top Glowing Edge (Same as Login Page) */}
@@ -484,7 +484,7 @@ export default function RegisterPage() {
               {/* Step 2 Pill */}
               <div
                 onClick={() => {
-                  if (step > 2 || watch("fullName")) setStep(2);
+                  if (step > 2) setStep(2);
                 }}
                 className={`flex items-center gap-2 transition-all cursor-pointer ${
                   step === 2
@@ -510,34 +510,63 @@ export default function RegisterPage() {
                 </span>
               </div>
 
-              {/* Step 3 Pill (Cleaner Verification) */}
+              <div className="flex-1 h-[2px] mx-2 sm:mx-3 bg-gradient-to-r from-slate-200 via-blue-100 to-slate-200 rounded-full" />
+
+              {/* Step 3 Pill (Email Verification) */}
+              <div
+                onClick={() => {
+                  if (step > 3 || (step === 2 && pendingStep2Data)) setStep(3);
+                }}
+                className={`flex items-center gap-2 transition-all cursor-pointer ${
+                  step === 3
+                    ? "text-[#007eff] font-bold"
+                    : step > 3
+                    ? "text-emerald-600 hover:text-emerald-700 font-semibold"
+                    : "text-slate-400 font-medium"
+                }`}
+              >
+                <span
+                  className={`w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center text-xs sm:text-sm font-extrabold transition-all duration-150 cursor-pointer ${
+                    step === 3
+                      ? "bg-[#007eff] text-white shadow-md shadow-blue-500/35 ring-4 ring-blue-500/15"
+                      : step > 3
+                      ? "bg-emerald-100 text-emerald-700 shadow-xs"
+                      : "bg-slate-100 text-slate-400"
+                  }`}
+                >
+                  {step > 3 ? <Check className="w-4 h-4 stroke-[3]" /> : "3"}
+                </span>
+                <span className="text-xs sm:text-sm tracking-tight font-bold cursor-pointer">
+                  3. Verify Email
+                </span>
+              </div>
+
+              {/* Step 4 Pill (Cleaner Profile - Only for CLEANER) */}
               {accountType === "CLEANER" && (
                 <>
                   <div className="flex-1 h-[2px] mx-2 sm:mx-3 bg-gradient-to-r from-slate-200 via-blue-100 to-slate-200 rounded-full" />
 
                   <div
                     onClick={() => {
-                      if (watch("fullName") && watch("email") && watch("phone")) setStep(3);
+                      if (isEmailVerified) setStep(4);
                     }}
                     className={`flex items-center gap-2 transition-all cursor-pointer ${
-                      step === 3
+                      step === 4
                         ? "text-[#007eff] font-bold"
-                        : step > 2
-                        ? "text-[#11233F] font-semibold"
                         : "text-slate-400 font-medium"
                     }`}
                   >
                     <span
                       className={`w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center text-xs sm:text-sm font-extrabold transition-all duration-150 cursor-pointer ${
-                        step === 3
+                        step === 4
                           ? "bg-[#007eff] text-white shadow-md shadow-blue-500/35 ring-4 ring-blue-500/15"
                           : "bg-slate-100 text-slate-400"
                       }`}
                     >
-                      3
+                      4
                     </span>
                     <span className="text-xs sm:text-sm tracking-tight font-bold cursor-pointer">
-                      3. Cleaner Profile
+                      4. Cleaner Profile
                     </span>
                   </div>
                 </>
@@ -1017,10 +1046,10 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* STEP 3: CLEANER VERIFICATION */}
-            {step === 3 && accountType === "CLEANER" && (
-              <div>
-                {/* Back to Step 2 */}
+            {/* STEP 3: EMAIL OTP VERIFICATION */}
+            {step === 3 && (
+              <div className="space-y-6">
+                {/* Back to Step 2 Header */}
                 <div className="flex items-center justify-between mb-5 bg-slate-50 p-2.5 sm:p-3 rounded-full border border-slate-200 text-xs">
                   <button
                     type="button"
@@ -1029,6 +1058,106 @@ export default function RegisterPage() {
                   >
                     <ArrowLeft className="w-3.5 h-3.5 text-blue-600" />
                     <span>Back to Account Info</span>
+                  </button>
+
+                  <div className="flex items-center gap-2 pr-1.5">
+                    <span className="text-slate-500 font-medium">Selected Role:</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#007eff] text-white font-extrabold text-xs">
+                      {accountType === "CUSTOMER" ? "Customer" : "Cleaner Staff"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-1.5 mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto mb-2 shadow-xs">
+                    <ShieldCheck className="w-7 h-7 text-[#007eff]" />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#11233F] tracking-tight">
+                    Verify Your Email Address
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    We have sent a 6-digit verification code to: <br />
+                    <strong className="text-[#11233F] font-bold">
+                      {pendingStep2Data?.email || watch("email")}
+                    </strong>
+                  </p>
+                </div>
+
+                {/* 6 Digit Input Grid */}
+                <div className="flex items-center justify-center gap-2 sm:gap-3 py-2">
+                  {otpDigits.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={registerOtpRefs[idx]}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpDigitKeyDown(idx, e)}
+                      className="w-11 h-12 sm:w-13 sm:h-14 bg-slate-50 border border-slate-300 focus:border-[#007eff] focus:bg-white focus:ring-4 focus:ring-blue-500/15 rounded-xl text-center text-xl sm:text-2xl font-bold font-mono text-[#11233F] transition-all"
+                    />
+                  ))}
+                </div>
+
+                {/* Timer & Resend Option */}
+                <div className="flex items-center justify-between text-xs px-2 max-w-sm mx-auto">
+                  <span className="text-slate-500 font-medium">
+                    Expires in: <strong className="text-blue-600 font-mono font-bold">{formatTimer(timerSeconds)}</strong>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendEmailOtp(pendingStep2Data?.email || watch("email"))}
+                    disabled={!canResendOtp || isSendingOtp}
+                    className="font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                  >
+                    {isSendingOtp && <RefreshCw className="w-3 h-3 animate-spin" />}
+                    <span>Resend Code</span>
+                  </button>
+                </div>
+
+                {/* Submit CTA */}
+                <div className="pt-2 space-y-3 max-w-md mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyEmailOtp(pendingStep2Data?.email || watch("email"))}
+                    disabled={isVerifyingOtp || otpDigits.join("").length !== 6}
+                    className="w-full bg-gradient-to-r from-[#007eff] via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.99] text-white font-bold py-3 sm:py-3.5 px-4 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-150 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isVerifyingOtp ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Verifying Code...</span>
+                      </>
+                    ) : accountType === "CLEANER" ? (
+                      <>
+                        <span>Verify & Continue to Profile</span>
+                        <ArrowRight className="w-4.5 h-4.5 stroke-[2.5]" />
+                      </>
+                    ) : (
+                      <>
+                        <span>Verify & Complete Registration</span>
+                        <ArrowRight className="w-4.5 h-4.5 stroke-[2.5]" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: CLEANER VERIFICATION PROFILE (Cleaner Only) */}
+            {step === 4 && accountType === "CLEANER" && (
+              <div>
+                {/* Back to Step 2 */}
+                <div className="flex items-center justify-between mb-5 bg-slate-50 p-2.5 sm:p-3 rounded-full border border-slate-200 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    className="text-slate-600 hover:text-[#11233F] font-bold flex items-center gap-1.5 pl-2 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Back to Email Verification</span>
                   </button>
 
                   <div className="flex items-center gap-2 pr-1.5">
@@ -1418,102 +1547,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
-
-      {/* Dedicated Email OTP Verification Modal Overlay */}
-      {isOtpModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center space-y-5 animate-in zoom-in-95 duration-200">
-            {/* Close / Dismiss Button */}
-            <button
-              type="button"
-              onClick={() => setIsOtpModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-
-            {/* Top Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto shadow-xs">
-              <ShieldCheck className="w-8 h-8 text-[#007eff]" />
-            </div>
-
-            {/* Modal Title */}
-            <div>
-              <h3 className="text-2xl font-extrabold text-[#11233F]">
-                Verify Email Address
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
-                Enter the 6-digit verification code sent to: <br />
-                <strong className="text-[#11233F] font-bold">{watch("email")}</strong>
-              </p>
-            </div>
-
-            {/* 6 Digit Input Grid */}
-            <div className="flex items-center justify-center gap-2 sm:gap-2.5 py-2">
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={registerOtpRefs[idx]}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpDigitKeyDown(idx, e)}
-                  className="w-11 h-12 sm:w-12 sm:h-14 bg-slate-50 border border-slate-300 focus:border-[#007eff] focus:bg-white focus:ring-4 focus:ring-blue-500/15 rounded-xl text-center text-xl sm:text-2xl font-bold font-mono text-[#11233F] transition-all"
-                />
-              ))}
-            </div>
-
-            {/* Timer & Resend Option */}
-            <div className="flex items-center justify-between text-xs px-1">
-              <span className="text-slate-500 font-medium">
-                Expires in: <strong className="text-blue-600 font-mono font-bold">{formatTimer(timerSeconds)}</strong>
-              </span>
-
-              <button
-                type="button"
-                onClick={() => handleSendEmailOtp(watch("email"))}
-                disabled={!canResendOtp || isSendingOtp}
-                className="font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
-              >
-                {isSendingOtp && <RefreshCw className="w-3 h-3 animate-spin" />}
-                <span>Resend Code</span>
-              </button>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-2 space-y-2.5">
-              <button
-                type="button"
-                onClick={() => handleVerifyEmailOtp(watch("email"))}
-                disabled={isVerifyingOtp || otpDigits.join("").length !== 6}
-                className="w-full bg-gradient-to-r from-[#007eff] via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-150 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isVerifyingOtp ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Verifying Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Verify Code & Continue</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsOtpModalOpen(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-[#11233F] font-bold py-2.5 px-4 rounded-full text-xs transition-colors cursor-pointer"
-              >
-                Cancel & Change Email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
