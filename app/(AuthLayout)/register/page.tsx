@@ -364,18 +364,17 @@ export default function RegisterPage() {
         return;
       }
 
-      const payload = {
-        name: credentials.fullName,
-        email: credentials.email,
-        phone: credentials.phone,
-        password: credentials.password,
-        role: accountType,
-        avatar: avatarPreview || undefined,
-        dob: isCleaner ? dob : undefined,
-        gender: isCleaner ? gender : undefined,
-      };
+      const formData = new FormData();
+      formData.append("name", credentials.fullName);
+      formData.append("email", credentials.email);
+      formData.append("phone", credentials.phone);
+      formData.append("password", credentials.password);
+      formData.append("role", accountType);
+      if (avatarPreview) formData.append("avatar", avatarPreview);
+      if (isCleaner && dob) formData.append("dob", dob);
+      if (isCleaner && gender) formData.append("gender", gender);
 
-      const res = await registerUserAPI(payload);
+      const res = await registerUserAPI(formData);
 
       if (!res?.success) {
         toast.error(res?.message || "Registration failed. Please try again.");

@@ -65,15 +65,16 @@ export const registerUserAPI = async (payload: IRegisterPayload | FormData) => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const isFormData =
-      typeof FormData !== "undefined" &&
-      (payload instanceof FormData || typeof (payload as any)?.get === "function");
-
-    if (isFormData) {
+    if (typeof FormData !== "undefined" && payload instanceof FormData) {
       body = payload;
     } else {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify(payload);
+      body = new FormData();
+      const obj = (payload || {}) as Record<string, any>;
+      Object.keys(obj).forEach((key) => {
+        if (obj[key] !== undefined && obj[key] !== null) {
+          body.append(key, String(obj[key]));
+        }
+      });
     }
 
     const res = await fetch(`${baseUrl}/auth/register`, {
