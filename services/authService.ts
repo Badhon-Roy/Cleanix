@@ -3,8 +3,6 @@
 import { IGoogleLoginPayload, ILoginPayload, IRegisterPayload } from "@/types";
 import { setAuthToken, removeAuthToken, getAuthToken } from "@/utils/cookie";
 
-export { setAuthToken, removeAuthToken, getAuthToken };
-
 const getBaseUrl = () => {
   return (
     process.env.NEXT_PUBLIC_API_URL ||
@@ -27,7 +25,7 @@ const getHeaders = () => {
   return headers;
 };
 
-export const getGoogleAuthUrl = () => {
+export const getGoogleAuthUrl = async () => {
   return `${getBaseUrl()}/auth/google`;
 };
 

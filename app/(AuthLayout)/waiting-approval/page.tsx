@@ -13,8 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
-import { removeAuthToken } from "@/services/authService";
-import { getAuthUser, setAuthUser, removeAuthUser, removeAuthRole } from "@/utils/cookie";
+import { getAuthUser, setAuthUser, removeAuthUser, removeAuthRole, removeAuthToken } from "@/utils/cookie";
 
 export default function WaitingApprovalPage() {
   const router = useRouter();

@@ -143,12 +143,12 @@ export default function LoginPage() {
   };
 
   // Google OAuth Handler
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     toast.info("Redirecting to Google Sign-In...", {
       description: "Connecting to Google OAuth 2.0 service",
     });
-    const googleUrl = getGoogleAuthUrl();
+    const googleUrl = await getGoogleAuthUrl();
     window.location.href = `${googleUrl}?role=CUSTOMER`;
   };
 
