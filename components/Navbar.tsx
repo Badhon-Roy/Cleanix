@@ -91,10 +91,10 @@ export default function Navbar() {
         {/* CTA Get a Quote Button */}
         <div className="hidden sm:flex items-center">
           <Link
-            href="/contact"
+            href="/login"
             className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-[14px] pl-5 pr-1.5 py-1.5 rounded-full flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]"
           >
-            <span>Get a Quote</span>
+            <span>Login</span>
             <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#007eff] shadow-sm">
               <ChevronRight className="w-4 h-4 stroke-[3]" />
             </div>
