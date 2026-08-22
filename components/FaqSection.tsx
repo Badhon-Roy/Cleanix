@@ -4,53 +4,27 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const faqList = [
-  {
-    id: 1,
-    number: "01",
-    question: "ক্লিনিং সার্ভিস সম্পন্ন করতে কত সময় লাগে?",
-    answer:
-      "সম্পত্তির স্কয়ার ফিট (SqFt) ও রুমের ওপর ভিত্তি করে সাধারণত ৩ থেকে ৬ ঘণ্টা সময় লাগে। ক্লিনার টিম পৌঁছানোর আগেই আপনাকে নিখুঁত টাইমলাইন জানিয়ে দেওয়া হবে।",
-  },
-  {
-    id: 2,
-    number: "02",
-    question: "আমাকে কি পরিষ্কারের কোনো সরঞ্জাম বা কেমিক্যাল দিতে হবে?",
-    answer:
-      "একদমই না! আমাদের পেশাদার টিম আন্তর্জাতিক মানের সেফ কেমিক্যালস, ভ্যাকুয়াম অ্যান্ড ড্রাইয়ার এবং স্যানিটাইজিং ইক্যুইপমেন্ট নিজেদের সাথে নিয়ে আসে।",
-  },
-  {
-    id: 3,
-    number: "03",
-    question: "ঢাকার কোন কোন এলাকায় আপনাদের সার্ভিস চালু আছে?",
-    answer:
-      "বর্তমানে গুলশান, বনানী, উত্তরা, ধানমন্ডি, মিরপুর, মতিঝিল, বসুন্ধরা আবাসিক এলাকা এবং ঢাকা মেট্রোপলিটনের সমস্ত প্রধান বাণিজ্যিক ও আবাসিক এলাকায় সার্ভিস এভেইলএবল।",
-  },
-  {
-    id: 4,
-    number: "04",
-    question: "আমি কি মাসিক সাবস্ক্রিপশন বা নিয়মিত সার্ভিস নিতে পারব?",
-    answer:
-      "হ্যাঁ! আপনি আমাদের Basic (৳6,000/মাস), Standard (৳14,000/মাস) বা Premium (৳30,000/মাস) প্ল্যান বেছে নিয়ে রেগুলার সাপ্তাহিক/পাক্ষিক অটোমেটেড সার্ভিস নিতে পারেন।",
-  },
-];
-
 import {
   getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
+  FaqItem,
 } from "@/lib/homeCMSData";
 
 export default function FaqSection() {
-  const [openId, setOpenId] = useState<number | null>(1);
+  const [openId, setOpenId] = useState<number | string | null>(1);
   const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
 
   useEffect(() => {
-    setCmsData(getStoredHomeCMSData());
+    const loaded = getStoredHomeCMSData();
+    setCmsData(loaded);
+    if (loaded.faqItems && loaded.faqItems.length > 0) {
+      setOpenId(loaded.faqItems[0].id);
+    }
 
     const handleUpdate = () => {
-      setCmsData(getStoredHomeCMSData());
+      const updated = getStoredHomeCMSData();
+      setCmsData(updated);
     };
 
     window.addEventListener("cleanix_home_cms_updated", handleUpdate);
@@ -59,7 +33,12 @@ export default function FaqSection() {
     };
   }, []);
 
-  const toggleFaq = (id: number) => {
+  const faqItemsList: FaqItem[] =
+    cmsData.faqItems && cmsData.faqItems.length > 0
+      ? cmsData.faqItems
+      : defaultHomeCMSData.faqItems;
+
+  const toggleFaq = (id: number | string) => {
     setOpenId(openId === id ? null : id);
   };
 
@@ -80,27 +59,29 @@ export default function FaqSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: FAQ Accordion Container */}
           <div className="lg:col-span-6 bg-[#f3f5f8] rounded-3xl p-4 sm:p-6 md:p-7 border border-slate-200/60 flex flex-col gap-4">
-            {faqList.map((faq) => {
+            {faqItemsList.map((faq, idx) => {
               const isOpen = openId === faq.id;
+              const formattedNumber = String(idx + 1).padStart(2, "0");
 
               return (
                 <div
-                  key={faq.id}
+                  key={faq.id || idx}
                   onClick={() => toggleFaq(faq.id)}
-                  className={`bg-white rounded-2xl p-5 sm:p-6 border transition-all duration-300 cursor-pointer shadow-xs ${isOpen
-                      ? "border-[#007eff]/50 shadow-md"
-                      : "border-slate-100 hover:border-slate-300"
-                    }`}
+                  className={`bg-white rounded-2xl p-5 sm:p-6 border transition-all duration-300 cursor-pointer ${
+                    isOpen
+                      ? "border-[#007eff] bg-blue-50/20"
+                      : "border-slate-200/80 hover:border-slate-300"
+                  }`}
                 >
                   {/* Question Header */}
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="text-[#001837] font-extrabold text-base sm:text-lg leading-snug">
-                      {faq.number}. {faq.question}
+                      {formattedNumber}. {faq.question}
                     </h3>
                     <motion.div
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="w-8 h-8 rounded-full bg-[#007eff] text-white flex items-center justify-center flex-shrink-0 shadow-xs"
+                      className="w-8 h-8 rounded-full bg-[#007eff] text-white flex items-center justify-center flex-shrink-0"
                     >
                       {isOpen ? (
                         <X className="w-5 h-5 stroke-[2.5]" />
@@ -140,7 +121,7 @@ export default function FaqSection() {
           </div>
 
           {/* Right Column: Feature Image Card */}
-          <div className="lg:col-span-6 relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-3xl overflow-hidden shadow-md border border-slate-100">
+          <div className="lg:col-span-6 relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-3xl overflow-hidden border border-slate-200/80">
             <Image
               src="https://framerusercontent.com/images/UaZYgh11hZSeJVH37MEKUXPqJb0.png?width=708&height=450"
               alt="Two Professional Cleaners at Work"

@@ -1,5 +1,11 @@
 "use client";
 
+export interface FaqItem {
+  id: number | string;
+  question: string;
+  answer: string;
+}
+
 export interface HomeCMSContent {
   // Hero Banner Section
   heroBadge: string;
@@ -52,11 +58,13 @@ export interface HomeCMSContent {
   servicesTitleLine1: string;
   servicesTitleHighlight: string;
   servicesTitleLine2: string;
+  servicesSubtitle: string;
 
-  // FAQ Section Header
+  // FAQ Section Header & Dynamic Items
   faqBadge: string;
   faqTitle: string;
   faqHotlinePhone: string;
+  faqItems: FaqItem[];
 }
 
 export const defaultHomeCMSData: HomeCMSContent = {
@@ -122,13 +130,41 @@ export const defaultHomeCMSData: HomeCMSContent = {
   servicesTitleLine1: "PROFESSIONAL",
   servicesTitleHighlight: "CLEANING",
   servicesTitleLine2: "SERVICES FOR EVERY SPACE",
+  servicesSubtitle:
+    "দক্ষ টিম, আন্তর্জাতিক মানের সেফ কেমিক্যালস, রিয়েল-টাইম জিপিএস ট্র্যাকিং এবং ডিজিটাল ইনভয়েসসহ প্রিমিয়াম সার্ভিস।",
 
   faqBadge: "FAQ & HELP",
   faqTitle: "FREQUENTLY ASKED QUESTIONS",
   faqHotlinePhone: "+880 1774-500815",
+  faqItems: [
+    {
+      id: 1,
+      question: "ক্লিনিং সার্ভিস সম্পন্ন করতে কত সময় লাগে?",
+      answer:
+        "সম্পত্তির স্কয়ার ফিট (SqFt) ও রুমের ওপর ভিত্তি করে সাধারণত ৩ থেকে ৬ ঘণ্টা সময় লাগে। ক্লিনার টিম পৌঁছানোর আগেই আপনাকে নিখুঁত টাইমলাইন জানিয়ে দেওয়া হবে।",
+    },
+    {
+      id: 2,
+      question: "আমাকে কি পরিষ্কারের কোনো সরঞ্জাম বা কেমিক্যাল দিতে হবে?",
+      answer:
+        "একদমই না! আমাদের পেশাদার টিম আন্তর্জাতিক মানের সেফ কেমিক্যালস, ভ্যাকুয়াম অ্যান্ড ড্রাইয়ার এবং স্যানিটাইজিং ইক্যুইপমেন্ট নিজেদের সাথে নিয়ে আসে।",
+    },
+    {
+      id: 3,
+      question: "ঢাকার কোন কোন এলাকায় আপনাদের সার্ভিস চালু আছে?",
+      answer:
+        "বর্তমানে গুলশান, বনানী, উত্তরা, ধানমন্ডি, মিরপুর, মতিঝিল, বসুন্ধরা আবাসিক এলাকা এবং ঢাকা মেট্রোপলিটনের সমস্ত প্রধান বাণিজ্যিক ও আবাসিক এলাকায় সার্ভিস এভেইলএবল।",
+    },
+    {
+      id: 4,
+      question: "আমি কি মাসিক সাবস্ক্রিপশন বা নিয়মিত সার্ভিস নিতে পারব?",
+      answer:
+        "হ্যাঁ! আপনি আমাদের Basic (৳6,000/মাস), Standard (৳14,000/মাস) বা Premium (৳30,000/মাস) প্ল্যান বেছে নিয়ে রেগুলার সাপ্তাহিক/পাক্ষিক অটোমেটেড সার্ভিস নিতে পারেন।",
+    },
+  ],
 };
 
-export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v4";
+export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v6";
 
 export function getStoredHomeCMSData(): HomeCMSContent {
   if (typeof window === "undefined") return defaultHomeCMSData;

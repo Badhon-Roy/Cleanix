@@ -94,9 +94,16 @@ export default function OurServices() {
 
           {/* Subtitle Description (Right) */}
           <div className="lg:max-w-md">
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              দক্ষ টিম, আন্তর্জাতিক মানের সেফ কেমিক্যালস, রিয়েল-টাইম জিপিএস ট্র্যাকিং এবং ডিজিটাল ইনভয়েসসহ প্রিমিয়াম সার্ভিস।
-            </p>
+            {cmsData.servicesSubtitle ? (
+              <div
+                className="text-slate-600 text-sm sm:text-base leading-relaxed [&_p]:mb-2"
+                dangerouslySetInnerHTML={{ __html: cmsData.servicesSubtitle }}
+              />
+            ) : (
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                দক্ষ টিম, আন্তর্জাতিক মানের সেফ কেমিক্যালস, রিয়েল-টাইম জিপিএস ট্র্যাকিং এবং ডিজিটাল ইনভয়েসসহ প্রিমিয়াম সার্ভিস।
+              </p>
+            )}
           </div>
         </div>
 

@@ -7,7 +7,6 @@ import {
   ExternalLink,
   Sparkles,
   Sliders,
-  DollarSign,
   ShieldCheck,
   HelpCircle,
   Home as HomeIcon,
@@ -21,12 +20,13 @@ import {
   getStoredHomeCMSData,
   saveHomeCMSData,
   HomeCMSContent,
+  FaqItem,
 } from "@/lib/homeCMSData";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 interface HomeCMSManagerProps {
-  activeTab: "homePage" | "hero" | "impact" | "services" | "pricing" | "whyUs" | "faq";
+  activeTab: "homePage" | "hero" | "impact" | "services" | "whyUs" | "faq";
 }
 
 function ChecklistArrayEditor({
@@ -97,9 +97,112 @@ function ChecklistArrayEditor({
   );
 }
 
+function FaqItemsArrayEditor({
+  items,
+  onChange,
+}: {
+  items: FaqItem[];
+  onChange: (items: FaqItem[]) => void;
+}) {
+  const safeItems = Array.isArray(items) ? items : [];
+
+  const handleAdd = () => {
+    const newFaq: FaqItem = {
+      id: Date.now(),
+      question: "",
+      answer: "",
+    };
+    onChange([...safeItems, newFaq]);
+  };
+
+  const handleRemove = (index: number) => {
+    onChange(safeItems.filter((_, i) => i !== index));
+  };
+
+  const handleChangeQuestion = (index: number, val: string) => {
+    const next = [...safeItems];
+    next[index] = { ...next[index], question: val };
+    onChange(next);
+  };
+
+  const handleChangeAnswer = (index: number, val: string) => {
+    const next = [...safeItems];
+    next[index] = { ...next[index], answer: val };
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-4 pt-4 border-t border-slate-200">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h4 className="font-bold text-[#11233F] text-sm">Interactive FAQ Accordion Questions List</h4>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Add new FAQs, edit questions &amp; answers, or delete items live.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#007eff] hover:bg-blue-600 text-white transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add New FAQ</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {safeItems.map((faq, idx) => (
+          <div key={faq.id || idx} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="text-xs font-black text-[#007eff]">
+                FAQ #{String(idx + 1).padStart(2, "0")}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemove(idx)}
+                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+                title="Delete FAQ"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#11233F]">FAQ Question Text:</label>
+                <textarea
+                  rows={3}
+                  value={faq.question}
+                  onChange={(e) => handleChangeQuestion(idx, e.target.value)}
+                  placeholder="Enter FAQ question in Bangla or English..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[#11233F] font-bold text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#11233F]">FAQ Answer Text:</label>
+                <textarea
+                  rows={3}
+                  value={faq.answer}
+                  onChange={(e) => handleChangeAnswer(idx, e.target.value)}
+                  placeholder="Enter detailed answer..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {safeItems.length === 0 && (
+          <p className="text-xs text-slate-400 italic">No FAQ items added yet. Click &quot;Add New FAQ&quot; to add one.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   const [currentSection, setCurrentSection] = useState<
-    "hero" | "impact" | "services" | "pricing" | "whyUs" | "faq"
+    "hero" | "impact" | "services" | "whyUs" | "faq"
   >(activeTab === "homePage" ? "hero" : (activeTab as any));
 
   useEffect(() => {
@@ -160,8 +263,7 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
           { id: "impact", label: "2. Impact & Numbers", icon: BarChart3 },
           { id: "whyUs", label: "3. Why Choose Us", icon: ShieldCheck },
           { id: "services", label: "4. Core Services", icon: Sliders },
-          { id: "pricing", label: "5. Pricing Plans", icon: DollarSign },
-          { id: "faq", label: "6. FAQ & Support", icon: HelpCircle },
+          { id: "faq", label: "5. FAQ", icon: HelpCircle },
         ].map((sec) => {
           const IconComp = sec.icon;
           const isActive = currentSection === sec.id;
@@ -720,49 +822,35 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
                   className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold uppercase focus:outline-none focus:border-[#007eff]"
                 />
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* 5. PRICING PLANS SECTION */}
-        {currentSection === "pricing" && (
-          <div className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
-            <div className="border-b border-slate-200/80 pb-4">
-              <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
-                <DollarSign className="w-5 h-5 text-[#007eff]" /> 5. Home Page Pricing Section Settings
-              </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Edit pricing section settings or manage subscription packages.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4 bg-blue-50 border border-blue-200 p-5 rounded-2xl">
-              <div>
-                <h4 className="font-bold text-[#11233F] text-sm">Need to edit Subscription Package Prices?</h4>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Use the dedicated Pricing Package Manager to update package prices, features, and billing cycles.
-                </p>
+              <div className="sm:col-span-12">
+                <Controller
+                  name="servicesSubtitle"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor
+                      label="Header Right Subtitle Description (Supports Bengali & HTML Formatting):"
+                      value={field.value}
+                      onChange={field.onChange}
+                      rows={3}
+                      placeholder="Enter subtitle description..."
+                    />
+                  )}
+                />
               </div>
-              <Link
-                href="/admin/pricing"
-                className="px-4 py-2.5 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all whitespace-nowrap ml-auto flex items-center gap-1.5"
-              >
-                <DollarSign className="w-4 h-4" />
-                <span>Go to Pricing Packages Manager</span>
-              </Link>
             </div>
           </div>
         )}
 
-        {/* 6. FAQ SECTION */}
+        {/* 5. FAQ SECTION */}
         {currentSection === "faq" && (
           <div className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
             <div className="border-b border-slate-200/80 pb-4">
               <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
-                <HelpCircle className="w-5 h-5 text-[#007eff]" /> 6. FAQ Section Settings
+                <HelpCircle className="w-5 h-5 text-[#007eff]" /> 5. FAQ Section Settings
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Manage FAQ section pill badge, main title, and support phone hotline.
+                Manage FAQ section pill badge, main title, hotline phone, and dynamic FAQ questions list.
               </p>
             </div>
 
@@ -797,6 +885,19 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
                   type="text"
                   {...register("faqTitle")}
                   className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold uppercase focus:outline-none focus:border-[#007eff]"
+                />
+              </div>
+
+              <div className="sm:col-span-12">
+                <Controller
+                  name="faqItems"
+                  control={control}
+                  render={({ field }) => (
+                    <FaqItemsArrayEditor
+                      items={field.value || []}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </div>
