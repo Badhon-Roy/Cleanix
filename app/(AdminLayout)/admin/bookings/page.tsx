@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AssignCleanerModal from "@/components/admin/AssignCleanerModal";
-import BookingDetailsModal, { BookingDetailRecord } from "@/components/admin/BookingDetailsModal";
+import BookingDetailsModal, {
+  BookingDetailRecord,
+} from "@/components/admin/BookingDetailsModal";
 
 export default function AdminBookingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,7 +29,8 @@ export default function AdminBookingsPage() {
     service: string;
   } | null>(null);
 
-  const [selectedBookingForDetails, setSelectedBookingForDetails] = useState<BookingDetailRecord | null>(null);
+  const [selectedBookingForDetails, setSelectedBookingForDetails] =
+    useState<BookingDetailRecord | null>(null);
 
   const [bookingList, setBookingList] = useState<BookingDetailRecord[]>([
     {
@@ -110,29 +113,37 @@ export default function AdminBookingsPage() {
         prev.map((b) =>
           b.id === selectedBookingForAssign.ref
             ? { ...b, status: "ASSIGNED", cleanerTeam: teamName }
-            : b
-        )
+            : b,
+        ),
       );
 
-      if (selectedBookingForDetails && selectedBookingForDetails.id === selectedBookingForAssign.ref) {
+      if (
+        selectedBookingForDetails &&
+        selectedBookingForDetails.id === selectedBookingForAssign.ref
+      ) {
         setSelectedBookingForDetails((prev) =>
-          prev ? { ...prev, status: "ASSIGNED", cleanerTeam: teamName } : null
+          prev ? { ...prev, status: "ASSIGNED", cleanerTeam: teamName } : null,
         );
       }
 
-      toast.success(`Assigned "${teamName}" to Booking #${selectedBookingForAssign.ref}`);
+      toast.success(
+        `Assigned "${teamName}" to Booking #${selectedBookingForAssign.ref}`,
+      );
       setSelectedBookingForAssign(null);
     }
   };
 
-  const handleUpdateBookingStatus = (id: string, newStatus: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED") => {
+  const handleUpdateBookingStatus = (
+    id: string,
+    newStatus: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED",
+  ) => {
     setBookingList((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
     );
 
     if (selectedBookingForDetails && selectedBookingForDetails.id === id) {
       setSelectedBookingForDetails((prev) =>
-        prev ? { ...prev, status: newStatus } : null
+        prev ? { ...prev, status: newStatus } : null,
       );
     }
 
@@ -169,7 +180,8 @@ export default function AdminBookingsPage() {
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            Search customer subscription bookings, track job progress stages, and assign pro cleaner teams to field dispatches.
+            Search customer subscription bookings, track job progress stages,
+            and assign pro cleaner teams to field dispatches.
           </p>
         </div>
       </div>
@@ -180,20 +192,22 @@ export default function AdminBookingsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           {/* Status Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {["ALL", "PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED"].map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => setStatusFilter(st)}
-                className={`px-4 py-2 rounded-2xl text-xs font-extrabold cursor-pointer transition-all ${
-                  statusFilter === st
-                    ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {st}
-              </button>
-            ))}
+            {["ALL", "PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED"].map(
+              (st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-4 py-2 rounded-2xl text-xs font-extrabold cursor-pointer transition-all ${
+                    statusFilter === st
+                      ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {st}
+                </button>
+              ),
+            )}
           </div>
 
           {/* Search Box */}
@@ -231,10 +245,14 @@ export default function AdminBookingsPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     {/* Stage Selector Dropdown */}
                     <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1 text-xs font-bold">
-                      <span className="text-slate-500 font-semibold text-[11px]">Stage:</span>
+                      <span className="text-slate-500 font-semibold text-[11px]">
+                        Stage:
+                      </span>
                       <select
                         value={b.status}
-                        onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
+                        onChange={(e) =>
+                          handleUpdateBookingStatus(b.id, e.target.value as any)
+                        }
                         className="bg-transparent font-extrabold text-slate-900 focus:outline-none cursor-pointer"
                       >
                         <option value="PENDING">PENDING DISPATCH</option>
@@ -259,37 +277,63 @@ export default function AdminBookingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs sm:text-sm">
                   {/* Customer Info */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Customer &amp; Contact</span>
-                    <p className="font-extrabold text-slate-900">{b.customer}</p>
-                    <p className="text-xs text-slate-600 font-semibold">{b.phone}</p>
-                    <p className="text-[11px] text-slate-500 font-medium">{b.email}</p>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Customer &amp; Contact
+                    </span>
+                    <p className="font-extrabold text-slate-900">
+                      {b.customer}
+                    </p>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      {b.phone}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      {b.email}
+                    </p>
                   </div>
 
                   {/* Location & Specs */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Location &amp; Property</span>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Location &amp; Property
+                    </span>
                     <p className="font-extrabold text-slate-900 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-red-500" /> {b.area}
                     </p>
-                    <p className="text-xs text-slate-600 font-medium">{b.address}</p>
-                    <p className="text-[11px] text-[#007eff] font-bold">{b.specs} ({b.sqft} sqft)</p>
+                    <p className="text-xs text-slate-600 font-medium">
+                      {b.address}
+                    </p>
+                    <p className="text-[11px] text-[#007eff] font-bold">
+                      {b.specs} ({b.sqft} sqft)
+                    </p>
                   </div>
 
                   {/* Schedule & Billing */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Schedule &amp; Amount</span>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Schedule &amp; Amount
+                    </span>
                     <p className="font-bold text-slate-900 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-blue-600" /> {b.date}
+                      <Calendar className="w-3.5 h-3.5 text-blue-600" />{" "}
+                      {b.date}
                     </p>
                     <p className="text-xs text-amber-700 font-bold">{b.time}</p>
-                    <p className="font-extrabold text-emerald-700 text-base">{b.amount} <span className="text-[10px] font-bold text-slate-500">({b.paymentStatus})</span></p>
+                    <p className="font-extrabold text-emerald-700 text-base">
+                      {b.amount}{" "}
+                      <span className="text-[10px] font-bold text-slate-500">
+                        ({b.paymentStatus})
+                      </span>
+                    </p>
                   </div>
 
                   {/* Assigned Team & Action */}
                   <div className="space-y-2 flex flex-col justify-between">
                     <div>
-                      <span className="font-bold text-slate-400 uppercase text-[11px]">Cleaner Team</span>
-                      <p className="font-extrabold text-slate-900">{b.cleanerTeam}</p>
+                      <span className="font-bold text-slate-400 uppercase text-[11px]">
+                        Cleaner Team
+                      </span>
+                      <p className="font-extrabold text-slate-900">
+                        {b.cleanerTeam}
+                      </p>
                     </div>
 
                     <button
@@ -304,7 +348,11 @@ export default function AdminBookingsPage() {
                       className="w-full py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
                     >
                       <Truck className="w-4 h-4" />
-                      <span>{b.status === "ASSIGNED" ? "Reassign Team" : "Assign Cleaner Team"}</span>
+                      <span>
+                        {b.status === "ASSIGNED"
+                          ? "Reassign Team"
+                          : "Assign Cleaner Team"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -312,8 +360,12 @@ export default function AdminBookingsPage() {
             ))
           ) : (
             <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-3xl space-y-2">
-              <p className="font-extrabold text-slate-900 text-base">No Bookings Found</p>
-              <p className="text-xs text-slate-500 font-medium">Try adjusting your search or status filters.</p>
+              <p className="font-extrabold text-slate-900 text-base">
+                No Bookings Found
+              </p>
+              <p className="text-xs text-slate-500 font-medium">
+                Try adjusting your search or status filters.
+              </p>
             </div>
           )}
         </div>
@@ -337,7 +389,9 @@ export default function AdminBookingsPage() {
           isOpen={!!selectedBookingForDetails}
           onClose={() => setSelectedBookingForDetails(null)}
           booking={selectedBookingForDetails}
-          onStatusChange={(newStatus) => handleUpdateBookingStatus(selectedBookingForDetails.id, newStatus)}
+          onStatusChange={(newStatus) =>
+            handleUpdateBookingStatus(selectedBookingForDetails.id, newStatus)
+          }
           onOpenAssignModal={() => {
             setSelectedBookingForAssign({
               ref: selectedBookingForDetails.id,
