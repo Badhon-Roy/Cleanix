@@ -23,6 +23,7 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   ContactMessage,
   getStoredContactMessages,
@@ -142,7 +143,6 @@ export default function AdminContactMessagesPage() {
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL");
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [adminNoteInput, setAdminNoteInput] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const loadMessages = () => {
     setMessages(getStoredContactMessages());
@@ -161,18 +161,13 @@ export default function AdminContactMessagesPage() {
     };
   }, []);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
   const handleStatusChange = (id: string, newStatus: ContactMessage["status"]) => {
     const updated = updateContactMessageStatus(id, newStatus);
     setMessages(updated);
     if (selectedMessage && selectedMessage.id === id) {
       setSelectedMessage({ ...selectedMessage, status: newStatus });
     }
-    showToast(`Message #${id} status updated to ${newStatus}`);
+    toast.success(`Message #${id} status updated to ${newStatus}`);
   };
 
   const handleSaveNotes = () => {
@@ -184,7 +179,7 @@ export default function AdminContactMessagesPage() {
     );
     setMessages(updated);
     setSelectedMessage({ ...selectedMessage, notes: adminNoteInput });
-    showToast("Admin notes saved successfully!");
+    toast.success("Admin notes saved successfully!");
   };
 
   const handleDelete = (id: string) => {
@@ -197,7 +192,7 @@ export default function AdminContactMessagesPage() {
       if (selectedMessage?.id === id) {
         setSelectedMessage(null);
       }
-      showToast(`Contact message #${id} deleted.`);
+      toast.error(`Contact message #${id} deleted.`);
     }
   };
 
@@ -240,22 +235,6 @@ export default function AdminContactMessagesPage() {
           </p>
         </div>
       </div>
-
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="bg-emerald-600 text-white px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border border-emerald-700 flex items-center justify-between animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-white" />
-            <span>{toastMessage}</span>
-          </div>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="text-white hover:text-slate-200"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
       {/* Direct Modern Shadowless KPI Cards (No Hover Effect) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">

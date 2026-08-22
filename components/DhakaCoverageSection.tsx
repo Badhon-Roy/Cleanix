@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { MapPin, Navigation, Search, X, ChevronRight } from "lucide-react";
+
+import { getStoredCoverageAreas, CoverageAreaItem } from "@/lib/coverageData";
 
 export function AreaStarIcon() {
   return (
@@ -14,74 +16,28 @@ export function AreaStarIcon() {
 
 export default function DhakaCoverageSection() {
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [coverageAreas, setCoverageAreas] = useState<CoverageAreaItem[]>([]);
 
-  const coverageAreas = [
-    {
-      area: "Gulshan 1 & 2",
-      tag: "VIP DUPLEX & EMBASSY",
-      time: "25 Mins SLA",
-      desc: "গুলশান ১ ও ২ এরিয়া এবং ডিপ্লোম্যাটিক এম্বাসি জোনের স্পেশাল সার্ভিস।",
-    },
-    {
-      area: "Banani & DOHS",
-      tag: "CORPORATE & TECH HUB",
-      time: "25 Mins SLA",
-      desc: "কর্পোরেট আইটি অফিস, স্টার্টআপ ও টেক হাবের নাইট শিফট স্যানিটাইজিং।",
-    },
-    {
-      area: "Uttara (Sec 1-14)",
-      tag: "RESIDENTIAL & TURNOVER",
-      time: "30 Mins SLA",
-      desc: "সেক্টর ১-১৪ এর রেসিডেন্সিয়াল অ্যাপার্টমেন্ট মুভ-ইন/মুভ-আউট সলিউশন।",
-    },
-    {
-      area: "Dhanmondi & Lalmatia",
-      tag: "RESIDENTIAL & MEDICAL",
-      time: "30 Mins SLA",
-      desc: "ধানমন্ডি ও লালমাটিয়া এলাকার ডুপ্লেক্স ও রেনোভেশন ক্লিনিং কেয়ার।",
-    },
-    {
-      area: "Bashundhara R/A",
-      tag: "LUXURY CONDO & VILLA",
-      time: "30 Mins SLA",
-      desc: "বসুন্ধরা আর/এ এর লাক্সারি কন্ডো ও প্রাইভেট ভিলার প্রিমিয়াম কেয়ার।",
-    },
-    {
-      area: "Mohammadpur & Adabor",
-      tag: "RESIDENTIAL & HOUSING",
-      time: "30 Mins SLA",
-      desc: "মোহাম্মদপুর ও আদাবর হাউজিং এলাকার রুটিন হোম কেয়ার ও ভ্যাকুয়াম।",
-    },
-    {
-      area: "Badda & Rampura",
-      tag: "COMMERCIAL & RESIDENTIAL",
-      time: "25 Mins SLA",
-      desc: "বাড্ডা, রামপুরা ও প্রগতি সরণি কমার্শিয়াল ফ্লোর ও হোম স্যানিটাইজ।",
-    },
-    {
-      area: "Motijheel & Dilkusha",
-      tag: "FINANCIAL & BANKING",
-      time: "35 Mins SLA",
-      desc: "মতিঝিল ও দিলকুশা ব্যাংকিং অ্যান্ড ফাইন্যান্সিয়াল অফ-আওয়ার্স কেয়ার।",
-    },
-    {
-      area: "Mirpur & Pallabi",
-      tag: "HIGH DENSITY HOUSING",
-      time: "35 Mins SLA",
-      desc: "মিরপুর ও পল্লবী কলোনি ও অ্যাপার্টমেন্টের দ্রুত সার্ভিস ডেলিভারি।",
-    },
-    {
-      area: "Mohakhali & Tejgaon",
-      tag: "SHOWROOM & COMMERCIAL",
-      time: "25 Mins SLA",
-      desc: "মহাখালী ও তেজগাঁও শোরুম গ্লাস ও ফ্লোর হ্যাভি-ডিউটি পলিশ সার্ভিস।",
-    },
-  ];
+  useEffect(() => {
+    setCoverageAreas(getStoredCoverageAreas());
 
-  const filteredAreas = coverageAreas.filter((item) =>
-    item.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.desc.toLowerCase().includes(searchQuery.toLowerCase())
+    const handleUpdate = () => {
+      setCoverageAreas(getStoredCoverageAreas());
+    };
+
+    window.addEventListener("cleanix_coverage_areas_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_coverage_areas_updated", handleUpdate);
+    };
+  }, []);
+
+  const activeAreas = coverageAreas.filter((a) => a.status !== "INACTIVE");
+
+  const filteredAreas = activeAreas.filter(
+    (item) =>
+      item.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.desc.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -159,7 +115,7 @@ export default function DhakaCoverageSection() {
                     href="/contact"
                     className="font-bold text-[11px] py-3 px-4 rounded-full w-full flex items-center justify-between transition-all duration-300 shadow-md bg-[#001837] text-white group-hover:bg-[#007eff] group-hover:shadow-blue-500/30"
                   >
-                    <span>Book in {item.area.split(" ")[0]}</span>
+                    <span>{item.btnLabel || `Book in ${item.area.split(" ")[0]}`}</span>
                     <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-xs bg-[#007eff] text-white group-hover:bg-white group-hover:text-[#007eff] transition-colors">
                       <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
                     </div>

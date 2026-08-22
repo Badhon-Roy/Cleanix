@@ -18,6 +18,7 @@ import {
   Activity,
   Sparkles,
   MessageSquare,
+  MapPin,
 } from "lucide-react";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 
@@ -37,6 +38,7 @@ export default function AdminSidebar({
   const navItems = [
     { name: "Overview & KPIs", href: "/admin", icon: LayoutDashboard },
     { name: "Bookings & Dispatch", href: "/admin/bookings", icon: Truck, badge: "12 Pending" },
+    { name: "Coverage Areas", href: "/admin/coverage", icon: MapPin, badge: "10 Zones" },
     { name: "Contact Messages", href: "/admin/messages", icon: MessageSquare, badge: "2 New" },
     { name: "Cleaners & Staff", href: "/admin/cleaners", icon: UserCheck, badge: "16 Active" },
     { name: "Services & Pricing", href: "/admin/services", icon: Sliders },

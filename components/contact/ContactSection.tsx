@@ -6,6 +6,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { MapPin, Headphones, Clock, Send, Sparkles, CheckCircle2 } from "lucide-react";
 
 import { addContactMessage } from "@/lib/contactMessagesData";
+import { toast } from "sonner";
 
 interface ContactFormInputs {
   name: string;
@@ -33,6 +34,10 @@ export default function ContactSection() {
       phone: data.number,
       email: data.email,
       message: data.message,
+    });
+
+    toast.success("Inquiry Submitted! Cleanix HQ will call/email you back shortly.", {
+      description: `Name: ${data.name} | Phone: ${data.number}`,
     });
 
     setSubmitted(true);
