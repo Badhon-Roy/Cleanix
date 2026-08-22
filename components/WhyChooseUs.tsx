@@ -66,9 +66,9 @@ export default function WhyChooseUs() {
           {/* Left Side: 2x2 Feature Cards with Equal Height (items-stretch) */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 lg:gap-6 items-stretch">
             {/* Feature Card 1 */}
-            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs border border-slate-100 flex flex-col justify-start h-full">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
               <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4 shadow-md shadow-blue-500/20">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
                   <Users className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
@@ -88,9 +88,9 @@ export default function WhyChooseUs() {
             </div>
 
             {/* Feature Card 2 */}
-            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs border border-slate-100 flex flex-col justify-start h-full">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
               <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4 shadow-md shadow-blue-500/20">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
                   <ShieldCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
@@ -110,9 +110,9 @@ export default function WhyChooseUs() {
             </div>
 
             {/* Feature Card 3 */}
-            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs border border-slate-100 flex flex-col justify-start h-full">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
               <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4 shadow-md shadow-blue-500/20">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
                   <CalendarCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
@@ -132,9 +132,9 @@ export default function WhyChooseUs() {
             </div>
 
             {/* Feature Card 4 */}
-            <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs border border-slate-100 flex flex-col justify-start h-full">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
               <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4 shadow-md shadow-blue-500/20">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
                   <Headset className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
