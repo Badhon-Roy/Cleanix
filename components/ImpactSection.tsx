@@ -1,27 +1,47 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-
-const statsList = [
-  {
-    id: 1,
-    value: "2,500+",
-    label: "ক্লিন করা বাসা ও অফিস",
-  },
-  {
-    id: 2,
-    value: "150+",
-    label: "ভেরিফাইড প্রফেশনাল ক্লিনার",
-  },
-  {
-    id: 3,
-    value: "99.2%",
-    label: "সন্তোষজনক কাস্টমার রেটিং",
-  },
-];
+import {
+  getStoredHomeCMSData,
+  defaultHomeCMSData,
+  HomeCMSContent,
+} from "@/lib/homeCMSData";
 
 export default function ImpactSection() {
+  const [data, setData] = useState<HomeCMSContent>(defaultHomeCMSData);
+
+  useEffect(() => {
+    setData(getStoredHomeCMSData());
+
+    const handleUpdate = () => {
+      setData(getStoredHomeCMSData());
+    };
+
+    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+    };
+  }, []);
+
+  const statsList = [
+    {
+      id: 1,
+      value: data.impactStat1Value || "2,500+",
+      label: data.impactStat1Label || "ক্লিন করা বাসা ও অফিস",
+    },
+    {
+      id: 2,
+      value: data.impactStat2Value || "150+",
+      label: data.impactStat2Label || "ভেরিফাইড প্রফেশনাল ক্লিনার",
+    },
+    {
+      id: 3,
+      value: data.impactStat3Value || "99.2%",
+      label: data.impactStat3Label || "সন্তোষজনক কাস্টমার রেটিং",
+    },
+  ];
+
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-7xl">
@@ -31,20 +51,25 @@ export default function ImpactSection() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-slate-500 font-bold text-xs tracking-wider uppercase mb-3">
               <span className="w-2 h-2 rounded-full bg-[#007eff] inline-block" />
-              <span>OUR IMPACT &amp; NUMBERS</span>
+              <span>{data.impactBadge || "OUR IMPACT & NUMBERS"}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.15] tracking-tight uppercase">
-              REAL NUMBERS BEHIND OUR <br className="hidden sm:block" />
-              <span className="text-[#007eff]">CLEANING EXCELLENCE</span>
+              {data.impactTitleLine1}{" "}
+              {data.impactTitleHighlight && (
+                <span className="text-[#007eff]">{data.impactTitleHighlight}</span>
+              )}
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
-          <div className="lg:max-w-md">
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              বাংলাদেশের প্রতিটি বাসা ও কর্পোরেট অফিস স্পেসকে শতভাগ জীবাণুমুক্ত ও ঝকঝকে রাখার নির্ভরযোগ্য ডিজিটাল সমাধান।
-            </p>
-          </div>
+          {data.impactSubtitle && (
+            <div className="lg:max-w-md">
+              <div
+                className="text-slate-600 text-sm sm:text-base leading-relaxed [&_p]:mb-2"
+                dangerouslySetInnerHTML={{ __html: data.impactSubtitle }}
+              />
+            </div>
+          )}
         </div>
 
         {/* 3-Column Main Grid (Equal Height Columns: Left Image, Center 3 Stats, Right Image) */}
@@ -52,10 +77,14 @@ export default function ImpactSection() {
           {/* Left Column: Image Card 1 */}
           <div className="lg:col-span-4 relative w-full min-h-[320px] sm:min-h-[360px] lg:min-h-[380px] h-full rounded-3xl overflow-hidden shadow-xs border border-slate-100">
             <Image
-              src="https://framerusercontent.com/images/7kuxPVTjMLe1PbETJGXV0BIBB6s.png?scale-down-to=512&width=901&height=826"
+              src={
+                data.impactLeftImage ||
+                "https://framerusercontent.com/images/7kuxPVTjMLe1PbETJGXV0BIBB6s.png?scale-down-to=512&width=901&height=826"
+              }
               alt="Modern Property Exterior 1"
               fill
               priority
+              unoptimized
               className="object-cover object-center transition-transform duration-700 hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 33vw"
             />
@@ -71,7 +100,7 @@ export default function ImpactSection() {
                 <span className="text-3xl sm:text-4xl lg:text-[36px] font-black text-[#007eff] tracking-tight">
                   {stat.value}
                 </span>
-                <span className="text-slate-700 font-extrabold text-xs sm:text-base tracking-wider uppercase">
+                <span className="text-slate-700 font-extrabold text-xs sm:text-base tracking-wider uppercase text-right">
                   {stat.label}
                 </span>
               </div>
@@ -81,10 +110,14 @@ export default function ImpactSection() {
           {/* Right Column: Image Card 2 */}
           <div className="lg:col-span-4 relative w-full min-h-[320px] sm:min-h-[360px] lg:min-h-[380px] h-full rounded-3xl overflow-hidden shadow-xs border border-slate-100">
             <Image
-              src="https://framerusercontent.com/images/RakXiRCu0eigdFvdHDqHa9us9PQ.png?width=855&height=858"
+              src={
+                data.impactRightImage ||
+                "https://framerusercontent.com/images/RakXiRCu0eigdFvdHDqHa9us9PQ.png?width=855&height=858"
+              }
               alt="Modern Property Exterior 2"
               fill
               priority
+              unoptimized
               className="object-cover object-center transition-transform duration-700 hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 33vw"
             />

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Home, Building2, Sparkles, Wrench } from "lucide-react";
@@ -50,8 +50,28 @@ const servicesList = [
   },
 ];
 
+import {
+  getStoredHomeCMSData,
+  defaultHomeCMSData,
+  HomeCMSContent,
+} from "@/lib/homeCMSData";
+
 export default function OurServices() {
   const [activeService, setActiveService] = useState(servicesList[0]);
+  const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
+
+  useEffect(() => {
+    setCmsData(getStoredHomeCMSData());
+
+    const handleUpdate = () => {
+      setCmsData(getStoredHomeCMSData());
+    };
+
+    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+    };
+  }, []);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
@@ -61,11 +81,14 @@ export default function OurServices() {
           {/* Badge & Headline (Left/Center) */}
           <div className="max-w-2xl">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4">
-              OUR SERVICES
+              {cmsData.servicesBadge || "OUR SERVICES"}
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-              RELIABLE HOME AND OFFICE{" "}
-              <span className="text-[#007eff]">CLEANING</span>
+              {cmsData.servicesTitleLine1}{" "}
+              {cmsData.servicesTitleHighlight && (
+                <span className="text-[#007eff]">{cmsData.servicesTitleHighlight}</span>
+              )}{" "}
+              {cmsData.servicesTitleLine2}
             </h2>
           </div>
 

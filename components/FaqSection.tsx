@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,8 +36,28 @@ const faqList = [
   },
 ];
 
+import {
+  getStoredHomeCMSData,
+  defaultHomeCMSData,
+  HomeCMSContent,
+} from "@/lib/homeCMSData";
+
 export default function FaqSection() {
   const [openId, setOpenId] = useState<number | null>(1);
+  const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
+
+  useEffect(() => {
+    setCmsData(getStoredHomeCMSData());
+
+    const handleUpdate = () => {
+      setCmsData(getStoredHomeCMSData());
+    };
+
+    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+    };
+  }, []);
 
   const toggleFaq = (id: number) => {
     setOpenId(openId === id ? null : id);
@@ -49,10 +69,10 @@ export default function FaqSection() {
         {/* Centered Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
           <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4 bg-white/60">
-            FAQ
+            {cmsData.faqBadge || "FAQ"}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] tracking-tight uppercase">
-            CLEANING QUESTIONS ANSWERED
+            {cmsData.faqTitle || "CLEANING QUESTIONS ANSWERED"}
           </h2>
         </div>
 
