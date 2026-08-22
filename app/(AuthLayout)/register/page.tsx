@@ -28,7 +28,13 @@ import {
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { SwirlLogo } from "@/components/Navbar";
-import { registerUserAPI, googleLoginAPI, getGoogleAuthUrl } from "@/services/authService";
+import {
+  registerUserAPI,
+  googleLoginAPI,
+  getGoogleAuthUrl,
+  sendRegisterOtpAPI,
+  verifyRegisterOtpAPI,
+} from "@/services/authService";
 import { setAuthUser, setAuthRole } from "@/utils/cookie";
 
 export interface IRegisterStep2Form {
@@ -120,6 +126,49 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  // Email OTP Verification States
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+
+  const handleSendEmailOtp = async (email: string) => {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      toast.error("Please enter a valid email address first");
+      return;
+    }
+    setIsSendingOtp(true);
+
+    const res = await sendRegisterOtpAPI(email);
+    setIsSendingOtp(false);
+
+    if (res?.success) {
+      setIsOtpSent(true);
+      toast.success(res?.message || "Verification OTP Sent!");
+    } else {
+      toast.error(res?.message || "Failed to send verification OTP");
+    }
+  };
+
+  const handleVerifyEmailOtp = async (email: string) => {
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit OTP code");
+      return;
+    }
+    setIsVerifyingOtp(true);
+    const res = await verifyRegisterOtpAPI(email, otpCode);
+    setIsVerifyingOtp(false);
+
+    if (res?.success) {
+      setIsEmailVerified(true);
+      setIsOtpSent(false);
+      toast.success(res?.message || "Email Address Verified Successfully!");
+    } else {
+      toast.error(res?.message || "Invalid or expired OTP code");
+    }
+  };
+
   // Direct, instant role selection handler
   const handleSelectRole = (role: AccountType) => {
     setAccountType(role);
@@ -142,17 +191,16 @@ export default function RegisterPage() {
   // Step 1 -> Step 2
   const handleProceedToStep2 = () => {
     setStep(2);
-    toast.info(
-      `Selected ${accountType === "CUSTOMER" ? "Customer" : "Cleaner"} role`,
-      { duration: 1500 }
-    );
   };
 
   // Step 2 Valid Submission Handler (Triggered by React Hook Form)
   const handleStep2Submit = (data: IRegisterStep2Form) => {
+    if (!isEmailVerified) {
+      toast.error("Please verify your email address via OTP code before proceeding.");
+      return;
+    }
     if (accountType === "CLEANER") {
       setStep(3);
-      toast.info("Please complete your Cleaner verification details");
     } else {
       handleFinalRegistration(data);
     }
@@ -169,7 +217,6 @@ export default function RegisterPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
-        toast.success("Profile photo uploaded!");
       };
       reader.readAsDataURL(file);
     }
@@ -238,45 +285,43 @@ export default function RegisterPage() {
       formData.append("data", JSON.stringify(payload));
       const res = await registerUserAPI(formData);
 
-      if (res?.success && res?.data?.accessToken) {
-        // Token is automatically stored in cookies by registerUserAPI
+      if (!res?.success) {
+        toast.error(res?.message || "Registration failed. Please try again.");
+        setIsLoading(false);
+        return;
       }
 
-      // Store local user auth
+      toast.success(res?.message || "User registered successfully!");
+
+      // Store user auth in cookies
       const userData = {
-        name: credentials.fullName || "Cleanix User",
-        email: credentials.email || "",
-        phone: credentials.phone || "",
-        role: accountType,
+        name: res.data?.user?.name || credentials.fullName,
+        email: res.data?.user?.email || credentials.email,
+        phone: res.data?.user?.phone || credentials.phone,
+        role: res.data?.user?.role || accountType,
         avatar: avatarPreview,
         dob: isCleaner ? dob : undefined,
         gender: isCleaner ? gender : undefined,
-        status: approvalStatus,
-        isApproved,
+        status: res.data?.user?.status || approvalStatus,
+        isApproved: res.data?.user?.isApproved !== undefined ? res.data?.user?.isApproved : isApproved,
         isLoggedIn: true,
         loginTime: new Date().toISOString(),
       };
 
       setAuthUser(userData);
-      setAuthRole(accountType);
+      setAuthRole(userData.role);
 
       if (isCleaner) {
-        toast.success("Application Submitted! Waiting for Admin Approval ⏳", {
-          description: "Your Cleaner Staff profile is under review by Cleanix Admin.",
-        });
         setTimeout(() => {
           router.push("/waiting-approval");
         }, 800);
       } else {
-        toast.success("Account Created Successfully! 🎉", {
-          description: "Welcome to Cleanix Customer Portal",
-        });
         setTimeout(() => {
           router.push("/dashboard");
         }, 800);
       }
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+    } catch (error: any) {
+      toast.error(error?.message || "Registration failed. Please try again.");
       setIsLoading(false);
     }
   };
@@ -648,17 +693,35 @@ export default function RegisterPage() {
 
                   {/* Grid 2 Cols: Email & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {/* Email Address */}
+                    {/* Email Address with OTP Verification */}
                     <div>
-                      <label className="block text-base font-bold text-[#11233F] mb-1.5 ml-1 cursor-pointer">
-                        Email Address
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5 ml-1">
+                        <label className="block text-base font-bold text-[#11233F] cursor-pointer">
+                          Email Address
+                        </label>
+                        {isEmailVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>Verified ✓</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSendEmailOtp(watch("email"))}
+                            disabled={isSendingOtp || isOtpSent}
+                            className="text-xs font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-50"
+                          >
+                            {isSendingOtp ? "Sending..." : isOtpSent ? "OTP Sent 📩" : "Verify Email (Send OTP)"}
+                          </button>
+                        )}
+                      </div>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                           <Mail className="w-4 h-4" />
                         </div>
                         <input
                           type="email"
+                          disabled={isEmailVerified}
                           placeholder="Enter email address"
                           {...registerField("email", {
                             required: "Email address is required",
@@ -668,7 +731,9 @@ export default function RegisterPage() {
                             },
                           })}
                           className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
-                            formErrors.email
+                            isEmailVerified
+                              ? "border-emerald-500 bg-emerald-50/30 text-emerald-900 font-semibold"
+                              : formErrors.email
                               ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
                               : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
                           }`}
@@ -679,6 +744,40 @@ export default function RegisterPage() {
                           <span>⚠️</span>
                           <span>{formErrors.email.message}</span>
                         </p>
+                      )}
+
+                      {/* OTP Code Verification Input Box */}
+                      {isOtpSent && !isEmailVerified && (
+                        <div className="mt-3 p-3 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-[#11233F]">Enter 6-Digit Email OTP</span>
+                            <button
+                              type="button"
+                              onClick={() => handleSendEmailOtp(watch("email"))}
+                              className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
+                            >
+                              Resend OTP
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              maxLength={6}
+                              placeholder="123456"
+                              value={otpCode}
+                              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                              className="w-full bg-white border border-blue-300 rounded-xl px-3 py-1.5 text-center text-sm font-mono tracking-widest font-bold text-[#11233F] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyEmailOtp(watch("email"))}
+                              disabled={isVerifyingOtp || otpCode.length !== 6}
+                              className="bg-[#007eff] hover:bg-blue-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                            >
+                              {isVerifyingOtp ? "..." : "Verify"}
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
 

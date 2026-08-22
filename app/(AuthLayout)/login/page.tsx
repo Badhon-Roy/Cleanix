@@ -77,33 +77,24 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      let role = "CUSTOMER";
-      let isApproved = true;
-      let status = "APPROVED";
-
       const res = await loginUserAPI({ email: data.email, password: data.password });
 
-      if (res?.success && res?.data?.accessToken) {
-        // Token is automatically stored in cookies by loginUserAPI
-        if (res.data.user) {
-          role = res.data.user.role || role;
-          status = res.data.user.status || status;
-          isApproved = res.data.user.isApproved !== undefined ? res.data.user.isApproved : isApproved;
-        }
+      if (!res?.success) {
+        toast.error(res?.message || "Sign-in failed. Please check your credentials.");
+        setIsLoading(false);
+        return;
       }
 
-      // Check existing cookie user role & approval status if offline/mock
-      const storedUser = getAuthUser();
-      if (storedUser && !res?.success) {
-        if (storedUser.role) role = storedUser.role;
-        if (storedUser.status) status = storedUser.status;
-        if (storedUser.isApproved !== undefined) isApproved = storedUser.isApproved;
-      }
+      toast.success(res?.message || "User logged in successfully!");
 
-      // Store updated user auth in cookies
+      const role = res.data?.user?.role || "CUSTOMER";
+      const status = res.data?.user?.status || "APPROVED";
+      const isApproved = res.data?.user?.isApproved !== undefined ? res.data?.user?.isApproved : true;
+
+      // Store user auth in cookies
       const userData = {
-        email: data.email,
-        name: data.email.split("@")[0] || "Cleanix User",
+        email: res.data?.user?.email || data.email,
+        name: res.data?.user?.name || data.email.split("@")[0],
         role,
         status,
         isApproved,
@@ -115,29 +106,20 @@ export default function LoginPage() {
       setAuthRole(role);
 
       if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
-        toast.info("Account Pending Admin Approval ⏳", {
-          description: "Redirecting to your application status page...",
-        });
         setTimeout(() => {
           router.push("/waiting-approval");
-        }, 900);
+        }, 800);
       } else if (role === "CLEANER") {
-        toast.success("Welcome back, Cleaner! 🧹", {
-          description: "Redirecting to Cleaner Dispatch Portal...",
-        });
         setTimeout(() => {
           router.push("/cleaner");
-        }, 900);
+        }, 800);
       } else {
-        toast.success("Welcome back! Sign-in successful. 🎉", {
-          description: "Redirecting to your Cleanix dashboard...",
-        });
         setTimeout(() => {
           router.push("/dashboard");
-        }, 900);
+        }, 800);
       }
-    } catch (error) {
-      toast.error("Sign-in failed. Please check your credentials.");
+    } catch (error: any) {
+      toast.error(error?.message || "Sign-in failed. Please check your credentials.");
       setIsLoading(false);
     }
   };

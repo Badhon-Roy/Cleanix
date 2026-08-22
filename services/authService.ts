@@ -196,3 +196,37 @@ export const resetPasswordAPI = async (payload: { email: string; otp: string; ne
     return { success: false, message: error.message || "Password reset failed" };
   }
 };
+
+export const sendRegisterOtpAPI = async (email: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/send-register-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error in sendRegisterOtpAPI:", error);
+    return { success: false, message: error.message || "Failed to send registration OTP" };
+  }
+};
+
+export const verifyRegisterOtpAPI = async (email: string, otp: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/verify-register-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error in verifyRegisterOtpAPI:", error);
+    return { success: false, message: error.message || "Registration OTP verification failed" };
+  }
+};
