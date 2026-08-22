@@ -26,6 +26,7 @@ import {
 import { blogsData, BlogDetail } from "@/lib/blogsData";
 import BlogModal from "@/components/admin/BlogModal";
 import AboutCMSManager from "@/components/admin/AboutCMSManager";
+import ServicesCMSManager from "@/components/admin/ServicesCMSManager";
 
 export default function AdminContentCMSPage() {
   const [activeSectionTab, setActiveSectionTab] = useState("blogs");
@@ -153,6 +154,7 @@ export default function AdminContentCMSPage() {
           {[
             { id: "blogs", label: "Blog & Editorial Articles CMS" },
             { id: "about", label: "About Us Page CMS" },
+            { id: "servicesPage", label: "Services Page CMS" },
             { id: "hero", label: "Hero Banner Section" },
             { id: "services", label: "Core Services Section" },
             { id: "pricing", label: "Pricing & Plans Section" },
@@ -301,8 +303,13 @@ export default function AdminContentCMSPage() {
         {/* TAB 2: ABOUT US PAGE CMS */}
         {activeSectionTab === "about" && <AboutCMSManager />}
 
-        {/* TABS 3-7: OTHER PAGE CMS SECTIONS */}
-        {activeSectionTab !== "blogs" && activeSectionTab !== "about" && (
+        {/* TAB 3: SERVICES PAGE CMS */}
+        {activeSectionTab === "servicesPage" && <ServicesCMSManager />}
+
+        {/* TABS 4-8: OTHER PAGE CMS SECTIONS */}
+        {activeSectionTab !== "blogs" &&
+          activeSectionTab !== "about" &&
+          activeSectionTab !== "servicesPage" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Form Editors (7 Cols) */}
             <form onSubmit={handleSaveCMS} className="lg:col-span-7 space-y-5 text-xs sm:text-sm">

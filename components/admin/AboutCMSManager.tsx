@@ -28,6 +28,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import {
   AboutContent,
   TeamMemberItem,
@@ -401,15 +402,13 @@ export default function AboutCMSManager() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                Hero Cover Image URL / Path:
-              </label>
-              <input
-                type="text"
+            <div className="sm:col-span-2">
+              <ImageUploadPreview
+                label="Hero Cover Background Image:"
                 value={formData.heroImage}
-                onChange={(e) => setFormData({ ...formData, heroImage: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-medium focus:outline-none focus:border-[#007eff]"
+                onChange={(newUrl) => setFormData({ ...formData, heroImage: newUrl })}
+                recommendedSize="Recommended: 1920x800px"
+                aspectRatio="banner"
               />
             </div>
 
@@ -475,27 +474,23 @@ export default function AboutCMSManager() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                Left Image URL / Path:
-              </label>
-              <input
-                type="text"
+            <div className="sm:col-span-1">
+              <ImageUploadPreview
+                label="Overview Left Side Image:"
                 value={formData.overviewLeftImage}
-                onChange={(e) => setFormData({ ...formData, overviewLeftImage: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                onChange={(newUrl) => setFormData({ ...formData, overviewLeftImage: newUrl })}
+                recommendedSize="Recommended: 600x600px"
+                aspectRatio="square"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                Right Image URL / Path:
-              </label>
-              <input
-                type="text"
+            <div className="sm:col-span-1">
+              <ImageUploadPreview
+                label="Overview Right Side Image:"
                 value={formData.overviewRightImage}
-                onChange={(e) => setFormData({ ...formData, overviewRightImage: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                onChange={(newUrl) => setFormData({ ...formData, overviewRightImage: newUrl })}
+                recommendedSize="Recommended: 600x600px"
+                aspectRatio="square"
               />
             </div>
 
@@ -674,15 +669,13 @@ export default function AboutCMSManager() {
               />
             </div>
 
-            <div className="space-y-1.5 sm:col-span-12">
-              <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                Feature Image URL / Path:
-              </label>
-              <input
-                type="text"
+            <div className="sm:col-span-12">
+              <ImageUploadPreview
+                label="Who We Are Main Feature Image:"
                 value={formData.whoWeAreFeatureImage}
-                onChange={(e) => setFormData({ ...formData, whoWeAreFeatureImage: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                onChange={(newUrl) => setFormData({ ...formData, whoWeAreFeatureImage: newUrl })}
+                recommendedSize="Recommended: 1200x800px"
+                aspectRatio="banner"
               />
             </div>
 
@@ -901,15 +894,13 @@ export default function AboutCMSManager() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
-            <div className="space-y-1.5 sm:col-span-12">
-              <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                Banner Background Image URL / Path:
-              </label>
-              <input
-                type="text"
+            <div className="sm:col-span-12">
+              <ImageUploadPreview
+                label="Promo CTA Banner Background Image:"
                 value={formData.ctaBannerImage}
-                onChange={(e) => setFormData({ ...formData, ctaBannerImage: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                onChange={(newUrl) => setFormData({ ...formData, ctaBannerImage: newUrl })}
+                recommendedSize="Recommended: 1920x600px"
+                aspectRatio="banner"
               />
             </div>
 
@@ -1253,14 +1244,12 @@ export default function AboutCMSManager() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-[#11233F] block">Photo Image URL:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. https://images.unsplash.com/..."
+                <ImageUploadPreview
+                  label="Team Specialist Photo Image:"
                   value={memberImage}
-                  onChange={(e) => setMemberImage(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                  onChange={(newUrl) => setMemberImage(newUrl)}
+                  recommendedSize="Recommended: 600x600px"
+                  aspectRatio="square"
                 />
               </div>
 

@@ -1,11 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Sparkles, Home, Building2, ShieldCheck, Calculator } from "lucide-react";
+import { ChevronRight, Sparkles, Calculator } from "lucide-react";
+import {
+  getStoredServicesCMSData,
+  defaultServicesCMSData,
+  ServicesCMSContent,
+} from "@/lib/servicesCMSData";
 
 export default function ServicesBanner() {
+  const [data, setData] = useState<ServicesCMSContent>(defaultServicesCMSData);
+
+  useEffect(() => {
+    setData(getStoredServicesCMSData());
+
+    const handleUpdate = () => {
+      setData(getStoredServicesCMSData());
+    };
+
+    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
+    };
+  }, []);
+
   return (
     <section className="relative w-full min-h-[540px] md:min-h-[600px] bg-[#001837] text-white pt-32 pb-20 md:pt-40 md:pb-28 px-4 sm:px-6 lg:px-12 overflow-hidden border-b border-white/10 flex items-center justify-center -mt-[102px]">
       {/* Background Image Container with Gradient Mask */}
@@ -21,10 +41,11 @@ export default function ServicesBanner() {
           }}
         >
           <Image
-            src="/COMMERCIAL-OFFICE-CLEANING.png"
+            src={data.heroImage || "/COMMERCIAL-OFFICE-CLEANING.png"}
             alt="Cleanix Cleaning Services Banner"
             fill
             priority
+            unoptimized
             className="object-cover object-center lg:object-right opacity-80"
             sizes="(max-width: 1024px) 100vw, 75vw"
           />
@@ -42,25 +63,33 @@ export default function ServicesBanner() {
       {/* Main Content Container */}
       <div className="relative z-20 w-full container mx-auto px-4 sm:px-6 lg:px-12 pt-12">
         <div className="max-w-3xl text-left">
-
           {/* Subtitle Badge Pill */}
           <div className="flex items-center gap-2.5 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-2 mb-6 shadow-lg max-w-max">
             <Sparkles className="w-4 h-4 text-[#007eff]" />
             <span className="text-white text-xs md:text-sm font-bold tracking-wider uppercase">
-              WORLD-CLASS CLEANING SOLUTIONS
+              {data.heroBadge || "WORLD-CLASS CLEANING SOLUTIONS"}
             </span>
           </div>
 
           {/* Headline - High Impact Typography */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white leading-[1.12] tracking-tight mb-6 uppercase drop-shadow-md">
-            EXPERT CLEANING SERVICES FOR <span className="text-[#007eff]">HOMES</span> &amp; <span className="text-[#007eff]">BUSINESSES</span>
+            {data.heroTitleLine1}{" "}
+            {data.heroTitleHighlight1 && (
+              <span className="text-[#007eff]">{data.heroTitleHighlight1}</span>
+            )}{" "}
+            {data.heroTitleMiddle}{" "}
+            {data.heroTitleHighlight2 && (
+              <span className="text-[#007eff]">{data.heroTitleHighlight2}</span>
+            )}
           </h1>
 
           {/* Subtitle Description */}
-          <p className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl mb-8 text-shadow-sm">
-            আবাসিক বাসা, প্রিমিয়াম অ্যাপার্টমেন্ট, করপোরেট অফিস, স্থানান্তরযোগ্য স্থান ও রেনোভেশন পরবর্তী জায়গা পরিষ্কারের জন্য প্রস্তুত আমাদের ভেরিফাইড প্রফেশনাল টিম। আপনার চাহিদা অনুযায়ী সেরা সেবাটি বেছে নিন।
-          </p>
-
+          {data.heroSubtitle && (
+            <div
+              className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl mb-8 text-shadow-sm [&_p]:mb-2 [&_b]:text-white [&_b]:font-bold"
+              dangerouslySetInnerHTML={{ __html: data.heroSubtitle }}
+            />
+          )}
 
           {/* Action Buttons with Glowing Blue Shadows */}
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
