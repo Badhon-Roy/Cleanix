@@ -147,3 +147,54 @@ export const changePasswordAPI = async (payload: Record<string, any>) => {
     return { success: false, message: error.message || "Password update failed" };
   }
 };
+
+export const forgotPasswordAPI = async (email: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error in forgotPasswordAPI:", error);
+    return { success: false, message: error.message || "Failed to send OTP" };
+  }
+};
+
+export const verifyOtpAPI = async (email: string, otp: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error in verifyOtpAPI:", error);
+    return { success: false, message: error.message || "OTP verification failed" };
+  }
+};
+
+export const resetPasswordAPI = async (payload: { email: string; otp: string; newPassword: string }) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error in resetPasswordAPI:", error);
+    return { success: false, message: error.message || "Password reset failed" };
+  }
+};
