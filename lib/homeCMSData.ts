@@ -60,6 +60,13 @@ export interface HomeCMSContent {
   servicesTitleLine2: string;
   servicesSubtitle: string;
 
+  // CTA Banner Section
+  ctaBadge: string;
+  ctaTitle: string;
+  ctaSubtitle: string;
+  ctaBtnText: string;
+  ctaBtnHref: string;
+
   // FAQ Section Header, Right Image & Dynamic Items
   faqBadge: string;
   faqTitle: string;
@@ -133,6 +140,13 @@ export const defaultHomeCMSData: HomeCMSContent = {
   servicesSubtitle:
     "দক্ষ টিম, আন্তর্জাতিক মানের সেফ কেমিক্যালস, রিয়েল-টাইম জিপিএস ট্র্যাকিং এবং ডিজিটাল ইনভয়েসসহ প্রিমিয়াম সার্ভিস।",
 
+  ctaBadge: "GET IN TOUCH TODAY",
+  ctaTitle: "READY FOR A SPOTLESS & HEALTHY SPACE?",
+  ctaSubtitle:
+    "আজই আপনার বাসা বা অফিসের জন্য বিশ্বমানের ক্লিনিং টিম বুক করুন অথবা কয়েক সেকেন্ডে ইনস্ট্যান্ট ফ্রি এস্টিমেট নিন।",
+  ctaBtnText: "Book Service Now",
+  ctaBtnHref: "/contact",
+
   faqBadge: "FAQ & HELP",
   faqTitle: "FREQUENTLY ASKED QUESTIONS",
   faqImage:
@@ -165,7 +179,7 @@ export const defaultHomeCMSData: HomeCMSContent = {
   ],
 };
 
-export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v7";
+export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v8";
 
 export function getStoredHomeCMSData(): HomeCMSContent {
   if (typeof window === "undefined") return defaultHomeCMSData;

@@ -13,6 +13,7 @@ import {
   BarChart3,
   Plus,
   Trash2,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
@@ -27,7 +28,7 @@ import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import DeleteCardConfirmModal from "@/components/admin/DeleteCardConfirmModal";
 
 interface HomeCMSManagerProps {
-  activeTab: "homePage" | "hero" | "impact" | "services" | "whyUs" | "faq";
+  activeTab: "homePage" | "hero" | "impact" | "services" | "whyUs" | "cta" | "faq";
 }
 
 function ChecklistArrayEditor({
@@ -120,7 +121,7 @@ function ChecklistArrayEditor({
 
 export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   const [currentSection, setCurrentSection] = useState<
-    "hero" | "impact" | "services" | "whyUs" | "faq"
+    "hero" | "impact" | "services" | "whyUs" | "cta" | "faq"
   >(activeTab === "homePage" ? "hero" : (activeTab as any));
 
   const [deleteFaqIdx, setDeleteFaqIdx] = useState<number | null>(null);
@@ -213,6 +214,7 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
           { id: "whyUs", label: "3. Why Choose Us", icon: ShieldCheck },
           { id: "services", label: "4. Core Services", icon: Sliders },
           { id: "faq", label: "5. FAQ", icon: HelpCircle },
+          { id: "cta", label: "6. CTA Banner", icon: Megaphone },
         ].map((sec) => {
           const IconComp = sec.icon;
           const isActive = currentSection === sec.id;
@@ -915,6 +917,82 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
                       ? `FAQ #${String(deleteFaqIdx + 1).padStart(2, "0")} (${currentFaqItems[deleteFaqIdx].question || "Untitled Question"})`
                       : "this FAQ item"
                   }
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. CTA BANNER SECTION */}
+        {currentSection === "cta" && (
+          <div className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
+            <div className="border-b border-slate-200/80 pb-4">
+              <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
+                <Megaphone className="w-5 h-5 text-[#007eff]" /> 6. CTA Banner Section Settings
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Manage full-width blue CTA banner pill badge, main title, subtitle description, and action button.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
+              <div className="space-y-1.5 sm:col-span-12">
+                <label className="font-bold text-[#11233F] text-xs sm:text-sm">
+                  CTA Pill Badge (e.g. GET IN TOUCH TODAY):
+                </label>
+                <input
+                  type="text"
+                  {...register("ctaBadge")}
+                  className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-12">
+                <label className="font-bold text-[#11233F] text-xs sm:text-sm">
+                  Main Headline Title (e.g. READY FOR A SPOTLESS &amp; HEALTHY SPACE?):
+                </label>
+                <input
+                  type="text"
+                  {...register("ctaTitle")}
+                  className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold uppercase focus:outline-none focus:border-[#007eff]"
+                />
+              </div>
+
+              <div className="sm:col-span-12">
+                <Controller
+                  name="ctaSubtitle"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor
+                      label="Subtitle Description (Supports Bengali &amp; HTML Formatting):"
+                      value={field.value}
+                      onChange={field.onChange}
+                      rows={3}
+                      placeholder="Enter CTA banner description..."
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-6">
+                <label className="font-bold text-[#11233F] text-xs sm:text-sm">
+                  Action Button Text (e.g. Book Service Now):
+                </label>
+                <input
+                  type="text"
+                  {...register("ctaBtnText")}
+                  className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-6">
+                <label className="font-bold text-[#11233F] text-xs sm:text-sm">
+                  Action Button Link Href (e.g. /contact):
+                </label>
+                <input
+                  type="text"
+                  {...register("ctaBtnHref")}
+                  className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
                 />
               </div>
             </div>
