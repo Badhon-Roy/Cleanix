@@ -1,10 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Navigation } from "lucide-react";
+import {
+  getStoredCoverageCMSData,
+  defaultCoverageCMSData,
+  CoverageCMSContent,
+} from "@/lib/coverageCMSData";
 
 export default function CoverageHero() {
+  const [data, setData] = useState<CoverageCMSContent>(defaultCoverageCMSData);
+
+  useEffect(() => {
+    setData(getStoredCoverageCMSData());
+
+    const handleUpdate = () => {
+      setData(getStoredCoverageCMSData());
+    };
+
+    window.addEventListener("cleanix_coverage_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_coverage_cms_updated", handleUpdate);
+    };
+  }, []);
+
   return (
     <section className="relative w-full min-h-[460px] md:min-h-[500px] bg-[#001837] text-white pt-32 pb-20 md:pt-40 md:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden border-b border-white/10 flex items-center justify-center -mt-[102px]">
       {/* Background Image Overlay */}
@@ -19,10 +39,14 @@ export default function CoverageHero() {
           }}
         >
           <Image
-            src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
+            src={
+              data.heroImage ||
+              "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
+            }
             alt="Cleanix Dhaka Service Coverage Map"
             fill
             priority
+            unoptimized
             className="object-cover object-center opacity-65"
             sizes="(max-width: 1024px) 100vw, 75vw"
           />
@@ -44,19 +68,26 @@ export default function CoverageHero() {
           <div className="flex items-center gap-2.5 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-2 mb-6 shadow-lg max-w-max">
             <Navigation className="w-4 h-4 text-[#007eff]" />
             <span className="text-white text-xs md:text-sm font-bold tracking-wider uppercase">
-              24/7 ACTIVE GPS FLEET COVERAGE
+              {data.heroBadge || "24/7 ACTIVE GPS FLEET COVERAGE"}
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white leading-[1.12] tracking-tight mb-6 uppercase drop-shadow-md">
-            DHAKA CITY <span className="text-[#007eff]">COVERAGE AREA</span> MAP
+            {data.heroTitleLine1}{" "}
+            {data.heroTitleHighlight && (
+              <span className="text-[#007eff]">{data.heroTitleHighlight}</span>
+            )}{" "}
+            {data.heroTitleLine2}
           </h1>
 
           {/* Description */}
-          <p className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl text-shadow-sm">
-            ঢাকার ১০টি প্রধান এলাকায় আমাদের এনআইডি-ভেরিফাইড ক্লিনার বহর জরুরি ২৫-৩০ মিনিটের মধ্যে পৌঁছে যায়। আপনার এলাকা নির্বাচন করে সার্ভিস স্পট বুক করুন।
-          </p>
+          {data.heroSubtitle && (
+            <div
+              className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl text-shadow-sm [&_p]:mb-2"
+              dangerouslySetInnerHTML={{ __html: data.heroSubtitle }}
+            />
+          )}
         </div>
       </div>
     </section>

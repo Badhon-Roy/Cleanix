@@ -5,6 +5,11 @@ import Link from "next/link";
 import { MapPin, Navigation, Search, X, ChevronRight } from "lucide-react";
 
 import { getStoredCoverageAreas, CoverageAreaItem } from "@/lib/coverageData";
+import {
+  getStoredCoverageCMSData,
+  defaultCoverageCMSData,
+  CoverageCMSContent,
+} from "@/lib/coverageCMSData";
 
 export function AreaStarIcon() {
   return (
@@ -17,17 +22,22 @@ export function AreaStarIcon() {
 export default function DhakaCoverageSection() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [coverageAreas, setCoverageAreas] = useState<CoverageAreaItem[]>([]);
+  const [cmsData, setCmsData] = useState<CoverageCMSContent>(defaultCoverageCMSData);
 
   useEffect(() => {
     setCoverageAreas(getStoredCoverageAreas());
+    setCmsData(getStoredCoverageCMSData());
 
     const handleUpdate = () => {
       setCoverageAreas(getStoredCoverageAreas());
+      setCmsData(getStoredCoverageCMSData());
     };
 
     window.addEventListener("cleanix_coverage_areas_updated", handleUpdate);
+    window.addEventListener("cleanix_coverage_cms_updated", handleUpdate);
     return () => {
       window.removeEventListener("cleanix_coverage_areas_updated", handleUpdate);
+      window.removeEventListener("cleanix_coverage_cms_updated", handleUpdate);
     };
   }, []);
 
@@ -47,16 +57,23 @@ export default function DhakaCoverageSection() {
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-white shadow-2xs">
             <Navigation className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>COVERAGE AREA MAP</span>
+            <span>{cmsData.sectionBadge || "COVERAGE AREA MAP"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12]">
-            PROUDLY SERVING ALL MAJOR <br />
-            <span className="text-[#007eff]">NEIGHBORHOODS</span> IN DHAKA
+            {cmsData.sectionTitleLine1} <br />
+            {cmsData.sectionTitleHighlight && (
+              <span className="text-[#007eff]">{cmsData.sectionTitleHighlight}</span>
+            )}{" "}
+            {cmsData.sectionTitleLine2}
           </h2>
-          <p className="text-slate-600 text-sm sm:text-base font-normal mt-4 max-w-xl mx-auto">
-            আমাদের জিপিএস ট্র্যাকিংকৃত ক্লিনার বহর ঢাকার প্রতিটি প্রধান এলাকায় জরুরি ২৫-৩০ মিনিটের মধ্যে পৌঁছে যায়।
-          </p>
+
+          {cmsData.sectionSubtitle && (
+            <div
+              className="text-slate-600 text-sm sm:text-base font-normal mt-4 max-w-xl mx-auto [&_p]:mb-2"
+              dangerouslySetInnerHTML={{ __html: cmsData.sectionSubtitle }}
+            />
+          )}
 
           {/* Interactive Location Search Bar */}
           <div className="mt-8 max-w-xl mx-auto">
