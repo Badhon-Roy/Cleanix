@@ -94,6 +94,7 @@ export default function RegisterPage() {
     watch,
   } = useForm<IRegisterStep2Form>({
     mode: "onChange",
+    shouldUnregister: false,
     defaultValues: {
       fullName: "",
       email: "",
@@ -293,12 +294,12 @@ export default function RegisterPage() {
     }
   };
 
-  // Avatar Upload Handler
+  // Avatar Upload Handler (Supports all image formats: PNG, JPG, JPEG, WEBP, GIF, SVG, HEIC, AVIF)
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image size must be less than 10MB");
         return;
       }
       const reader = new FileReader();
@@ -353,8 +354,15 @@ export default function RegisterPage() {
       const approvalStatus = isCleaner ? "PENDING_APPROVAL" : "APPROVED";
       const isApproved = !isCleaner;
 
-      // Extract values from React Hook Form
-      const credentials = step2Data || watch();
+      // Extract values from step2Data, pendingStep2Data, or watch()
+      const credentials = step2Data || pendingStep2Data || watch();
+
+      if (!credentials.email || !credentials.fullName || !credentials.phone || !credentials.password) {
+        toast.error("Account credentials missing. Please return to Step 2 to enter your details.");
+        setIsLoading(false);
+        setStep(2);
+        return;
+      }
 
       // Construct FormData for multipart transmission
       const formData = new FormData();
@@ -1232,7 +1240,7 @@ export default function RegisterPage() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.svg,.bmp,.heic,.heif,.avif"
                         onChange={handleAvatarChange}
                         className="hidden"
                       />
