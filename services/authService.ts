@@ -65,9 +65,12 @@ export const registerUserAPI = async (payload: IRegisterPayload | FormData) => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    if (typeof window !== "undefined" && payload instanceof FormData) {
+    const isFormData =
+      typeof FormData !== "undefined" &&
+      (payload instanceof FormData || typeof (payload as any)?.get === "function");
+
+    if (isFormData) {
       body = payload;
-      // Do not set Content-Type header so browser automatically sets boundary
     } else {
       headers["Content-Type"] = "application/json";
       body = JSON.stringify(payload);

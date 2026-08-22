@@ -364,8 +364,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // Construct FormData for multipart transmission
-      const formData = new FormData();
       const payload = {
         name: credentials.fullName,
         email: credentials.email,
@@ -377,8 +375,7 @@ export default function RegisterPage() {
         gender: isCleaner ? gender : undefined,
       };
 
-      formData.append("data", JSON.stringify(payload));
-      const res = await registerUserAPI(formData);
+      const res = await registerUserAPI(payload);
 
       if (!res?.success) {
         toast.error(res?.message || "Registration failed. Please try again.");
