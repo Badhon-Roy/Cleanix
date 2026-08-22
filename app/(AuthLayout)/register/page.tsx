@@ -193,6 +193,21 @@ export default function RegisterPage() {
     }
   };
 
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      const pastedArr = pastedData.split("");
+      const newOtp = ["", "", "", "", "", ""];
+      pastedArr.forEach((char, i) => {
+        if (i < 6) newOtp[i] = char;
+      });
+      setOtpDigits(newOtp);
+      const focusIndex = Math.min(pastedArr.length, 5);
+      registerOtpRefs[focusIndex].current?.focus();
+    }
+  };
+
   const handleSendEmailOtp = async (email: string) => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       toast.error("Please enter a valid email address first");
@@ -204,10 +219,10 @@ export default function RegisterPage() {
     setIsSendingOtp(false);
 
     if (res?.success) {
-      setIsOtpModalOpen(true);
       setTimerSeconds(300);
       setCanResendOtp(false);
       setOtpDigits(["", "", "", "", "", ""]);
+      setStep(3);
       toast.success(res?.message || "Verification OTP Sent!");
       setTimeout(() => registerOtpRefs[0].current?.focus(), 350);
     } else {
@@ -227,12 +242,11 @@ export default function RegisterPage() {
 
     if (res?.success) {
       setIsEmailVerified(true);
-      setIsOtpModalOpen(false);
       toast.success(res?.message || "Email Address Verified Successfully!");
 
       const step2FormData = pendingStep2Data || watch();
       if (accountType === "CLEANER") {
-        setStep(3);
+        setStep(4);
       } else {
         handleFinalRegistration(step2FormData);
       }
@@ -995,18 +1009,23 @@ export default function RegisterPage() {
                   {/* Step 2 CTA */}
                   <button
                     type="submit"
-                    disabled={isLoading || isGoogleLoading}
+                    disabled={isLoading || isGoogleLoading || isSendingOtp}
                     className="w-full mt-2 bg-gradient-to-r from-[#007eff] via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.99] text-white font-bold py-3 sm:py-3.5 px-4 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-150 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    {accountType === "CLEANER" ? (
+                    {isSendingOtp ? (
                       <>
-                        <span>Next: Cleaner Verification</span>
-                        <ArrowRight className="w-4.5 h-4.5 stroke-[2.5]" />
+                        <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Sending Verification OTP...</span>
                       </>
                     ) : isLoading ? (
                       <>
                         <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Creating Account...</span>
+                      </>
+                    ) : accountType === "CLEANER" ? (
+                      <>
+                        <span>Next: Cleaner Verification</span>
+                        <ArrowRight className="w-4.5 h-4.5 stroke-[2.5]" />
                       </>
                     ) : (
                       <>
@@ -1095,6 +1114,7 @@ export default function RegisterPage() {
                       value={digit}
                       onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpDigitKeyDown(idx, e)}
+                      onPaste={handleOtpPaste}
                       className="w-11 h-12 sm:w-13 sm:h-14 bg-slate-50 border border-slate-300 focus:border-[#007eff] focus:bg-white focus:ring-4 focus:ring-blue-500/15 rounded-xl text-center text-xl sm:text-2xl font-bold font-mono text-[#11233F] transition-all"
                     />
                   ))}

@@ -108,6 +108,21 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      const pastedArr = pastedData.split("");
+      const newOtp = ["", "", "", "", "", ""];
+      pastedArr.forEach((char, i) => {
+        if (i < 6) newOtp[i] = char;
+      });
+      setOtp(newOtp);
+      const focusIndex = Math.min(pastedArr.length, 5);
+      otpRefs[focusIndex].current?.focus();
+    }
+  };
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullOtp = otp.join("");
@@ -382,7 +397,8 @@ export default function ForgotPasswordPage() {
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-11 h-12 sm:w-12 sm:h-13 text-center text-lg font-extrabold text-slate-900 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 focus:outline-none transition-all"
+                        onPaste={handleOtpPaste}
+                        className="w-11 h-12 sm:w-12 sm:h-13 text-center text-lg font-extrabold text-[#11233F] bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 focus:outline-none transition-all"
                       />
                     ))}
                   </div>

@@ -95,6 +95,21 @@ export default function VerifyOtpPage() {
     }
   };
 
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      const pastedArr = pastedData.split("");
+      const newOtp = ["", "", "", "", "", ""];
+      pastedArr.forEach((char, i) => {
+        if (i < 6) newOtp[i] = char;
+      });
+      setOtp(newOtp);
+      const focusIndex = Math.min(pastedArr.length, 5);
+      otpRefs[focusIndex].current?.focus();
+    }
+  };
+
   // Verify OTP Handler
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +251,7 @@ export default function VerifyOtpPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
+                    onPaste={handleOtpPaste}
                     className="w-11 h-12 sm:w-12 sm:h-14 bg-slate-50 border border-slate-300 focus:border-[#007eff] focus:bg-white focus:ring-4 focus:ring-blue-500/15 rounded-xl text-center text-xl sm:text-2xl font-bold font-mono text-[#11233F] transition-all"
                   />
                 ))}
