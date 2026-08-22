@@ -41,8 +41,6 @@ export default function WaitingApprovalPage() {
         if (storedUser.isApproved || storedUser.status === "APPROVED") {
           router.push("/cleaner");
         }
-      } else {
-        router.push("/login");
       }
     } catch (e) {
       console.log("Error reading user session", e);

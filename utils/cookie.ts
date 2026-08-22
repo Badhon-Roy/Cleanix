@@ -42,7 +42,12 @@ export const removeAuthToken = () => {
 };
 
 export const setAuthUser = (user: any, days = 7) => {
-  setCookie("cleanix_user", JSON.stringify(user), days);
+  if (!user) return;
+  const cleanUser = { ...user };
+  if (cleanUser.avatar && typeof cleanUser.avatar === "string" && cleanUser.avatar.startsWith("data:")) {
+    delete cleanUser.avatar;
+  }
+  setCookie("cleanix_user", JSON.stringify(cleanUser), days);
 };
 
 export const getAuthUser = () => {
