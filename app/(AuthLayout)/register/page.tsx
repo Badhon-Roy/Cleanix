@@ -26,7 +26,18 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
 import { SwirlLogo } from "@/components/Navbar";
+import { registerUserAPI, googleLoginAPI, getGoogleAuthUrl } from "@/services/authService";
+import { setAuthUser, setAuthRole } from "@/utils/cookie";
+
+export interface IRegisterStep2Form {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+}
 
 function GoogleIcon() {
   return (
@@ -57,7 +68,7 @@ type Step = 1 | 2 | 3;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "July", "August", "September", "October", "November", "December",
 ];
 
 export default function RegisterPage() {
@@ -68,15 +79,29 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>(1);
   const [accountType, setAccountType] = useState<AccountType>("CUSTOMER");
 
-  // Basic Fields (Completely Empty Initial Values)
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // React Hook Form for Step 2 Credentials
+  const {
+    register: registerField,
+    handleSubmit: handleRHFSubmitStep2,
+    formState: { errors: formErrors },
+    watch,
+  } = useForm<IRegisterStep2Form>({
+    mode: "onChange",
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const watchPassword = watch("password");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [step3Errors, setStep3Errors] = useState<Record<string, string>>({});
 
   // Cleaner Verification Fields (Step 3)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -123,30 +148,13 @@ export default function RegisterPage() {
     );
   };
 
-  // Step 2 -> Step 3 (or Submit for Customer)
-  const handleStep2Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!fullName || !email || !phone || !password || !confirmPassword) {
-      toast.error("Please fill in all required account fields");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match. Please verify.");
-      return;
-    }
-
+  // Step 2 Valid Submission Handler (Triggered by React Hook Form)
+  const handleStep2Submit = (data: IRegisterStep2Form) => {
     if (accountType === "CLEANER") {
       setStep(3);
       toast.info("Please complete your Cleaner verification details");
     } else {
-      handleFinalRegistration();
+      handleFinalRegistration(data);
     }
   };
 
@@ -177,7 +185,7 @@ export default function RegisterPage() {
 
     setDob(dateStr);
     setIsDobOpen(false);
-    toast.success(`Date of Birth set to ${formattedDay}/${formattedMonth}/${year}`);
+    if (step3Errors.dob) setStep3Errors((prev) => ({ ...prev, dob: "" }));
   };
 
   // Helper for generating calendar grid
@@ -190,23 +198,18 @@ export default function RegisterPage() {
   };
 
   // Final Form Submission
-  const handleFinalRegistration = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
+  const handleFinalRegistration = async (step2Data?: IRegisterStep2Form) => {
     if (accountType === "CLEANER") {
-      if (!dob) {
-        toast.error("Please select your Date of Birth");
-        return;
-      }
-      if (!gender) {
-        toast.error("Please select your Gender");
-        return;
-      }
-    }
+      const newErrors: Record<string, string> = {};
+      if (!dob) newErrors.dob = "Please select your Date of Birth";
+      if (!gender) newErrors.gender = "Please select your Gender";
+      if (!agreeTerms) newErrors.agreeTerms = "You must agree to the Terms of Service & Privacy Policy";
+      setStep3Errors(newErrors);
 
-    if (!agreeTerms) {
-      toast.error("Please agree to the Terms of Service & Privacy Policy");
-      return;
+      if (Object.keys(newErrors).length > 0) {
+        toast.error("Please fix the highlighted errors below");
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -216,42 +219,34 @@ export default function RegisterPage() {
       const approvalStatus = isCleaner ? "PENDING_APPROVAL" : "APPROVED";
       const isApproved = !isCleaner;
 
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      // Extract values from React Hook Form
+      const credentials = step2Data || watch();
 
-      try {
-        const response = await fetch(`${backendUrl}/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: fullName,
-            email,
-            phone,
-            password,
-            role: accountType,
-            avatar: avatarPreview,
-            dob: isCleaner ? dob : undefined,
-            gender: isCleaner ? gender : undefined,
-            status: approvalStatus,
-            isApproved,
-          }),
-        });
+      // Construct FormData for multipart transmission
+      const formData = new FormData();
+      const payload = {
+        name: credentials.fullName,
+        email: credentials.email,
+        phone: credentials.phone,
+        password: credentials.password,
+        role: accountType,
+        avatar: avatarPreview || undefined,
+        dob: isCleaner ? dob : undefined,
+        gender: isCleaner ? gender : undefined,
+      };
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.data?.accessToken) {
-            localStorage.setItem("cleanix_token", data.data.accessToken);
-          }
-        }
-      } catch (err) {
-        console.log("Backend offline, completing local registration simulation", err);
+      formData.append("data", JSON.stringify(payload));
+      const res = await registerUserAPI(formData);
+
+      if (res?.success && res?.data?.accessToken) {
+        // Token is automatically stored in cookies by registerUserAPI
       }
 
       // Store local user auth
       const userData = {
-        name: fullName,
-        email,
-        phone,
+        name: credentials.fullName || "Cleanix User",
+        email: credentials.email || "",
+        phone: credentials.phone || "",
         role: accountType,
         avatar: avatarPreview,
         dob: isCleaner ? dob : undefined,
@@ -262,8 +257,8 @@ export default function RegisterPage() {
         loginTime: new Date().toISOString(),
       };
 
-      localStorage.setItem("cleanix_user", JSON.stringify(userData));
-      localStorage.setItem("cleanix_role", accountType);
+      setAuthUser(userData);
+      setAuthRole(accountType);
 
       if (isCleaner) {
         toast.success("Application Submitted! Waiting for Admin Approval ⏳", {
@@ -289,40 +284,11 @@ export default function RegisterPage() {
   // Google OAuth Handler
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    toast.info("Connecting to Google Auth...", {
-      description: "Creating account with your Google profile",
+    toast.info("Redirecting to Google Sign-In...", {
+      description: "Connecting to Google OAuth 2.0 service",
     });
-
-    setTimeout(() => {
-      const isCleaner = accountType === "CLEANER";
-      const approvalStatus = isCleaner ? "PENDING_APPROVAL" : "APPROVED";
-      const isApproved = !isCleaner;
-
-      const googleUser = {
-        name: "Google Verified User",
-        email: "user.google@cleanix.com",
-        role: accountType,
-        status: approvalStatus,
-        isApproved,
-        isLoggedIn: true,
-        provider: "google",
-        loginTime: new Date().toISOString(),
-      };
-      localStorage.setItem("cleanix_user", JSON.stringify(googleUser));
-      localStorage.setItem("cleanix_role", accountType);
-
-      if (isCleaner) {
-        toast.success("Cleaner Profile Submitted!", {
-          description: "Waiting for Admin Approval...",
-        });
-        router.push("/waiting-approval");
-      } else {
-        toast.success("Google Account Created!", {
-          description: "Redirecting to your portal...",
-        });
-        router.push("/dashboard");
-      }
-    }, 1000);
+    const googleUrl = getGoogleAuthUrl();
+    window.location.href = `${googleUrl}?role=${accountType}`;
   };
 
   return (
@@ -400,7 +366,7 @@ export default function RegisterPage() {
               {/* Step 2 Pill */}
               <div
                 onClick={() => {
-                  if (step > 2 || fullName) setStep(2);
+                  if (step > 2 || watch("fullName")) setStep(2);
                 }}
                 className={`flex items-center gap-2 transition-all cursor-pointer ${
                   step === 2
@@ -433,7 +399,7 @@ export default function RegisterPage() {
 
                   <div
                     onClick={() => {
-                      if (fullName && email && phone) setStep(3);
+                      if (watch("fullName") && watch("email") && watch("phone")) setStep(3);
                     }}
                     className={`flex items-center gap-2 transition-all cursor-pointer ${
                       step === 3
@@ -649,7 +615,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleStep2Submit} className="space-y-3.5">
+                <form noValidate onSubmit={handleRHFSubmitStep2(handleStep2Submit)} className="space-y-3.5">
                   {/* Full Name */}
                   <div>
                     <label className="block text-base font-bold text-[#11233F] mb-1.5 ml-1 cursor-pointer">
@@ -661,13 +627,23 @@ export default function RegisterPage() {
                       </div>
                       <input
                         type="text"
-                        required
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
                         placeholder="Enter full name"
-                        className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                        {...registerField("fullName", {
+                          required: "Full Name is required",
+                        })}
+                        className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                          formErrors.fullName
+                            ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                            : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                        }`}
                       />
                     </div>
+                    {formErrors.fullName && (
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>{formErrors.fullName.message}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Grid 2 Cols: Email & Phone */}
@@ -683,13 +659,27 @@ export default function RegisterPage() {
                         </div>
                         <input
                           type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
                           placeholder="Enter email address"
-                          className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                          {...registerField("email", {
+                            required: "Email address is required",
+                            pattern: {
+                              value: /\S+@\S+\.\S+/,
+                              message: "Please enter a valid email address",
+                            },
+                          })}
+                          className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                            formErrors.email
+                              ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                              : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                          }`}
                         />
                       </div>
+                      {formErrors.email && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{formErrors.email.message}</span>
+                        </p>
+                      )}
                     </div>
 
                     {/* Phone Number */}
@@ -703,13 +693,23 @@ export default function RegisterPage() {
                         </div>
                         <input
                           type="tel"
-                          required
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
                           placeholder="Enter phone number"
-                          className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                          {...registerField("phone", {
+                            required: "Phone number is required",
+                          })}
+                          className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                            formErrors.phone
+                              ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                              : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                          }`}
                         />
                       </div>
+                      {formErrors.phone && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{formErrors.phone.message}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -726,11 +726,19 @@ export default function RegisterPage() {
                         </div>
                         <input
                           type={showPassword ? "text" : "password"}
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
                           placeholder="Enter password"
-                          className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                          {...registerField("password", {
+                            required: "Password is required",
+                            minLength: {
+                              value: 6,
+                              message: "Password must be at least 6 characters",
+                            },
+                          })}
+                          className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                            formErrors.password
+                              ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                              : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                          }`}
                         />
                         <button
                           type="button"
@@ -744,6 +752,12 @@ export default function RegisterPage() {
                           )}
                         </button>
                       </div>
+                      {formErrors.password && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{formErrors.password.message}</span>
+                        </p>
+                      )}
                     </div>
 
                     {/* Confirm Password */}
@@ -757,11 +771,20 @@ export default function RegisterPage() {
                         </div>
                         <input
                           type={showConfirmPassword ? "text" : "password"}
-                          required
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Confirm password"
-                          className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                          {...registerField("confirmPassword", {
+                            required: "Confirm password is required",
+                            validate: (val: string) => {
+                              if (watchPassword !== val) {
+                                return "Passwords do not match";
+                              }
+                            },
+                          })}
+                          className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                            formErrors.confirmPassword
+                              ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                              : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                          }`}
                         />
                         <button
                           type="button"
@@ -777,6 +800,12 @@ export default function RegisterPage() {
                           )}
                         </button>
                       </div>
+                      {formErrors.confirmPassword && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{formErrors.confirmPassword.message}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -889,7 +918,7 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                <form onSubmit={handleFinalRegistration} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleFinalRegistration(); }} className="space-y-4">
                   {/* Avatar Upload Section */}
                   <div className="flex items-center gap-4 bg-blue-50/60 border border-blue-200/80 p-4 rounded-3xl">
                     <div className="relative flex-shrink-0">
@@ -1131,6 +1160,12 @@ export default function RegisterPage() {
                           </div>
                         </div>
                       )}
+                      {step3Errors.dob && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{step3Errors.dob}</span>
+                        </p>
+                      )}
                     </div>
 
                     {/* CUSTOM GENDER DROPDOWN */}
@@ -1143,7 +1178,11 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         onClick={() => setIsGenderOpen(!isGenderOpen)}
-                        className="w-full bg-slate-50/80 hover:bg-white border border-slate-200 rounded-full px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-left flex items-center justify-between focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all group cursor-pointer"
+                        className={`w-full bg-slate-50/80 hover:bg-white border rounded-full px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-left flex items-center justify-between focus:outline-none transition-all group cursor-pointer ${
+                          step3Errors.gender
+                            ? "border-red-500 ring-2 ring-red-500/20"
+                            : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                        }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <UserCheck className="w-4 h-4 text-slate-400 group-hover:text-[#007eff] transition-colors" />
@@ -1168,6 +1207,7 @@ export default function RegisterPage() {
                                 onClick={() => {
                                   setGender(g);
                                   setIsGenderOpen(false);
+                                  if (step3Errors.gender) setStep3Errors((prev) => ({ ...prev, gender: "" }));
                                 }}
                                 className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-all cursor-pointer ${
                                   isSelected
@@ -1184,6 +1224,12 @@ export default function RegisterPage() {
                           })}
                         </div>
                       )}
+                      {step3Errors.gender && (
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>{step3Errors.gender}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1193,7 +1239,10 @@ export default function RegisterPage() {
                       <input
                         type="checkbox"
                         checked={agreeTerms}
-                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        onChange={(e) => {
+                          setAgreeTerms(e.target.checked);
+                          if (step3Errors.agreeTerms) setStep3Errors((prev) => ({ ...prev, agreeTerms: "" }));
+                        }}
                         className="w-4 h-4 rounded bg-slate-50 border-slate-300 text-[#007eff] focus:ring-offset-0 focus:ring-blue-500 accent-[#007eff] cursor-pointer"
                       />
                       <span>
@@ -1207,6 +1256,12 @@ export default function RegisterPage() {
                         </Link>
                       </span>
                     </label>
+                    {step3Errors.agreeTerms && (
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-1 flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>{step3Errors.agreeTerms}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Final Submit CTA */}

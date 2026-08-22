@@ -18,7 +18,15 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
 import { SwirlLogo } from "@/components/Navbar";
+import { loginUserAPI, googleLoginAPI, getGoogleAuthUrl } from "@/services/authService";
+import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
+
+export interface ILoginForm {
+  email: string;
+  password: string;
+}
 
 function GoogleIcon() {
   return (
@@ -45,22 +53,27 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  // React Hook Form
+  const {
+    register: registerLogin,
+    handleSubmit: handleRHFSubmitLogin,
+    formState: { errors: loginErrors },
+  } = useForm<ILoginForm>({
+    mode: "onChange",
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Submit Email/Password Handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      toast.error("Please fill in both email and password");
-      return;
-    }
-
+  const onLoginSubmit = async (data: ILoginForm) => {
     setIsLoading(true);
 
     try {
@@ -68,44 +81,29 @@ export default function LoginPage() {
       let isApproved = true;
       let status = "APPROVED";
 
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await loginUserAPI({ email: data.email, password: data.password });
 
-      try {
-        const response = await fetch(`${backendUrl}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.data?.accessToken) {
-            localStorage.setItem("cleanix_token", data.data.accessToken);
-          }
-          if (data?.data?.user?.role) role = data.data.user.role;
-          if (data?.data?.user?.status) status = data.data.user.status;
-          if (data?.data?.user?.isApproved !== undefined) {
-            isApproved = data.data.user.isApproved;
-          }
+      if (res?.success && res?.data?.accessToken) {
+        // Token is automatically stored in cookies by loginUserAPI
+        if (res.data.user) {
+          role = res.data.user.role || role;
+          status = res.data.user.status || status;
+          isApproved = res.data.user.isApproved !== undefined ? res.data.user.isApproved : isApproved;
         }
-      } catch (err) {
-        console.log("Backend API unreachable, checking local user state", err);
       }
 
-      // Check existing local user role & approval status
-      const storedUser = localStorage.getItem("cleanix_user");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.role) role = parsed.role;
-        if (parsed.status) status = parsed.status;
-        if (parsed.isApproved !== undefined) isApproved = parsed.isApproved;
+      // Check existing cookie user role & approval status if offline/mock
+      const storedUser = getAuthUser();
+      if (storedUser && !res?.success) {
+        if (storedUser.role) role = storedUser.role;
+        if (storedUser.status) status = storedUser.status;
+        if (storedUser.isApproved !== undefined) isApproved = storedUser.isApproved;
       }
 
-      // Store updated local user auth
+      // Store updated user auth in cookies
       const userData = {
-        email,
-        name: email.split("@")[0] || "Cleanix User",
+        email: data.email,
+        name: data.email.split("@")[0] || "Cleanix User",
         role,
         status,
         isApproved,
@@ -113,8 +111,8 @@ export default function LoginPage() {
         loginTime: new Date().toISOString(),
       };
 
-      localStorage.setItem("cleanix_user", JSON.stringify(userData));
-      localStorage.setItem("cleanix_role", role);
+      setAuthUser(userData);
+      setAuthRole(role);
 
       if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
         toast.info("Account Pending Admin Approval ⏳", {
@@ -147,41 +145,11 @@ export default function LoginPage() {
   // Google OAuth Handler
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    toast.info("Connecting to Google Auth...", {
-      description: "Authenticating with your Google account",
+    toast.info("Redirecting to Google Sign-In...", {
+      description: "Connecting to Google OAuth 2.0 service",
     });
-
-    setTimeout(() => {
-      const storedUser = localStorage.getItem("cleanix_user");
-      let role = "CUSTOMER";
-      let isApproved = true;
-
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.role) role = parsed.role;
-        if (parsed.isApproved !== undefined) isApproved = parsed.isApproved;
-      }
-
-      const googleUser = {
-        email: "user.google@cleanix.com",
-        name: "Google Verified User",
-        role,
-        isApproved,
-        isLoggedIn: true,
-        provider: "google",
-        loginTime: new Date().toISOString(),
-      };
-      localStorage.setItem("cleanix_user", JSON.stringify(googleUser));
-      localStorage.setItem("cleanix_role", role);
-
-      if (role === "CLEANER" && !isApproved) {
-        toast.info("Cleaner Account Pending Approval ⏳");
-        router.push("/waiting-approval");
-      } else {
-        toast.success("Google Sign-In Successful!");
-        router.push(role === "CLEANER" ? "/cleaner" : "/dashboard");
-      }
-    }, 1200);
+    const googleUrl = getGoogleAuthUrl();
+    window.location.href = `${googleUrl}?role=CUSTOMER`;
   };
 
   return (
@@ -319,7 +287,7 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form noValidate onSubmit={handleRHFSubmitLogin(onLoginSubmit)} className="space-y-4">
               {/* Email Input */}
               <div>
                 <label className="block text-base font-bold text-[#11233F] mb-1.5 cursor-pointer">
@@ -331,13 +299,27 @@ export default function LoginPage() {
                   </div>
                   <input
                     type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter email address"
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                    {...registerLogin("email", {
+                      required: "Email address is required",
+                      pattern: {
+                        value: /\S+@\S+\.\S+/,
+                        message: "Please enter a valid email address",
+                      },
+                    })}
+                    className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                      loginErrors.email
+                        ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                        : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                    }`}
                   />
                 </div>
+                {loginErrors.email && (
+                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>{loginErrors.email.message}</span>
+                  </p>
+                )}
               </div>
 
               {/* Password Input */}
@@ -358,12 +340,16 @@ export default function LoginPage() {
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter password"
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15 transition-all font-medium"
+                    {...registerLogin("password", {
+                      required: "Password is required",
+                    })}
+                    className={`w-full bg-slate-50/80 border rounded-full pl-11 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-[#11233F] placeholder-slate-400 focus:bg-white focus:outline-none transition-all font-medium ${
+                      loginErrors.password
+                        ? "border-red-500 focus:border-red-600 ring-2 ring-red-500/20"
+                        : "border-slate-200 focus:border-[#007eff] focus:ring-4 focus:ring-[#007eff]/15"
+                    }`}
                   />
                   <button
                     type="button"
@@ -377,6 +363,12 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+                {loginErrors.password && (
+                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>{loginErrors.password.message}</span>
+                  </p>
+                )}
               </div>
 
               {/* Remember Me Checkbox */}

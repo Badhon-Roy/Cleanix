@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
+import { removeAuthToken } from "@/services/authService";
+import { getAuthUser, setAuthUser, removeAuthUser, removeAuthRole } from "@/utils/cookie";
 
 export default function WaitingApprovalPage() {
   const router = useRouter();
@@ -32,13 +34,12 @@ export default function WaitingApprovalPage() {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem("cleanix_user");
+      const storedUser = getAuthUser();
       if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed);
+        setUser(storedUser);
 
         // If approved by admin, allow access to cleaner portal
-        if (parsed.isApproved || parsed.status === "APPROVED") {
+        if (storedUser.isApproved || storedUser.status === "APPROVED") {
           router.push("/cleaner");
         }
       } else {
@@ -63,7 +64,7 @@ export default function WaitingApprovalPage() {
           status: "APPROVED",
           isApproved: true,
         };
-        localStorage.setItem("cleanix_user", JSON.stringify(updatedUser));
+        setAuthUser(updatedUser);
         setUser(updatedUser);
         toast.success("Admin Approval Granted! 🎉", {
           description: "Your Cleaner account is now active. Redirecting to Portal...",
@@ -77,9 +78,9 @@ export default function WaitingApprovalPage() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("cleanix_user");
-    localStorage.removeItem("cleanix_token");
-    localStorage.removeItem("cleanix_role");
+    removeAuthUser();
+    removeAuthToken();
+    removeAuthRole();
     sessionStorage.clear();
     toast.info("Signed out successfully");
     router.push("/login");
