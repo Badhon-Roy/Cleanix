@@ -19,6 +19,7 @@ import {
   Sparkles,
   MessageSquare,
   MapPin,
+  Info,
 } from "lucide-react";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 
