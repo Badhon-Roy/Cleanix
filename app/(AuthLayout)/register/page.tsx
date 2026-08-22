@@ -36,7 +36,7 @@ import {
   sendRegisterOtpAPI,
   verifyRegisterOtpAPI,
 } from "@/services/authService";
-import { setAuthUser, setAuthRole } from "@/utils/cookie";
+import { setAuthUser, setAuthRole, setAuthToken } from "@/utils/cookie";
 
 export interface IRegisterStep2Form {
   fullName: string;
@@ -385,6 +385,12 @@ export default function RegisterPage() {
 
       toast.success(res?.message || "User registered successfully!");
 
+      // Store Access Token in Cookie (Instant Automatic Login)
+      const token = res?.data?.accessToken || res?.accessToken;
+      if (token) {
+        setAuthToken(token);
+      }
+
       // Store user auth in cookies
       const userData = {
         name: res.data?.user?.name || credentials.fullName,
@@ -403,6 +409,7 @@ export default function RegisterPage() {
       setAuthUser(userData);
       setAuthRole(userData.role);
 
+      // Auto-login: Redirect directly to application pages based on role
       if (isCleaner) {
         setTimeout(() => {
           router.push("/waiting-approval");
