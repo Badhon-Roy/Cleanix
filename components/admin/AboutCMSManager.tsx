@@ -14,7 +14,6 @@ import {
   Award,
   Sparkles,
   ShieldCheck,
-  Image as ImageIcon,
   CheckCircle2,
   X,
   UserCheck,
@@ -28,6 +27,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import {
   AboutContent,
@@ -39,54 +39,49 @@ import {
 import RichTextEditor from "@/components/admin/RichTextEditor";
 
 export default function AboutCMSManager() {
-  const [formData, setFormData] = useState<AboutContent>(getStoredAboutData());
-  // Journey Milestone Form State
-  const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
-  const [editingJourneyId, setEditingJourneyId] = useState<string | null>(null);
-  const [stepNumber, setStepNumber] = useState("01");
-  const [stepYear, setStepYear] = useState("2025–2026");
-  const [stepSide, setStepSide] = useState<"left" | "right">("right");
-  const [stepTitle, setStepTitle] = useState("");
-  const [stepDesc, setStepDesc] = useState("");
+  const { register, handleSubmit, reset, control, watch, setValue, getValues } =
+    useForm<AboutContent>({
+      defaultValues: getStoredAboutData(),
+    });
+
+  const formData = watch();
 
   useEffect(() => {
-    setFormData(getStoredAboutData());
+    reset(getStoredAboutData());
 
     const handleUpdate = () => {
-      setFormData(getStoredAboutData());
+      reset(getStoredAboutData());
     };
 
     window.addEventListener("cleanix_about_updated", handleUpdate);
     return () => {
       window.removeEventListener("cleanix_about_updated", handleUpdate);
     };
-  }, []);
+  }, [reset]);
 
   const [draggedCheckIndex, setDraggedCheckIndex] = useState<number | null>(null);
 
-  const handleSaveAll = (e: React.FormEvent) => {
-    e.preventDefault();
-    saveAboutData(formData);
+  // Form Submit Handler
+  const onSubmit = (data: AboutContent) => {
+    saveAboutData(data);
     toast.success("About Us Page CMS updated successfully! (Changes Live)");
   };
 
+  // Dynamic Checkmarks Handlers
   const handleAddCheckmark = () => {
-    const current = formData.ctaChecks || [];
-    setFormData({
-      ...formData,
-      ctaChecks: [...current, "NEW CHECKMARK ITEM"],
-    });
+    const current = getValues("ctaChecks") || [];
+    setValue("ctaChecks", [...current, "NEW CHECKMARK ITEM"]);
   };
 
   const handleUpdateCheckmark = (index: number, text: string) => {
-    const current = [...(formData.ctaChecks || [])];
+    const current = [...(getValues("ctaChecks") || [])];
     current[index] = text;
-    setFormData({ ...formData, ctaChecks: current });
+    setValue("ctaChecks", current);
   };
 
   const handleDeleteCheckmark = (index: number) => {
-    const current = (formData.ctaChecks || []).filter((_, i) => i !== index);
-    setFormData({ ...formData, ctaChecks: current });
+    const current = (getValues("ctaChecks") || []).filter((_, i) => i !== index);
+    setValue("ctaChecks", current);
   };
 
   const handleCheckDragStart = (index: number) => {
@@ -97,13 +92,13 @@ export default function AboutCMSManager() {
     e.preventDefault();
     if (draggedCheckIndex === null || draggedCheckIndex === targetIndex) return;
 
-    const current = [...(formData.ctaChecks || [])];
+    const current = [...(getValues("ctaChecks") || [])];
     const itemToMove = current[draggedCheckIndex];
     current.splice(draggedCheckIndex, 1);
     current.splice(targetIndex, 0, itemToMove);
 
     setDraggedCheckIndex(targetIndex);
-    setFormData({ ...formData, ctaChecks: current });
+    setValue("ctaChecks", current);
   };
 
   const handleCheckDragEnd = () => {
@@ -111,16 +106,17 @@ export default function AboutCMSManager() {
   };
 
   const handleMoveCheckmark = (index: number, direction: "left" | "right") => {
-    const current = [...(formData.ctaChecks || [])];
+    const current = [...(getValues("ctaChecks") || [])];
     const targetIndex = direction === "left" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= current.length) return;
 
     const temp = current[index];
     current[index] = current[targetIndex];
     current[targetIndex] = temp;
-    setFormData({ ...formData, ctaChecks: current });
+    setValue("ctaChecks", current);
   };
 
+  // Team Member Modal State & Handlers
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [memberName, setMemberName] = useState("");
@@ -128,127 +124,6 @@ export default function AboutCMSManager() {
   const [memberImage, setMemberImage] = useState("");
   const [memberNidVerified, setMemberNidVerified] = useState(true);
   const [memberBio, setMemberBio] = useState("");
-
-  // Journey Stepper Modal Handlers
-  const handleOpenAddJourneyModal = () => {
-    setEditingJourneyId(null);
-    const nextNum = (formData.journeySteps?.length || 0) + 1;
-    setStepNumber(nextNum < 10 ? `0${nextNum}` : `${nextNum}`);
-    setStepYear("2025–2026");
-    setStepSide(nextNum % 2 === 0 ? "left" : "right");
-    setStepTitle("");
-    setStepDesc("");
-    setIsJourneyModalOpen(true);
-  };
-
-  const handleOpenEditJourneyModal = (item: JourneyStepItem) => {
-    setEditingJourneyId(item.id);
-    setStepNumber(item.number);
-    setStepYear(item.year);
-    setStepSide(item.side);
-    setStepTitle(item.title);
-    setStepDesc(item.desc);
-    setIsJourneyModalOpen(true);
-  };
-
-  const handleSaveJourneyStep = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stepTitle.trim() || !stepDesc.trim()) {
-      toast.error("Please enter a title and description for the milestone!");
-      return;
-    }
-
-    const currentSteps = formData.journeySteps || [];
-
-    if (editingJourneyId) {
-      const updated = currentSteps.map((step) =>
-        step.id === editingJourneyId
-          ? {
-              ...step,
-              number: stepNumber,
-              year: stepYear,
-              side: stepSide,
-              title: stepTitle,
-              desc: stepDesc,
-            }
-          : step
-      );
-      const updatedForm = { ...formData, journeySteps: updated };
-      setFormData(updatedForm);
-      saveAboutData(updatedForm);
-      toast.success("Journey milestone updated successfully!");
-    } else {
-      const newStep: JourneyStepItem = {
-        id: `JS-${Date.now()}`,
-        number: stepNumber,
-        year: stepYear,
-        side: stepSide,
-        title: stepTitle,
-        desc: stepDesc,
-      };
-      const updatedForm = {
-        ...formData,
-        journeySteps: [...currentSteps, newStep],
-      };
-      setFormData(updatedForm);
-      saveAboutData(updatedForm);
-      toast.success("New journey milestone added!");
-    }
-
-    setIsJourneyModalOpen(false);
-  };
-
-  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
-    type: "team" | "journey";
-    id: string;
-    title: string;
-  } | null>(null);
-
-  const requestDeleteJourneyStep = (id: string, title: string) => {
-    setDeleteConfirmModal({ type: "journey", id, title });
-  };
-
-  const requestDeleteTeamMember = (id: string, name: string) => {
-    setDeleteConfirmModal({ type: "team", id, title: name });
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteConfirmModal) return;
-
-    if (deleteConfirmModal.type === "team") {
-      const updatedMembers = formData.teamMembers.filter(
-        (m) => m.id !== deleteConfirmModal.id
-      );
-      const newFormData = { ...formData, teamMembers: updatedMembers };
-      setFormData(newFormData);
-      saveAboutData(newFormData);
-      toast.error(`Team Member "${deleteConfirmModal.title}" removed.`);
-    } else if (deleteConfirmModal.type === "journey") {
-      const updated = (formData.journeySteps || []).filter(
-        (s) => s.id !== deleteConfirmModal.id
-      );
-      const updatedForm = { ...formData, journeySteps: updated };
-      setFormData(updatedForm);
-      saveAboutData(updatedForm);
-      toast.error(`Journey Milestone "${deleteConfirmModal.title}" removed.`);
-    }
-
-    setDeleteConfirmModal(null);
-  };
-
-  const handleMoveJourneyStep = (index: number, direction: "up" | "down") => {
-    const current = [...(formData.journeySteps || [])];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= current.length) return;
-
-    const temp = current[index];
-    current[index] = current[targetIndex];
-    current[targetIndex] = temp;
-
-    const updatedForm = { ...formData, journeySteps: current };
-    setFormData(updatedForm);
-    saveAboutData(updatedForm);
-  };
 
   const handleOpenAddTeamModal = () => {
     setEditingMemberId(null);
@@ -280,10 +155,11 @@ export default function AboutCMSManager() {
       return;
     }
 
+    const currentMembers = getValues("teamMembers") || [];
     let updatedMembers: TeamMemberItem[] = [];
 
     if (editingMemberId) {
-      updatedMembers = formData.teamMembers.map((m) =>
+      updatedMembers = currentMembers.map((m) =>
         m.id === editingMemberId
           ? {
               ...m,
@@ -305,18 +181,136 @@ export default function AboutCMSManager() {
         nidVerified: memberNidVerified,
         bio: memberBio,
       };
-      updatedMembers = [newMember, ...formData.teamMembers];
+      updatedMembers = [newMember, ...currentMembers];
       toast.success(`New Team Member "${memberName}" added.`);
     }
 
-    const newFormData = { ...formData, teamMembers: updatedMembers };
-    setFormData(newFormData);
-    saveAboutData(newFormData);
+    setValue("teamMembers", updatedMembers);
+    saveAboutData(getValues());
     setIsTeamModalOpen(false);
   };
 
-  const handleDeleteTeamMember = (id: string, name: string) => {
-    requestDeleteTeamMember(id, name);
+  // Journey Stepper Modal State & Handlers
+  const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
+  const [editingJourneyId, setEditingJourneyId] = useState<string | null>(null);
+  const [stepNumber, setStepNumber] = useState("01");
+  const [stepYear, setStepYear] = useState("2025–2026");
+  const [stepSide, setStepSide] = useState<"left" | "right">("right");
+  const [stepTitle, setStepTitle] = useState("");
+  const [stepDesc, setStepDesc] = useState("");
+
+  const handleOpenAddJourneyModal = () => {
+    setEditingJourneyId(null);
+    const nextNum = (getValues("journeySteps")?.length || 0) + 1;
+    setStepNumber(nextNum < 10 ? `0${nextNum}` : `${nextNum}`);
+    setStepYear("2025–2026");
+    setStepSide(nextNum % 2 === 0 ? "left" : "right");
+    setStepTitle("");
+    setStepDesc("");
+    setIsJourneyModalOpen(true);
+  };
+
+  const handleOpenEditJourneyModal = (item: JourneyStepItem) => {
+    setEditingJourneyId(item.id);
+    setStepNumber(item.number);
+    setStepYear(item.year);
+    setStepSide(item.side);
+    setStepTitle(item.title);
+    setStepDesc(item.desc);
+    setIsJourneyModalOpen(true);
+  };
+
+  const handleSaveJourneyStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stepTitle.trim() || !stepDesc.trim()) {
+      toast.error("Please enter a title and description for the milestone!");
+      return;
+    }
+
+    const currentSteps = getValues("journeySteps") || [];
+
+    if (editingJourneyId) {
+      const updated = currentSteps.map((step) =>
+        step.id === editingJourneyId
+          ? {
+              ...step,
+              number: stepNumber,
+              year: stepYear,
+              side: stepSide,
+              title: stepTitle,
+              desc: stepDesc,
+            }
+          : step
+      );
+      setValue("journeySteps", updated);
+      saveAboutData(getValues());
+      toast.success("Journey milestone updated successfully!");
+    } else {
+      const newStep: JourneyStepItem = {
+        id: `JS-${Date.now()}`,
+        number: stepNumber,
+        year: stepYear,
+        side: stepSide,
+        title: stepTitle,
+        desc: stepDesc,
+      };
+      const updated = [...currentSteps, newStep];
+      setValue("journeySteps", updated);
+      saveAboutData(getValues());
+      toast.success("New journey milestone added!");
+    }
+
+    setIsJourneyModalOpen(false);
+  };
+
+  // Delete Confirm Modal State & Handlers
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    type: "team" | "journey";
+    id: string;
+    title: string;
+  } | null>(null);
+
+  const requestDeleteJourneyStep = (id: string, title: string) => {
+    setDeleteConfirmModal({ type: "journey", id, title });
+  };
+
+  const requestDeleteTeamMember = (id: string, name: string) => {
+    setDeleteConfirmModal({ type: "team", id, title: name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteConfirmModal) return;
+
+    if (deleteConfirmModal.type === "team") {
+      const updatedMembers = (getValues("teamMembers") || []).filter(
+        (m) => m.id !== deleteConfirmModal.id
+      );
+      setValue("teamMembers", updatedMembers);
+      saveAboutData(getValues());
+      toast.error(`Team Member "${deleteConfirmModal.title}" removed.`);
+    } else if (deleteConfirmModal.type === "journey") {
+      const updated = (getValues("journeySteps") || []).filter(
+        (s) => s.id !== deleteConfirmModal.id
+      );
+      setValue("journeySteps", updated);
+      saveAboutData(getValues());
+      toast.error(`Journey Milestone "${deleteConfirmModal.title}" removed.`);
+    }
+
+    setDeleteConfirmModal(null);
+  };
+
+  const handleMoveJourneyStep = (index: number, direction: "up" | "down") => {
+    const current = [...(getValues("journeySteps") || [])];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= current.length) return;
+
+    const temp = current[index];
+    current[index] = current[targetIndex];
+    current[targetIndex] = temp;
+
+    setValue("journeySteps", current);
+    saveAboutData(getValues());
   };
 
   return (
@@ -344,7 +338,7 @@ export default function AboutCMSManager() {
 
           <button
             type="button"
-            onClick={handleSaveAll}
+            onClick={handleSubmit(onSubmit)}
             className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
@@ -353,7 +347,7 @@ export default function AboutCMSManager() {
         </div>
       </div>
 
-      <form onSubmit={handleSaveAll} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* SECTION 1: HERO BANNER SETTINGS */}
         <div className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-200/80 pb-4">
@@ -372,8 +366,7 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.heroBadge}
-                onChange={(e) => setFormData({ ...formData, heroBadge: e.target.value })}
+                {...register("heroBadge")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -384,8 +377,7 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.heroTitleLine1}
-                onChange={(e) => setFormData({ ...formData, heroTitleLine1: e.target.value })}
+                {...register("heroTitleLine1")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -396,19 +388,24 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.heroTitleHighlight}
-                onChange={(e) => setFormData({ ...formData, heroTitleHighlight: e.target.value })}
+                {...register("heroTitleHighlight")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#007eff] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <ImageUploadPreview
-                label="Hero Cover Background Image:"
-                value={formData.heroImage}
-                onChange={(newUrl) => setFormData({ ...formData, heroImage: newUrl })}
-                recommendedSize="Recommended: 1920x800px"
-                aspectRatio="banner"
+              <Controller
+                name="heroImage"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadPreview
+                    label="Hero Cover Background Image:"
+                    value={field.value}
+                    onChange={field.onChange}
+                    recommendedSize="Recommended: 1920x800px"
+                    aspectRatio="banner"
+                  />
+                )}
               />
             </div>
 
@@ -418,8 +415,7 @@ export default function AboutCMSManager() {
               </label>
               <textarea
                 rows={2}
-                value={formData.heroSubtitle}
-                onChange={(e) => setFormData({ ...formData, heroSubtitle: e.target.value })}
+                {...register("heroSubtitle")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-medium focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -430,7 +426,7 @@ export default function AboutCMSManager() {
         <div className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-200/80 pb-4">
             <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
-              <Info className="w-5 h-5 text-[#007eff]" /> 2. Company Overview Story & Counter Cards Settings
+              <Info className="w-5 h-5 text-[#007eff]" /> 2. Company Overview Story &amp; Counter Cards Settings
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               Overview headline, description text, side images, and the 3 bottom statistic counter cards.
@@ -444,9 +440,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.overviewBadge}
-                onChange={(e) => setFormData({ ...formData, overviewBadge: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("overviewBadge")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -456,9 +451,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.overviewTitle1}
-                onChange={(e) => setFormData({ ...formData, overviewTitle1: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
+                {...register("overviewTitle1")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -468,38 +462,55 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.overviewTitleHighlight}
-                onChange={(e) => setFormData({ ...formData, overviewTitleHighlight: e.target.value })}
+                {...register("overviewTitleHighlight")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#007eff] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
             <div className="sm:col-span-1">
-              <ImageUploadPreview
-                label="Overview Left Side Image:"
-                value={formData.overviewLeftImage}
-                onChange={(newUrl) => setFormData({ ...formData, overviewLeftImage: newUrl })}
-                recommendedSize="Recommended: 600x600px"
-                aspectRatio="square"
+              <Controller
+                name="overviewLeftImage"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadPreview
+                    label="Overview Left Side Image:"
+                    value={field.value}
+                    onChange={field.onChange}
+                    recommendedSize="Recommended: 600x600px"
+                    aspectRatio="square"
+                  />
+                )}
               />
             </div>
 
             <div className="sm:col-span-1">
-              <ImageUploadPreview
-                label="Overview Right Side Image:"
-                value={formData.overviewRightImage}
-                onChange={(newUrl) => setFormData({ ...formData, overviewRightImage: newUrl })}
-                recommendedSize="Recommended: 600x600px"
-                aspectRatio="square"
+              <Controller
+                name="overviewRightImage"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadPreview
+                    label="Overview Right Side Image:"
+                    value={field.value}
+                    onChange={field.onChange}
+                    recommendedSize="Recommended: 600x600px"
+                    aspectRatio="square"
+                  />
+                )}
               />
             </div>
 
             <div className="sm:col-span-2">
-              <RichTextEditor
-                label="Overview Description Paragraph (Supports HTML & Formatting):"
-                value={formData.overviewDesc}
-                onChange={(newValue) => setFormData({ ...formData, overviewDesc: newValue })}
-                placeholder="Enter company overview description..."
+              <Controller
+                name="overviewDesc"
+                control={control}
+                render={({ field }) => (
+                  <RichTextEditor
+                    label="Overview Description Paragraph (Supports HTML & Formatting):"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Enter company overview description..."
+                  />
+                )}
               />
             </div>
           </div>
@@ -528,8 +539,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. 16K+"
-                      value={formData.stat1Count}
-                      onChange={(e) => setFormData({ ...formData, stat1Count: e.target.value })}
+                      {...register("stat1Count")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold text-lg focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -538,8 +548,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. Cleanings Completed"
-                      value={formData.stat1Label}
-                      onChange={(e) => setFormData({ ...formData, stat1Label: e.target.value })}
+                      {...register("stat1Label")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-700 font-bold text-xs focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -563,8 +572,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. 1,200+"
-                      value={formData.stat2Count}
-                      onChange={(e) => setFormData({ ...formData, stat2Count: e.target.value })}
+                      {...register("stat2Count")}
                       className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold text-lg focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -573,8 +581,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. Satisfied Clients"
-                      value={formData.stat2Label}
-                      onChange={(e) => setFormData({ ...formData, stat2Label: e.target.value })}
+                      {...register("stat2Label")}
                       className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-700 font-bold text-xs focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -598,8 +605,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. 4.9 / 5"
-                      value={formData.stat3Count}
-                      onChange={(e) => setFormData({ ...formData, stat3Count: e.target.value })}
+                      {...register("stat3Count")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold text-lg focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -608,8 +614,7 @@ export default function AboutCMSManager() {
                     <input
                       type="text"
                       placeholder="e.g. Average Client Rating"
-                      value={formData.stat3Label}
-                      onChange={(e) => setFormData({ ...formData, stat3Label: e.target.value })}
+                      {...register("stat3Label")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-700 font-bold text-xs focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
@@ -637,9 +642,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreBadge}
-                onChange={(e) => setFormData({ ...formData, whoWeAreBadge: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreBadge")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -650,8 +654,7 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreTitle}
-                onChange={(e) => setFormData({ ...formData, whoWeAreTitle: e.target.value })}
+                {...register("whoWeAreTitle")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -663,19 +666,24 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreHighlight}
-                onChange={(e) => setFormData({ ...formData, whoWeAreHighlight: e.target.value })}
+                {...register("whoWeAreHighlight")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#007eff] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
             <div className="sm:col-span-12">
-              <ImageUploadPreview
-                label="Who We Are Main Feature Image:"
-                value={formData.whoWeAreFeatureImage}
-                onChange={(newUrl) => setFormData({ ...formData, whoWeAreFeatureImage: newUrl })}
-                recommendedSize="Recommended: 1200x800px"
-                aspectRatio="banner"
+              <Controller
+                name="whoWeAreFeatureImage"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadPreview
+                    label="Who We Are Main Feature Image:"
+                    value={field.value}
+                    onChange={field.onChange}
+                    recommendedSize="Recommended: 1200x800px"
+                    aspectRatio="banner"
+                  />
+                )}
               />
             </div>
 
@@ -685,9 +693,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreExpYears}
-                onChange={(e) => setFormData({ ...formData, whoWeAreExpYears: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreExpYears")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -697,9 +704,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreExpLabel}
-                onChange={(e) => setFormData({ ...formData, whoWeAreExpLabel: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreExpLabel")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -709,9 +715,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreClientsCount}
-                onChange={(e) => setFormData({ ...formData, whoWeAreClientsCount: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreClientsCount")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -721,9 +726,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreRatingScore}
-                onChange={(e) => setFormData({ ...formData, whoWeAreRatingScore: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreRatingScore")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -733,19 +737,24 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreSubheading}
-                onChange={(e) => setFormData({ ...formData, whoWeAreSubheading: e.target.value })}
+                {...register("whoWeAreSubheading")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
             <div className="sm:col-span-12">
-              <RichTextEditor
-                label="Company Story & Description Paragraphs (Press Enter for line breaks, HTML supported):"
-                value={formData.whoWeArePara1}
-                onChange={(newValue) => setFormData({ ...formData, whoWeArePara1: newValue })}
-                rows={6}
-                placeholder="Type your description text here... Press Enter to create new line breaks or paragraphs."
+              <Controller
+                name="whoWeArePara1"
+                control={control}
+                render={({ field }) => (
+                  <RichTextEditor
+                    label="Company Story & Description Paragraphs (Press Enter for line breaks, HTML supported):"
+                    value={field.value}
+                    onChange={field.onChange}
+                    rows={6}
+                    placeholder="Type your description text here... Press Enter to create new line breaks or paragraphs."
+                  />
+                )}
               />
             </div>
 
@@ -755,9 +764,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreCheck1}
-                onChange={(e) => setFormData({ ...formData, whoWeAreCheck1: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreCheck1")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -767,9 +775,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreCheck2}
-                onChange={(e) => setFormData({ ...formData, whoWeAreCheck2: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreCheck2")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -779,9 +786,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreCheck3}
-                onChange={(e) => setFormData({ ...formData, whoWeAreCheck3: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreCheck3")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -791,9 +797,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.whoWeAreCheck4}
-                onChange={(e) => setFormData({ ...formData, whoWeAreCheck4: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("whoWeAreCheck4")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
           </div>
@@ -804,7 +809,7 @@ export default function AboutCMSManager() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
             <div>
               <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-[#007eff]" /> 4. Executive &amp; Specialist Team Roster ({formData.teamMembers.length} Members)
+                <Users className="w-5 h-5 text-[#007eff]" /> 4. Executive &amp; Specialist Team Roster ({(formData.teamMembers || []).length} Members)
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Manage team specialists, photos, roles, NID badges, and bios displayed on `/about`.
@@ -822,7 +827,7 @@ export default function AboutCMSManager() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {formData.teamMembers.map((member) => (
+            {(formData.teamMembers || []).map((member) => (
               <div
                 key={member.id}
                 className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4 flex flex-col justify-between hover:border-[#007eff]/60 transition-all"
@@ -864,7 +869,7 @@ export default function AboutCMSManager() {
 
                   <button
                     type="button"
-                    onClick={() => handleDeleteTeamMember(member.id, member.name)}
+                    onClick={() => requestDeleteTeamMember(member.id, member.name)}
                     className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                     title="Delete Team Member"
                   >
@@ -874,7 +879,7 @@ export default function AboutCMSManager() {
               </div>
             ))}
 
-            {formData.teamMembers.length === 0 && (
+            {(!formData.teamMembers || formData.teamMembers.length === 0) && (
               <div className="col-span-full py-8 text-center text-slate-500 font-medium">
                 No team specialists added yet. Click &quot;Add Team Specialist&quot; to add one.
               </div>
@@ -895,12 +900,18 @@ export default function AboutCMSManager() {
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
             <div className="sm:col-span-12">
-              <ImageUploadPreview
-                label="Promo CTA Banner Background Image:"
-                value={formData.ctaBannerImage}
-                onChange={(newUrl) => setFormData({ ...formData, ctaBannerImage: newUrl })}
-                recommendedSize="Recommended: 1920x600px"
-                aspectRatio="banner"
+              <Controller
+                name="ctaBannerImage"
+                control={control}
+                render={({ field }) => (
+                  <ImageUploadPreview
+                    label="Promo CTA Banner Background Image:"
+                    value={field.value}
+                    onChange={field.onChange}
+                    recommendedSize="Recommended: 1920x600px"
+                    aspectRatio="banner"
+                  />
+                )}
               />
             </div>
 
@@ -910,9 +921,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.ctaBadgeText}
-                onChange={(e) => setFormData({ ...formData, ctaBadgeText: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("ctaBadgeText")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -922,8 +932,7 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.ctaTitle}
-                onChange={(e) => setFormData({ ...formData, ctaTitle: e.target.value })}
+                {...register("ctaTitle")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -933,7 +942,7 @@ export default function AboutCMSManager() {
               <div className="flex items-center justify-between">
                 <label className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#007eff]" />
-                  <span>Promo Card Dynamic Checkmarks ({formData.ctaChecks?.length || 0} Items):</span>
+                  <span>Promo Card Dynamic Checkmarks ({(formData.ctaChecks || []).length} Items):</span>
                 </label>
 
                 <button
@@ -1024,7 +1033,7 @@ export default function AboutCMSManager() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
             <div>
               <h3 className="text-lg font-bold text-[#11233F] flex items-center gap-2.5">
-                <Milestone className="w-5 h-5 text-[#007eff]" /> 6. Company Journey Timeline Settings ({formData.journeySteps?.length || 0} Milestones)
+                <Milestone className="w-5 h-5 text-[#007eff]" /> 6. Company Journey Timeline Settings ({(formData.journeySteps?.length || 0)} Milestones)
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Manage section pill badge, headline, and timeline milestone cards displayed on `/about`.
@@ -1048,9 +1057,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.journeyBadge}
-                onChange={(e) => setFormData({ ...formData, journeyBadge: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                {...register("journeyBadge")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
               />
             </div>
 
@@ -1061,8 +1069,7 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.journeyTitle}
-                onChange={(e) => setFormData({ ...formData, journeyTitle: e.target.value })}
+                {...register("journeyTitle")}
                 className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
@@ -1074,9 +1081,8 @@ export default function AboutCMSManager() {
               </label>
               <input
                 type="text"
-                value={formData.journeyHighlight}
-                onChange={(e) => setFormData({ ...formData, journeyHighlight: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#007eff] font-black uppercase focus:outline-none focus:border-[#007eff]"
+                {...register("journeyHighlight")}
+                className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#007eff] font-bold uppercase focus:outline-none focus:border-[#007eff]"
               />
             </div>
           </div>
@@ -1085,7 +1091,7 @@ export default function AboutCMSManager() {
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <label className="font-bold text-[#11233F] text-sm flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#007eff]" /> Timeline Milestone Cards List ({formData.journeySteps?.length || 0} Items):
+                <Calendar className="w-4 h-4 text-[#007eff]" /> Timeline Milestone Cards List ({(formData.journeySteps?.length || 0)} Items):
               </label>
 
               <button
@@ -1101,15 +1107,15 @@ export default function AboutCMSManager() {
             <div className="space-y-3">
               {(formData.journeySteps || []).map((step, index) => (
                 <div
-                  key={step.id || index}
-                  className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                  key={step.id}
+                  className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#007eff]/60 transition-all"
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-black text-lg flex-shrink-0">
-                      {step.number || `0${index + 1}`}
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 font-extrabold text-sm flex items-center justify-center flex-shrink-0">
+                      {step.number}
                     </div>
 
-                    <div className="space-y-1 flex-1 min-w-0">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-black px-2.5 py-0.5 rounded-md bg-slate-900 text-white">
                           {step.year}
@@ -1170,15 +1176,15 @@ export default function AboutCMSManager() {
               ))}
 
               {(!formData.journeySteps || formData.journeySteps.length === 0) && (
-                <div className="py-8 text-center text-slate-400 font-medium bg-white rounded-2xl border border-slate-200">
-                  No journey milestones added yet. Click &quot;Add Journey Milestone&quot; to add one.
+                <div className="text-center py-6 text-xs font-bold text-slate-400">
+                  No journey milestone steps added yet. Click &quot;Add Journey Milestone&quot; to add one.
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Submit Bar */}
+        {/* BOTTOM SAVE BUTTON */}
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
@@ -1190,7 +1196,7 @@ export default function AboutCMSManager() {
         </div>
       </form>
 
-      {/* ADD / EDIT TEAM MEMBER MODAL */}
+      {/* ADD / EDIT TEAM SPECIALIST MODAL */}
       {isTeamModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 relative my-8">
@@ -1204,7 +1210,7 @@ export default function AboutCMSManager() {
                     {editingMemberId ? "Edit Team Specialist" : "Add Team Specialist"}
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold">
-                    Configure staff profile for `/about`
+                    Configure specialist profile details for `/about`
                   </p>
                 </div>
               </div>

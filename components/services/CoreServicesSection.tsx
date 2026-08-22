@@ -5,20 +5,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { getStoredServices, ServiceDetail } from "@/lib/servicesData";
+import { getStoredServicesCMSData, defaultServicesCMSData, ServicesCMSContent } from "@/lib/servicesCMSData";
 
 export default function CoreServicesSection() {
   const [servicesList, setServicesList] = useState<ServiceDetail[]>([]);
+  const [cmsData, setCmsData] = useState<ServicesCMSContent>(defaultServicesCMSData);
 
   useEffect(() => {
     setServicesList(getStoredServices());
+    setCmsData(getStoredServicesCMSData());
 
     const handleUpdate = () => {
       setServicesList(getStoredServices());
+      setCmsData(getStoredServicesCMSData());
     };
 
     window.addEventListener("cleanix_services_updated", handleUpdate);
+    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
     return () => {
       window.removeEventListener("cleanix_services_updated", handleUpdate);
+      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
     };
   }, []);
 
@@ -31,12 +37,15 @@ export default function CoreServicesSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-6 py-2 mb-6 bg-blue-50/50">
             <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>OUR CORE SERVICES</span>
+            <span>{cmsData.coreBadge || "OUR CORE SERVICES"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12]">
-            RELIABLE HOME &amp; COMMERCIAL <br />
-            <span className="text-[#007eff]">CLEANING</span> SERVICES
+            {cmsData.coreTitleLine1}{" "}
+            {cmsData.coreTitleHighlight && (
+              <span className="text-[#007eff]">{cmsData.coreTitleHighlight}</span>
+            )}{" "}
+            {cmsData.coreTitleLine2}
           </h2>
         </div>
 

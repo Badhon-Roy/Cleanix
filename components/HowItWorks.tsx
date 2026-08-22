@@ -1,71 +1,71 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-
-const stepsList = [
-  {
-    step: "STEP 01",
-    title: "INSTANT BOOKING & ESTIMATE",
-    description:
-      "আপনার স্পেসের সাইজ (SqFt), রুম সংখ্যা এবং সুবিধাজনক সময় বেছে নিয়ে কয়েক সেকেন্ডে ডাইনামিক কোটেশন পেয়ে যান।",
-    image:
-      "https://framerusercontent.com/images/iP0bB1oMamNlkOzNJQUNBhTRiU.png?width=464&height=320",
-  },
-  {
-    step: "STEP 02",
-    title: "VERIFIED TEAM VISIT",
-    description:
-      "আমাদের ভেরিফাইড ক্লিনার টিম নির্ধারিত সময়ে পৌঁছে আন্তর্জাতিক মানের সেফ কেমিক্যালস দিয়ে সেবা প্রদান করবে।",
-    image:
-      "https://framerusercontent.com/images/qQZSYnMAEFCtGMlduHTBAQmANg.png?width=464&height=320",
-  },
-  {
-    step: "STEP 03",
-    title: "QUALITY CHECK & INVOICE",
-    description:
-      "কাজ শেষে বিফোর/আফটার ফটো ইনসপেকশন, ইনস্ট্যান্ট কাস্টমার রেটিং এবং অ্যাপ থেকে অটোমেটেড ইনভয়েস ডাউনলোড করুন।",
-    image:
-      "https://framerusercontent.com/images/2Zn55hKsUUZQoQR8DfeD1PUXY78.png?width=464&height=320",
-  },
-];
+import {
+  getStoredServicesCMSData,
+  defaultServicesCMSData,
+  ServicesCMSContent,
+} from "@/lib/servicesCMSData";
 
 export default function HowItWorks() {
+  const [data, setData] = useState<ServicesCMSContent>(defaultServicesCMSData);
+
+  useEffect(() => {
+    setData(getStoredServicesCMSData());
+
+    const handleUpdate = () => {
+      setData(getStoredServicesCMSData());
+    };
+
+    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
+    };
+  }, []);
+
+  const stepsList = data.howItWorksSteps || defaultServicesCMSData.howItWorksSteps;
+
   return (
-    <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+    <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100">
       <div className="container mx-auto max-w-7xl">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-12 mb-12 md:mb-16">
           {/* Badge & Headline (Left) */}
           <div className="max-w-2xl">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4">
-              HOW IT WORKS
+              {data.howItWorksBadge || "HOW IT WORKS"}
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-              EASY STEPS TO BOOK YOUR{" "}
-              <span className="text-[#007eff]">CLEANING</span>
+              {data.howItWorksTitle}{" "}
+              {data.howItWorksHighlight && (
+                <span className="text-[#007eff]">{data.howItWorksHighlight}</span>
+              )}
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
-          <div className="lg:max-w-md">
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              সহজ বুকিং প্রসেস, ক্লিনারদের লাইভ জিপিএস ট্র্যাকিং এবং কোয়ালিটি গ্যারান্টি নিয়ে আপনার সেবা নিশ্চিত করুন ৩টি সহজ ধাপে।
-            </p>
-          </div>
+          {data.howItWorksRightDesc && (
+            <div className="lg:max-w-md">
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-medium">
+                {data.howItWorksRightDesc}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* 3 Step Cards Grid */}
+        {/* Dynamic Step Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-8">
           {stepsList.map((item, index) => (
-            <div key={index} className="flex flex-col group">
+            <div key={item.id || index} className="flex flex-col group">
               {/* Top Image Card */}
-              <div className="relative w-full h-[240px] sm:h-[270px] overflow-hidden">
+              <div className="relative w-full h-[240px] sm:h-[270px] overflow-hidden rounded-t-2xl bg-slate-100">
                 <Image
                   src={item.image}
                   alt={item.title}
                   fill
                   priority
+                  unoptimized
                   className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
