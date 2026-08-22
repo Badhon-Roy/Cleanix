@@ -9,6 +9,15 @@ export interface TeamMemberItem {
   bio: string;
 }
 
+export interface JourneyStepItem {
+  id: string;
+  number: string;
+  year: string;
+  side: "left" | "right";
+  title: string;
+  desc: string;
+}
+
 export interface AboutContent {
   heroBadge: string;
   heroTitleLine1: string;
@@ -48,6 +57,23 @@ export interface AboutContent {
   whoWeAreCheck4: string;
 
   teamMembers: TeamMemberItem[];
+
+  // Section 5: Professional CTA Banner Data
+  ctaBannerImage: string;
+  ctaBadgeText: string;
+  ctaTitle: string;
+  ctaCheck1: string;
+  ctaCheck2: string;
+  ctaCheck3: string;
+  ctaChecks: string[];
+  ctaButtonText: string;
+  ctaButtonLink: string;
+
+  // Section 6: Our Journey Timeline Data
+  journeyBadge: string;
+  journeyTitle: string;
+  journeyHighlight: string;
+  journeySteps: JourneyStepItem[];
 }
 
 export const initialAboutData: AboutContent = {
@@ -73,7 +99,6 @@ export const initialAboutData: AboutContent = {
   stat3Count: "4.9 / 5",
   stat3Label: "Average Client Rating",
 
-  // Who We Are Initial Data
   whoWeAreBadge: "ABOUT OUR COMPANY",
   whoWeAreTitle: "DELIVERING RELIABLE CLEANING SOLUTIONS WITH PROFESSIONAL CARE & LASTING",
   whoWeAreHighlight: "QUALITY",
@@ -117,9 +142,54 @@ export const initialAboutData: AboutContent = {
       bio: "ইকো-ফ্রেন্ডলি সার্টিফাইড অর্গানিক কেমিক্যাল ও স্টিম অ্যাপ্লায়েন্স কেয়ার এক্সপার্ট।",
     },
   ],
+
+  ctaBannerImage: "https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750",
+  ctaBadgeText: "• CLEANING • DEEP CLEAN • HOME CARE • SANITIZE",
+  ctaTitle: "LET'S MOVE YOUR CLEANING WITH PROFESSIONAL",
+  ctaCheck1: "RESIDENTIAL CLEANING SERVICES",
+  ctaCheck2: "COMMERCIAL CLEANING SOLUTIONS",
+  ctaCheck3: "ECO-FRIENDLY CLEANING PRODUCTS",
+  ctaChecks: [
+    "RESIDENTIAL CLEANING SERVICES",
+    "COMMERCIAL CLEANING SOLUTIONS",
+    "ECO-FRIENDLY CLEANING PRODUCTS",
+  ],
+  ctaButtonText: "Get a Quote",
+  ctaButtonLink: "/#quote",
+
+  // Section 6 Initial Data
+  journeyBadge: "OUR JOURNEY",
+  journeyTitle: "BUILDING CLEANER SPACES",
+  journeyHighlight: "WITH EVERY SERVICE",
+  journeySteps: [
+    {
+      id: "JS-101",
+      number: "01",
+      year: "2025–2026",
+      side: "right",
+      title: "Expanding Smart SaaS Automation Across Dhaka City",
+      desc: "গুলশান, বনানী, উত্তরা, ধানমন্ডি ও মতিঝিলে আমাদের ১,২০০+ সক্রিয় বিটুবি ও বিটুসি গ্রাহকদের জন্য রিয়েল-টাইম জিপিএস ট্র্যাকিং, অনলাইন বিটুবি সাবস্ক্রিপশন ও ডিজিটাল ইনভয়েসিং সিস্টেম চালু।",
+    },
+    {
+      id: "JS-102",
+      number: "02",
+      year: "2022–2023",
+      side: "left",
+      title: "Hospital-Grade Chemical & HEPA Scrubbers Setup",
+      desc: "বাংলাদেশি বাসাবাড়ি ও অফিসের জন্য বিশ্বমানের অ্যান্টি-ব্যাকটেরিয়াল ইকো কেমিক্যালস, ইন্ডাস্ট্রিয়াল ফ্লোর বাফার ও ১০০% এনআইডি-ভেরিফাইড প্রফেশনাল ক্লিনার টিম গঠন।",
+    },
+    {
+      id: "JS-103",
+      number: "03",
+      year: "2020–2021",
+      side: "right",
+      title: "Company Founded in Dhaka",
+      desc: "ঢাকার ব্যস্ত পরিবার ও করপোরেট প্রতিষ্ঠানকে সাশ্রয়ী খরচে (৳6,000 / ৳14,000 / ৳30,000 প্যাকেজে) নিখুঁত ও নির্ভরযোগ্য ক্লিনিং সেবা দেওয়ার ভিশন নিয়ে ক্লিনিক্সের শুভ সূচনা।",
+    },
+  ],
 };
 
-const STORAGE_KEY = "cleanix_about_data_v5";
+const STORAGE_KEY = "cleanix_about_data_v8";
 
 export function getStoredAboutData(): AboutContent {
   if (typeof window === "undefined") return initialAboutData;

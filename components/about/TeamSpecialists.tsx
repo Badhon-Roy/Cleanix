@@ -88,7 +88,10 @@ export default function TeamSpecialists() {
         <div className="mt-40 relative w-full overflow-visible min-h-[440px] md:min-h-[500px] flex items-center justify-end p-6 sm:p-10 md:p-12 mb-24">
           <div className="absolute inset-0 overflow-hidden rounded-xl">
             <Image
-              src="https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750"
+              src={
+                data.ctaBannerImage ||
+                "https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750"
+              }
               alt="Professional Floor Cleaning Banner"
               fill
               unoptimized
@@ -112,7 +115,7 @@ export default function TeamSpecialists() {
                 />
                 <text className="text-[9.2px] font-bold fill-white tracking-widest uppercase">
                   <textPath href="#circlePath" startOffset="0%">
-                    • CLEANING • DEEP CLEAN • HOME CARE • SANITIZE
+                    {data.ctaBadgeText || "• CLEANING • DEEP CLEAN • HOME CARE • SANITIZE"}
                   </textPath>
                 </text>
               </svg>
@@ -135,42 +138,33 @@ export default function TeamSpecialists() {
           <div className="relative lg:absolute lg:right-10 lg:top-1/2 lg:-bottom-16 z-20 w-full lg:max-w-md bg-[#007eff] rounded-3xl p-8 sm:p-10 text-white shadow-2xl border border-white/20 my-4 lg:my-0 flex flex-col justify-between">
             <div>
               <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
-                LET&apos;S MOVE YOUR CLEANING WITH PROFESSIONAL
+                {data.ctaTitle || "LET'S MOVE YOUR CLEANING WITH PROFESSIONAL"}
               </h3>
 
               <div className="space-y-3 mb-8">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Check className="w-5 h-5 text-white stroke-[3]" />
+                {(data.ctaChecks && data.ctaChecks.length > 0
+                  ? data.ctaChecks
+                  : [
+                      data.ctaCheck1 || "RESIDENTIAL CLEANING SERVICES",
+                      data.ctaCheck2 || "COMMERCIAL CLEANING SOLUTIONS",
+                      data.ctaCheck3 || "ECO-FRIENDLY CLEANING PRODUCTS",
+                    ]
+                ).map((checkItem, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div>
+                      <Check className="w-5 h-5 text-white stroke-[3]" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wide text-white">
+                      {checkItem}
+                    </span>
                   </div>
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide text-white">
-                    RESIDENTIAL CLEANING SERVICES
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Check className="w-5 h-5 text-white stroke-[3]" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide text-white">
-                    COMMERCIAL CLEANING SOLUTIONS
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Check className="w-5 h-5 text-white stroke-[3]" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide text-white">
-                    ECO-FRIENDLY CLEANING PRODUCTS
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
 
             <div>
               <Link
-                href="/#quote"
+                href={data.ctaButtonLink || "/#quote"}
                 className="bg-[#001837] hover:bg-[#0b2144] text-white font-bold text-xs uppercase tracking-wider pl-6 hover:pl-10 pr-2 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-xl hover:scale-105"
               >
                 <span>Get a Quote</span>

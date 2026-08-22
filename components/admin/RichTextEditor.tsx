@@ -86,7 +86,7 @@ export default function RichTextEditor({
   return (
     <div className="space-y-1.5 w-full">
       <div className="flex items-center justify-between">
-        <label className="font-extrabold text-slate-800 text-xs sm:text-sm">
+        <label className="font-extrabold text-[#11233F] text-xs sm:text-sm">
           {label}
         </label>
         <button
@@ -184,7 +184,7 @@ export default function RichTextEditor({
           onInput={handleInput}
           onBlur={handleInput}
           style={{ minHeight: `${rows * 32}px` }}
-          className="w-full bg-white border border-slate-200 rounded-b-2xl p-4 text-slate-900 font-medium text-sm sm:text-[15px] focus:outline-none focus:border-[#007eff] transition-all leading-relaxed whitespace-pre-wrap cursor-text"
+          className="w-full bg-white border border-slate-200 rounded-b-2xl p-4 text-[#11233F] font-medium text-sm sm:text-[15px] focus:outline-none focus:border-[#007eff] transition-all leading-relaxed whitespace-pre-wrap cursor-text"
         />
       ) : (
         <textarea

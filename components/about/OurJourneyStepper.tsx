@@ -2,33 +2,53 @@
 
 import React, { useState, useEffect } from "react";
 import { Sparkles, Calendar } from "lucide-react";
+import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
 
 export default function OurJourneyStepper() {
+  const [data, setData] = useState<AboutContent>(getStoredAboutData());
   const [activeStep, setActiveStep] = useState(0);
 
-  const steps = [
-    {
-      number: "01",
-      year: "2025–2026",
-      side: "right",
-      title: "Expanding Smart SaaS Automation Across Dhaka City",
-      desc: "গুলশান, বনানী, উত্তরা, ধানমন্ডি ও মতিঝিলে আমাদের ১,২০০+ সক্রিয় বিটুবি ও বিটুসি গ্রাহকদের জন্য রিয়েল-টাইম জিপিএস ট্র্যাকিং, অনলাইন বিটুবি সাবস্ক্রিপশন ও ডিজিটাল ইনভয়েসিং সিস্টেম চালু।",
-    },
-    {
-      number: "02",
-      year: "2022–2023",
-      side: "left",
-      title: "Hospital-Grade Chemical & HEPA Scrubbers Setup",
-      desc: "বাংলাদেশি বাসাবাড়ি ও অফিসের জন্য বিশ্বমানের অ্যান্টি-ব্যাকটেরিয়াল ইকো কেমিক্যালস, ইন্ডাস্ট্রিয়াল ফ্লোর বাফার ও ১০০% এনআইডি-ভেরিফাইড প্রফেশনাল ক্লিনার টিম গঠন।",
-    },
-    {
-      number: "03",
-      year: "2020–2021",
-      side: "right",
-      title: "Company Founded in Dhaka",
-      desc: "ঢাকার ব্যস্ত পরিবার ও করপোরেট প্রতিষ্ঠানকে সাশ্রয়ী খরচে (৳6,000 / ৳14,000 / ৳30,000 প্যাকেজে) নিখুঁত ও নির্ভরযোগ্য ক্লিনিং সেবা দেওয়ার ভিশন নিয়ে ক্লিনিক্সের শুভ সূচনা।",
-    },
-  ];
+  useEffect(() => {
+    setData(getStoredAboutData());
+
+    const handleUpdate = () => {
+      setData(getStoredAboutData());
+    };
+
+    window.addEventListener("cleanix_about_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_about_updated", handleUpdate);
+    };
+  }, []);
+
+  const steps = data.journeySteps && data.journeySteps.length > 0
+    ? data.journeySteps
+    : [
+        {
+          id: "JS-101",
+          number: "01",
+          year: "2025–2026",
+          side: "right" as const,
+          title: "Expanding Smart SaaS Automation Across Dhaka City",
+          desc: "গুলশান, বনানী, উত্তরা, ধানমন্ডি ও মতিঝিলে আমাদের ১,২০০+ সক্রিয় বিটুবি ও বিটুসি গ্রাহকদের জন্য রিয়েল-টাইম জিপিএস ট্র্যাকিং, অনলাইন বিটুবি সাবস্ক্রিপশন ও ডিজিটাল ইনভয়েসিং সিস্টেম চালু।",
+        },
+        {
+          id: "JS-102",
+          number: "02",
+          year: "2022–2023",
+          side: "left" as const,
+          title: "Hospital-Grade Chemical & HEPA Scrubbers Setup",
+          desc: "বাংলাদেশি বাসাবাড়ি ও অফিসের জন্য বিশ্বমানের অ্যান্টি-ব্যাকটেরিয়াল ইকো কেমিক্যালস, ইন্ডাস্ট্রিয়াল ফ্লোর বাফার ও ১০০% এনআইডি-ভেরিফাইড প্রফেশনাল ক্লিনার টিম গঠন।",
+        },
+        {
+          id: "JS-103",
+          number: "03",
+          year: "2020–2021",
+          side: "right" as const,
+          title: "Company Founded in Dhaka",
+          desc: "ঢাকার ব্যস্ত পরিবার ও করপোরেট প্রতিষ্ঠানকে সাশ্রয়ী খরচে (৳6,000 / ৳14,000 / ৳30,000 প্যাকেজে) নিখুঁত ও নির্ভরযোগ্য ক্লিনিং সেবা দেওয়ার ভিশন নিয়ে ক্লিনিক্সের শুভ সূচনা।",
+        },
+      ];
 
   // Automatic scroll listener for active step progression on scroll
   useEffect(() => {
@@ -43,19 +63,18 @@ export default function OurJourneyStepper() {
         const currentScroll = windowHeight * 0.7 - rect.top;
         const percentage = currentScroll / totalHeight;
 
-        if (percentage < 0.4) {
-          setActiveStep(0);
-        } else if (percentage < 0.75) {
-          setActiveStep(1);
-        } else {
-          setActiveStep(2);
-        }
+        const totalSteps = steps.length || 1;
+        const stepIndex = Math.min(
+          totalSteps - 1,
+          Math.max(0, Math.floor(percentage * totalSteps))
+        );
+        setActiveStep(stepIndex);
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [steps.length]);
 
   return (
     <section
@@ -70,29 +89,24 @@ export default function OurJourneyStepper() {
         <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-blue-50/10 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>OUR JOURNEY</span>
+            <span>{data.journeyBadge || "OUR JOURNEY"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white leading-[1.12]">
-            BUILDING CLEANER SPACES <br />
-            <span className="text-[#007eff]">WITH EVERY SERVICE</span>
+            {data.journeyTitle || "BUILDING CLEANER SPACES"} <br />
+            <span className="text-[#007eff]">{data.journeyHighlight || "WITH EVERY SERVICE"}</span>
           </h2>
         </div>
 
         {/* Vertical Timeline Stepper */}
-        <div className="relative w-full min-h-[700px] flex flex-col justify-between py-6">
+        <div className="relative w-full min-h-[500px] flex flex-col justify-between py-6">
           {/* Timeline Center Continuous Progress Line */}
           <div className="absolute left-6 md:left-1/2 md:-translate-x-1/2 top-6 bottom-6 w-1 bg-white/15 rounded-full z-0 overflow-hidden">
             {/* Active & Passed Stepper Line Fill */}
             <div
               className="w-full bg-[#007eff] rounded-full transition-all duration-700 shadow-[0_0_15px_#007eff]"
               style={{
-                height:
-                  activeStep === 0
-                    ? "33%"
-                    : activeStep === 1
-                    ? "66%"
-                    : "100%",
+                height: `${Math.min(100, Math.max(15, ((activeStep + 1) / steps.length) * 100))}%`,
               }}
             />
           </div>
@@ -100,14 +114,15 @@ export default function OurJourneyStepper() {
           {/* Stepper Node Items */}
           {steps.map((step, idx) => {
             const isPassedOrActive = idx <= activeStep;
+            const stepNumberStr = step.number || (idx + 1 < 10 ? `0${idx + 1}` : `${idx + 1}`);
 
             return (
               <div
-                key={idx}
+                key={step.id || idx}
                 onClick={() => setActiveStep(idx)}
                 className="relative z-10 grid grid-cols-1 md:grid-cols-12 items-center gap-4 sm:gap-6 cursor-pointer my-6 sm:my-8 group transition-all duration-500"
               >
-                {/* Mobile Circle Badge (Only visible on mobile < md) */}
+                {/* Mobile Circle Badge */}
                 <div className="md:hidden absolute left-6 -translate-x-1/2 top-6 z-20 flex justify-center items-center">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-base transition-all duration-500 border-4 shadow-xl ${
@@ -116,7 +131,7 @@ export default function OurJourneyStepper() {
                         : "bg-[#001837] border-white/20 text-slate-400"
                     }`}
                   >
-                    {step.number}
+                    {stepNumberStr}
                   </div>
                 </div>
 
@@ -164,7 +179,7 @@ export default function OurJourneyStepper() {
                         : "bg-[#001837] border-white/20 text-slate-400"
                     }`}
                   >
-                    {step.number}
+                    {stepNumberStr}
                   </div>
                 </div>
 
