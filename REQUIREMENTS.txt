@@ -57,146 +57,83 @@ Revenue Generation Streams & Detailed Package Breakdown (গ্রাহক য�
 
 
 --------------------------------------------------------------------------------
-3. SYSTEM ARCHITECTURE & TECH STACK
+৩. ইউজার রোলসমূহ এবং পারমিশন ম্যাট্রিক্স (USER ROLES & RBAC MATRIX)
 --------------------------------------------------------------------------------
-- Frontend Framework: Next.js 16 (App Router with Server Components & Actions)
-- Styling & UI: Tailwind CSS v4 + Framer Motion + Lenis Smooth Scroll + Lucide React
-- Database: MongoDB Atlas
-- ORM / ODM Layer: Mongoose
-- Authentication: NextAuth.js (Auth.js) / Clerk (Credentials, Google OAuth, Magic Link, RBAC)
-- Payment Engines & Billing: Stripe API, SSLCommerz, bKash Gateway (Subscriptions, Webhooks, Dunning)
-- Media & Storage: Cloudinary / Uploadthing (Before/After Proof of Work Photos)
-- Communication APIs: Resend (Transactional Emails & PDF Invoices) + Twilio (SMS Dispatch Alerts)
-- Validation & State: Zod, React Hook Form, Zustand / React Context
+১. SUPER_ADMIN (সুপার অ্যাডমিন / প্ল্যাটফর্ম অপারেশনস প্রধান)
+   - অ্যাক্সেস পাথ: /admin/*
+   - দায়িত্ব ও ক্ষমতা:
+     * সম্পূর্ণ Admin HQ Control Center পরিচালনা করার অসীম ক্ষমতা।
+     * ৮টি পাবলিক পেজের সিএমএস ডেটা লাইভ এডিট ও আপডেট করা (Home, About, Services, Projects, Pricing, Coverage, Contact, Blog)।
+     * বুকিং ও ডিসপ্যাচ ম্যানেজমেন্ট: ক্লিনারদের কাজের আবেদন (Application) অনুমোদন বা বাতিল এবং টিম অ্যাসাইন করা (AssignCleanerModal)।
+     * কাস্টমার সিআরএম: নতুন কাস্টমার রেজিস্টার করা (AddCustomerModal), অ্যাকাউন্ট স্ট্যাটাস টগল (ACTIVE / SUSPENDED) এবং কনফার্মেশনসহ অ্যাকাউন্ট ডিলিট করা।
+     * ক্লিনার সিআরএম: নতুন ক্লিনার স্টাফ যোগ করা (AddCleanerModal), হাব লোকেশন নির্ধারণ করা, ডিউটি স্ট্যাটাস (ON_DUTY / OFF_DUTY) ও অ্যাকাউন্ট সাসপেন্ড করা।
+     * ইনবক্স মেসেজ ফিল্টার, দেখা ও রিপ্লাই প্রদান করা।
+     * সিস্টেম সেটিংস: কোম্পানির তথ্য, সাপোর্ট নম্বর, পেমেন্ট গেটওয়ে (Stripe, SSLCommerz, bKash, COD) এবং অ্যাডমিন পাসওয়ার্ড পরিবর্তন।
+     * আর্থিক অ্যানালিটিক্স ও আয়-ব্যয়ের মানচিত্র পর্যবেক্ষণ।
 
+২. CUSTOMER (আবাসিক ও বাণিজ্যিক ক্লায়েন্ট)
+   - অ্যাক্সেস পাথ: /dashboard/*
+   - দায়িত্ব ও ক্ষমতা:
+     * নিজস্ব কাস্টমার পোর্টাল ড্যাশবোর্ড দেখা।
+     * বুকিং হিস্ট্রি, লাইভ জব স্ট্যাটাস ও বাকি থাকা সাবস্ক্রিপশন ভিজিট ট্র্যাকিং।
+     * ডাইনামিক এস্টিমেটরের সাহায্যে নতুন সার্ভিস বুক করা।
+     * সক্রিয় সাবস্ক্রিপশন প্ল্যান (Basic, Standard, Premium) দেখা।
+     * ডিজিটাল ইনভয়েস ও রসিদ ডাউনলোড করা।
+     * নোটিফিকেশন দেখা এবং প্রোফাইল তথ্য ও ঠিকানা আপডেট করা।
 
---------------------------------------------------------------------------------
-4. DATABASE SCHEMAS & DATA MODELING (MONGOOSE)
---------------------------------------------------------------------------------
-1. User Schema:
-   - _id: ObjectId
-   - name: String (Required)
-   - email: String (Unique, Required)
-   - passwordHash: String (Optional for OAuth users)
-   - phone: String (Required)
-   - role: String (Enum: "CUSTOMER", "CLEANER", "ADMIN", Default: "CUSTOMER")
-   - address: { street: String, city: String, area: String, zipCode: String, geoCoordinates: { lat: Number, lng: Number } }
-   - avatarUrl: String
-   - createdAt, updatedAt: Date
-
-2. Booking Schema:
-   - _id: ObjectId
-   - bookingNumber: String (Unique, e.g., "CLN-2026-8891")
-   - customerId: ObjectId (Ref: User)
-   - cleanerTeamId: ObjectId (Ref: User, Optional until assigned)
-   - serviceType: String (Enum: "RESIDENTIAL", "COMMERCIAL", "DEEP_CLEAN", "MOVE_IN_OUT", "POST_CONSTRUCTION")
-   - propertyDetails: { sqft: Number, bedrooms: Number, bathrooms: Number }
-   - selectedAddons: [{ name: String, price: Number }]
-   - totalAmount: Number (Required)
-   - status: String (Enum: "PENDING", "ASSIGNED", "EN_ROUTE", "IN_PROGRESS", "COMPLETED", "CANCELLED")
-   - scheduledDate: Date (Required)
-   - timeSlot: String (e.g., "09:00 AM - 11:00 AM")
-   - paymentStatus: String (Enum: "UNPAID", "PAID", "REFUNDED")
-   - paymentMethod: String (Enum: "STRIPE", "SSLCOMMERZ", "BKASH", "CASH_ON_DELIVERY")
-   - createdAt, updatedAt: Date
-
-3. Subscription Schema:
-   - _id: ObjectId
-   - customerId: ObjectId (Ref: User)
-   - planType: String (Enum: "BASIC", "STANDARD", "PREMIUM")
-   - monthlyPrice: Number
-   - stripeSubscriptionId: String
-   - status: String (Enum: "ACTIVE", "PAST_DUE", "CANCELLED")
-   - visitsPerMonth: Number
-   - remainingVisits: Number
-   - currentPeriodStart: Date
-   - currentPeriodEnd: Date
-
-4. ProofOfWork Schema:
-   - _id: ObjectId
-   - bookingId: ObjectId (Ref: Booking)
-   - cleanerId: ObjectId (Ref: User)
-   - beforePhotos: [String] (Cloudinary URLs)
-   - afterPhotos: [String] (Cloudinary URLs)
-   - notes: String
-   - customerRating: Number (1-5)
-   - customerReview: String
-   - createdAt: Date
+৩. CLEANER / FIELD_STAFF (সার্টিফাইড ক্লিনার ও সুপারভাইজার)
+   - অ্যাক্সেস পাথ: /cleaner/*
+   - দায়িত্ব ও ক্ষমতা:
+     * মোবাইল-ফ্রেন্ডলি ফিল্ড স্টাফ পোর্টাল ড্যাশবোর্ড দেখা।
+     * উন্মুক্ত জবের তালিকা দেখা এবং ১-ক্লিকে জবের জন্য আবেদন করা।
+     * নির্ধারিত জবের বিস্তারিত, কাস্টমারের ফোন ও ঠিকানা দেখা।
+     * ম্যাপের মাধ্যমে কাস্টমার লোকেশনে পৌঁছানো।
+     * Proof of Work Camera Upload: কাজ শুরুর আগের ও কাজ শেষের (Before/After) ছবি আপলোড করা।
+     * কাজের ডিউটি স্ট্যাটাস (ON_DUTY / OFF_DUTY) টগল করা।
 
 
 --------------------------------------------------------------------------------
-5. API ROUTE ARCHITECTURE & SERVER ACTIONS
+৪. ড্যাশবোর্ড আর্কিটেকচার এবং মডিউল সামারি (DASHBOARD MODULE SUMMARY)
 --------------------------------------------------------------------------------
-- Auth Routes:
-  - POST /api/auth/register (User registration)
-  - POST /api/auth/[...nextauth] (NextAuth callback & session management)
+১. অ্যাডমিন কন্ট্রোল সেন্টার ড্যাশবোর্ড (ADMIN HQ - /admin)
+   - Overview & KPIs: মোট আয়, সচল বুকিং, সার্টিফাইড ক্লিনার ও কাস্টমার রেটিং, মেসেজ ফিড, জব অ্যাপ্লিকেশন এপ্রুভাল এবং ডিসপ্যাচ মোডাল।
+   - Bookings & Dispatch: বুকিং তালিকা, ফিল্টারিং (ALL, PENDING, ASSIGNED, COMPLETED) ও টিম অ্যাসাইন মোডাল।
+   - Coverage Areas: ঢাকা মেট্রোপলিটন কাভারেজ এরিয়া ও জোন ম্যানেজার।
+   - Contact Messages: ক্লায়েন্ট মেসেজ ইনবক্স, রিপ্লাই মোডাল ও স্ট্যাটাস ট্র্যাকিং।
+   - Projects Portfolio: প্রজেক্ট গ্যালারি, কাজের আগের/পরের ছবি ও ক্লায়েন্ট ট্যাগস।
+   - Cleaners & Staff CRM: স্টাফ ডিরেক্টরি, হাব ফিল্টার, অন-ডিউটি/অফ-ডিউটি, সক্রিয়/সাসপেন্ড টগল ও AddCleanerModal।
+   - Services & Pricing: সার্ভিস ক্যাটাগরি, প্যাকেজ রেট ও সাব-সার্ভিসেস।
+   - Dynamic Content CMS: ৮টি পেজ লেভেল সিএমএস মডিউল (Home, About, Services, Projects, Pricing, Coverage, Contact, Blog)।
+   - Customers & Plans CRM: কাস্টমার ডিরেক্টরি, প্ল্যান ফিল্টার, সক্রিয়/সাসপেন্ড টগল, AddCustomerModal ও DeleteCardConfirmModal।
+   - Revenue Analytics: মোট আয়, মান্থলি গ্রাফ ও রেভিনিউ রিপোর্ট।
+   - System Settings: কোম্পানি তথ্য, হটলাইন, পেমেন্ট গেটওয়ে টগল ও সিকিউরিটি পাসওয়ার্ড ফর্ম।
 
-- Pricing & Booking Routes:
-  - POST /api/pricing/estimate (Calculates instant quote based on sqft & rooms)
-  - POST /api/bookings (Create new booking & lock time slot)
-  - GET  /api/bookings/my-bookings (Fetch customer booking history)
-  - PATCH /api/bookings/[id]/status (Update booking status by Cleaner or Admin)
+২. কাস্টমার পোর্টাল ড্যাশবোর্ড (CUSTOMER PORTAL - /dashboard)
+   - Overview: ওয়েলকাম ব্যানার, সচল সাবস্ক্রিপশন কার্ড, কুইক বুকিং লিংক ও মোট সম্পন্ন করা বুকিং সংখ্যা।
+   - My Bookings: সম্পন্ন হওয়া ও আগামী সার্ভিসের তালিকা।
+   - Subscription: বর্তমান মান্থলি প্ল্যান, বিলিং সাইকেল ও ভিজিট কাউন্টার।
+   - New Booking: ডাইনামিক প্রাইসিং এস্টিমেটর ও ইনস্ট্যান্ট বুকিং উইজার্ড।
+   - Invoices & Receipts: ডিজিটাল ইনভয়েস হিস্ট্রি ও পেমেন্ট রসিদ ডাউনলোড।
+   - Notifications: সার্ভিস আপডেট ও অফার নোটিফিকেশন।
+   - Account Settings: কাস্টমার নাম, ফোন ও সেভ করা ঠিকানা।
 
-- Admin & Dispatcher Routes:
-  - GET  /api/admin/dispatch (Fetch visual schedule calendar & cleaner availability)
-  - PATCH /api/admin/assign-cleaner (Assign cleaner team to specific booking)
-  - GET  /api/admin/analytics (Fetch daily revenue, total bookings, active subscriptions)
+৩. ফিল্ড স্টাফ মোবাইল ড্যাশবোর্ড (CLEANER PORTAL - /cleaner)
+   - Available Jobs: খালি জবের তালিকা ও আবেদন বাটন।
+   - My Assigned Jobs: কনফার্ম হওয়া কাজ, কাস্টমারের ঠিকানা ও সময়।
+   - Proof of Work: কাজের আগে ও পরের ফটো আপলোড উইজার্ড।
+   - Cleaner Profile: কাজের রেটিং (★), সম্পূর্ণ করা জবের সংখ্যা, সার্ভিস ভ্যান ও ডিউটি টগল (ON_DUTY / OFF_DUTY)।
 
-- Payment & Webhook Handlers:
-  - POST /api/payments/stripe/checkout (Create Stripe checkout session)
-  - POST /api/webhooks/stripe (Listen for invoice.payment_succeeded, customer.subscription.deleted)
-  - POST /api/payments/sslcommerz/init (Initialize SSLCommerz session)
-  - POST /api/payments/bkash/create (Initialize bKash payment)
-
-
---------------------------------------------------------------------------------
-6. ROLE-BASED ACCESS CONTROL (RBAC) & DASHBOARDS
---------------------------------------------------------------------------------
-1. Customer Role & Portal:
-   - Interactive Dynamic Price Calculator & instant booking.
-   - Subscription management (Upgrade/Downgrade/Cancel plan).
-   - Live job tracking (Scheduled -> Assigned -> En Route -> Completed).
-   - Download automated PDF Invoices & leave job ratings.
-
-2. Cleaner / Field Staff Role & Mobile View:
-   - Mobile-optimized daily schedule & Google Maps navigation.
-   - One-tap status updates (Check-in, In Progress, Job Complete).
-   - Camera upload for Before & After proof photos.
-
-3. Admin / Dispatcher Control Center:
-   - Visual drag-and-drop Dispatch Calendar.
-   - Dynamic Pricing & Promo Code engine.
-   - Customer & Cleaner CRM with job history and reviews.
-   - Real-time revenue & payout analytics.
+৪. পাব্লিক ওয়েবসাইট পোর্টাল (PUBLIC WEBSITE - /)
+   - ডাইনামিক হোম পেজ: হিরো ব্যানার, ইমপ্যাক্ট অ্যান্ড নাম্বারস, হোয়াই চুজ আস (৪টি কার্ড), কোর সার্ভিসেস, FAQ অ্যাকর্ডিয়ন, এবং ব্লু সিটিএ ব্যানার।
+   - ডাইনামিক অন্যান্য পেজ: অ্যাবাউট আস, সার্ভিসেস, প্রজেক্টস, প্রাইসিং, ঢাকা কাভারেজ, কনট্যাক্ট এবং ব্লগ পোস্টস।
 
 
 --------------------------------------------------------------------------------
-7. CORE FUNCTIONAL ALGORITHMS & LOGIC
+৫. সিস্টেম আর্কিটেকচার এবং টেকনোলজি স্ট্যাক (TECH STACK)
 --------------------------------------------------------------------------------
-1. Dynamic Pricing Calculation Formula:
-   Base Service Fee (৳1,500) + (SqFt * ৳2.5) + (Bedrooms * ৳500) + (Bathrooms * ৳400) + Selected Addons
-
-2. Concurrency & Time-Slot Availability Lock:
-   - Atomic database reservation for 10 minutes during payment checkout.
-   - Prevents double-booking of cleaner teams for identical dates and time slots.
-
-3. Automated Notification Triggers:
-   - Booking Confirmed -> Email PDF Invoice to Customer (Resend API)
-   - Cleaner Dispatched -> SMS alert with estimated arrival time (Twilio API)
-   - Job Completed -> Push notification & Email asking for 5-star review
-
-
---------------------------------------------------------------------------------
-8. PROJECT DEVELOPMENT ROADMAP
---------------------------------------------------------------------------------
-Phase 1: Database, Schema & Role Auth Setup (Week 1)
-- MongoDB Mongoose schemas, NextAuth credentials/OAuth, RBAC middleware.
-
-Phase 2: Dynamic Booking Engine & Payment Webhooks (Week 2)
-- Price calculator widget, time slot picker, Stripe & local payment gateways integration.
-
-Phase 3: Customer Portal & Field Staff Mobile Interface (Week 3)
-- Customer booking tracking dashboard, cleaner task view, Cloudinary photo upload.
-
-Phase 4: Admin Dispatch Center, Analytics & Production Deploy (Week 4)
-- Visual schedule calendar, dispatch engine, revenue analytics, SEO optimization, deployment.
+- ফ্রন্টএন্ড ফ্রেমওয়ার্ক: Next.js 16 (App Router)
+- স্টাইলিং ও ইউআই: Tailwind CSS v4 + Framer Motion + Lenis Smooth Scroll + Lucide React Icons
+- স্টেট ও সিএমএস সিঙ্ক: LocalStorage + Reactive Event Dispatchers (cleanix_*_updated)
+- ফর্ম ও ভ্যালিডেশন: React Hook Form, Custom Base64 Uploader, Portal Modals
+- ডাটাবেস ও মডেলস: MongoDB Atlas / Mongoose ORM
+- পেমেন্ট চ্যানেল: Stripe API, SSLCommerz, bKash Gateway, Cash on Delivery (COD)
