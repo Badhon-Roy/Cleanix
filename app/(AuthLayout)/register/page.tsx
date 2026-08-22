@@ -24,6 +24,7 @@ import {
   UserCheck,
   ChevronLeft,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -126,12 +127,71 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Email OTP Verification States
+  // Email OTP Verification States & Modal
+  const [pendingStep2Data, setPendingStep2Data] = useState<IRegisterStep2Form | null>(null);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [timerSeconds, setTimerSeconds] = useState(300);
+  const [canResendOtp, setCanResendOtp] = useState(false);
+
+  const registerOtpRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  useEffect(() => {
+    let interval: any;
+    if (isOtpModalOpen && timerSeconds > 0) {
+      interval = setInterval(() => {
+        setTimerSeconds((prev) => prev - 1);
+      }, 1000);
+    } else if (timerSeconds <= 0) {
+      setCanResendOtp(true);
+    }
+    return () => clearInterval(interval);
+  }, [isOtpModalOpen, timerSeconds]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  const handleOtpDigitChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      const pasted = value.replace(/\D/g, "").slice(0, 6).split("");
+      const newOtp = [...otpDigits];
+      pasted.forEach((char, i) => {
+        if (i < 6) newOtp[i] = char;
+      });
+      setOtpDigits(newOtp);
+      const nextIdx = Math.min(pasted.length, 5);
+      registerOtpRefs[nextIdx].current?.focus();
+      return;
+    }
+
+    const digit = value.replace(/\D/g, "");
+    const newOtp = [...otpDigits];
+    newOtp[index] = digit;
+    setOtpDigits(newOtp);
+
+    if (digit && index < 5) {
+      registerOtpRefs[index + 1].current?.focus();
+    }
+  };
+
+  const handleOtpDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      registerOtpRefs[index - 1].current?.focus();
+    }
+  };
 
   const handleSendEmailOtp = async (email: string) => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
@@ -144,26 +204,38 @@ export default function RegisterPage() {
     setIsSendingOtp(false);
 
     if (res?.success) {
-      setIsOtpSent(true);
+      setIsOtpModalOpen(true);
+      setTimerSeconds(300);
+      setCanResendOtp(false);
+      setOtpDigits(["", "", "", "", "", ""]);
       toast.success(res?.message || "Verification OTP Sent!");
+      setTimeout(() => registerOtpRefs[0].current?.focus(), 350);
     } else {
       toast.error(res?.message || "Failed to send verification OTP");
     }
   };
 
   const handleVerifyEmailOtp = async (email: string) => {
-    if (!otpCode || otpCode.length !== 6) {
-      toast.error("Please enter the 6-digit OTP code");
+    const fullCode = otpDigits.join("");
+    if (fullCode.length !== 6) {
+      toast.error("Please enter all 6 digits of the OTP code");
       return;
     }
     setIsVerifyingOtp(true);
-    const res = await verifyRegisterOtpAPI(email, otpCode);
+    const res = await verifyRegisterOtpAPI(email, fullCode);
     setIsVerifyingOtp(false);
 
     if (res?.success) {
       setIsEmailVerified(true);
-      setIsOtpSent(false);
+      setIsOtpModalOpen(false);
       toast.success(res?.message || "Email Address Verified Successfully!");
+
+      const step2FormData = pendingStep2Data || watch();
+      if (accountType === "CLEANER") {
+        setStep(3);
+      } else {
+        handleFinalRegistration(step2FormData);
+      }
     } else {
       toast.error(res?.message || "Invalid or expired OTP code");
     }
@@ -196,7 +268,8 @@ export default function RegisterPage() {
   // Step 2 Valid Submission Handler (Triggered by React Hook Form)
   const handleStep2Submit = (data: IRegisterStep2Form) => {
     if (!isEmailVerified) {
-      toast.error("Please verify your email address via OTP code before proceeding.");
+      setPendingStep2Data(data);
+      handleSendEmailOtp(data.email);
       return;
     }
     if (accountType === "CLEANER") {
@@ -694,25 +767,17 @@ export default function RegisterPage() {
                   {/* Grid 2 Cols: Email & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Email Address with OTP Verification */}
+                    {/* Email Address with Dedicated OTP Verification Modal */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5 ml-1">
                         <label className="block text-base font-bold text-[#11233F] cursor-pointer">
                           Email Address
                         </label>
-                        {isEmailVerified ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        {isEmailVerified && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                             <Check className="w-3 h-3 stroke-[3]" />
                             <span>Verified ✓</span>
                           </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSendEmailOtp(watch("email"))}
-                            disabled={isSendingOtp || isOtpSent}
-                            className="text-xs font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-50"
-                          >
-                            {isSendingOtp ? "Sending..." : isOtpSent ? "OTP Sent 📩" : "Verify Email (Send OTP)"}
-                          </button>
                         )}
                       </div>
                       <div className="relative">
@@ -744,40 +809,6 @@ export default function RegisterPage() {
                           <span>⚠️</span>
                           <span>{formErrors.email.message}</span>
                         </p>
-                      )}
-
-                      {/* OTP Code Verification Input Box */}
-                      {isOtpSent && !isEmailVerified && (
-                        <div className="mt-3 p-3 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-[#11233F]">Enter 6-Digit Email OTP</span>
-                            <button
-                              type="button"
-                              onClick={() => handleSendEmailOtp(watch("email"))}
-                              className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
-                            >
-                              Resend OTP
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              maxLength={6}
-                              placeholder="123456"
-                              value={otpCode}
-                              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                              className="w-full bg-white border border-blue-300 rounded-xl px-3 py-1.5 text-center text-sm font-mono tracking-widest font-bold text-[#11233F] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleVerifyEmailOtp(watch("email"))}
-                              disabled={isVerifyingOtp || otpCode.length !== 6}
-                              className="bg-[#007eff] hover:bg-blue-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                            >
-                              {isVerifyingOtp ? "..." : "Verify"}
-                            </button>
-                          </div>
-                        </div>
                       )}
                     </div>
 
@@ -1387,6 +1418,102 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
+
+      {/* Dedicated Email OTP Verification Modal Overlay */}
+      {isOtpModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Close / Dismiss Button */}
+            <button
+              type="button"
+              onClick={() => setIsOtpModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              ✕
+            </button>
+
+            {/* Top Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto shadow-xs">
+              <ShieldCheck className="w-8 h-8 text-[#007eff]" />
+            </div>
+
+            {/* Modal Title */}
+            <div>
+              <h3 className="text-2xl font-extrabold text-[#11233F]">
+                Verify Email Address
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                Enter the 6-digit verification code sent to: <br />
+                <strong className="text-[#11233F] font-bold">{watch("email")}</strong>
+              </p>
+            </div>
+
+            {/* 6 Digit Input Grid */}
+            <div className="flex items-center justify-center gap-2 sm:gap-2.5 py-2">
+              {otpDigits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={registerOtpRefs[idx]}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleOtpDigitKeyDown(idx, e)}
+                  className="w-11 h-12 sm:w-12 sm:h-14 bg-slate-50 border border-slate-300 focus:border-[#007eff] focus:bg-white focus:ring-4 focus:ring-blue-500/15 rounded-xl text-center text-xl sm:text-2xl font-bold font-mono text-[#11233F] transition-all"
+                />
+              ))}
+            </div>
+
+            {/* Timer & Resend Option */}
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-slate-500 font-medium">
+                Expires in: <strong className="text-blue-600 font-mono font-bold">{formatTimer(timerSeconds)}</strong>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => handleSendEmailOtp(watch("email"))}
+                disabled={!canResendOtp || isSendingOtp}
+                className="font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+              >
+                {isSendingOtp && <RefreshCw className="w-3 h-3 animate-spin" />}
+                <span>Resend Code</span>
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => handleVerifyEmailOtp(watch("email"))}
+                disabled={isVerifyingOtp || otpDigits.join("").length !== 6}
+                className="w-full bg-gradient-to-r from-[#007eff] via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-150 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isVerifyingOtp ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Verifying Code...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Verify Code & Continue</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsOtpModalOpen(false)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-[#11233F] font-bold py-2.5 px-4 rounded-full text-xs transition-colors cursor-pointer"
+              >
+                Cancel & Change Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

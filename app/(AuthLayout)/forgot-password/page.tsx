@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
+import { forgotPasswordAPI, verifyOtpAPI, resetPasswordAPI } from "@/services/authService";
 
 type Step = "EMAIL" | "OTP" | "RESET" | "SUCCESS";
 
@@ -56,28 +57,17 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await forgotPasswordAPI(email);
+      setIsLoading(false);
 
-      try {
-        await fetch(`${backendUrl}/auth/forgot-password`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-      } catch (err) {
-        console.log("Backend offline, carrying out OTP simulation", err);
-      }
-
-      setTimeout(() => {
-        setIsLoading(false);
+      if (res?.success) {
         setCurrentStep("OTP");
-        toast.success("Verification code dispatched!", {
-          description: `A 6-digit OTP code was sent to ${email}`,
-        });
-      }, 800);
-    } catch (error) {
-      toast.error("Failed to send OTP. Please try again.");
+        toast.success(res?.message || "Verification code dispatched!");
+      } else {
+        toast.error(res?.message || "Failed to send OTP. Please try again.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to send OTP. Please try again.");
       setIsLoading(false);
     }
   };
@@ -129,36 +119,29 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await verifyOtpAPI(email, fullOtp);
+      setIsLoading(false);
 
-      try {
-        await fetch(`${backendUrl}/auth/verify-otp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp: fullOtp }),
-        });
-      } catch (err) {
-        console.log("Backend offline, verifying OTP simulation", err);
-      }
-
-      setTimeout(() => {
-        setIsLoading(false);
+      if (res?.success) {
         setCurrentStep("RESET");
-        toast.success("OTP Verified Successfully!", {
-          description: "You may now set your new password.",
-        });
-      }, 800);
-    } catch (error) {
-      toast.error("Invalid verification code. Please try again.");
+        toast.success(res?.message || "OTP Verified Successfully!");
+      } else {
+        toast.error(res?.message || "Invalid verification code. Please try again.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Invalid verification code. Please try again.");
       setIsLoading(false);
     }
   };
 
-  const handleResendOtp = () => {
-    toast.info("Resending OTP code...", {
-      description: `New code sent to ${email}`,
-    });
+  const handleResendOtp = async () => {
+    if (!email) return;
+    const res = await forgotPasswordAPI(email);
+    if (res?.success) {
+      toast.success(res?.message || "OTP resent successfully!");
+    } else {
+      toast.error(res?.message || "Failed to resend OTP");
+    }
   };
 
   // ----------------------------------------------------
@@ -166,6 +149,7 @@ export default function ForgotPasswordPage() {
   // ----------------------------------------------------
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const fullOtp = otp.join("");
 
     if (!newPassword || !confirmPassword) {
       toast.error("Please fill in both password fields");
@@ -185,33 +169,20 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await resetPasswordAPI({ email, otp: fullOtp, newPassword });
+      setIsLoading(false);
 
-      try {
-        await fetch(`${backendUrl}/auth/reset-password`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, newPassword }),
-        });
-      } catch (err) {
-        console.log("Backend offline, completing password reset simulation", err);
-      }
-
-      setTimeout(() => {
-        setIsLoading(false);
+      if (res?.success) {
         setCurrentStep("SUCCESS");
-        toast.success("Password Updated Successfully! 🎉", {
-          description: "Redirecting you to the login page...",
-        });
-
-        // Auto redirect to login
+        toast.success(res?.message || "Password Updated Successfully!");
         setTimeout(() => {
           router.push("/login");
-        }, 2200);
-      }, 900);
-    } catch (error) {
-      toast.error("Failed to reset password. Please try again.");
+        }, 1500);
+      } else {
+        toast.error(res?.message || "Failed to reset password. Please try again.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to reset password. Please try again.");
       setIsLoading(false);
     }
   };
