@@ -30,6 +30,7 @@ import ServicesCMSManager from "@/components/admin/ServicesCMSManager";
 import ProjectsCMSManager from "@/components/admin/ProjectsCMSManager";
 import PricingCMSManager from "@/components/admin/PricingCMSManager";
 import CoverageCMSManager from "@/components/admin/CoverageCMSManager";
+import ContactCMSManager from "@/components/admin/ContactCMSManager";
 
 export default function AdminContentCMSPage() {
   const [activeSectionTab, setActiveSectionTab] = useState("blogs");
@@ -161,6 +162,7 @@ export default function AdminContentCMSPage() {
             { id: "projectsPage", label: "Projects Page CMS" },
             { id: "pricingPage", label: "Pricing Page CMS" },
             { id: "coveragePage", label: "Coverage Page CMS" },
+            { id: "contactPage", label: "Contact Page CMS" },
             { id: "hero", label: "Hero Banner Section" },
             { id: "services", label: "Core Services Section" },
             { id: "pricing", label: "Pricing & Plans Section" },
@@ -321,13 +323,17 @@ export default function AdminContentCMSPage() {
         {/* TAB 6: COVERAGE PAGE CMS */}
         {activeSectionTab === "coveragePage" && <CoverageCMSManager />}
 
-        {/* TABS 7-11: OTHER PAGE CMS SECTIONS */}
+        {/* TAB 7: CONTACT PAGE CMS */}
+        {activeSectionTab === "contactPage" && <ContactCMSManager />}
+
+        {/* TABS 8-12: OTHER PAGE CMS SECTIONS */}
         {activeSectionTab !== "blogs" &&
           activeSectionTab !== "about" &&
           activeSectionTab !== "servicesPage" &&
           activeSectionTab !== "projectsPage" &&
           activeSectionTab !== "pricingPage" &&
-          activeSectionTab !== "coveragePage" && (
+          activeSectionTab !== "coveragePage" &&
+          activeSectionTab !== "contactPage" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Form Editors (7 Cols) */}
             <form onSubmit={handleSaveCMS} className="lg:col-span-7 space-y-5 text-xs sm:text-sm">

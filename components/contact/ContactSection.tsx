@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MapPin, Headphones, Clock, Send, Sparkles, CheckCircle2 } from "lucide-react";
 
 import { addContactMessage } from "@/lib/contactMessagesData";
 import { toast } from "sonner";
+import {
+  getStoredContactCMSData,
+  defaultContactCMSData,
+  ContactCMSContent,
+} from "@/lib/contactCMSData";
 
 interface ContactFormInputs {
   name: string;
@@ -17,6 +22,20 @@ interface ContactFormInputs {
 
 export default function ContactSection() {
   const [submitted, setSubmitted] = useState(false);
+  const [cmsData, setCmsData] = useState<ContactCMSContent>(defaultContactCMSData);
+
+  useEffect(() => {
+    setCmsData(getStoredContactCMSData());
+
+    const handleUpdate = () => {
+      setCmsData(getStoredContactCMSData());
+    };
+
+    window.addEventListener("cleanix_contact_cms_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_contact_cms_updated", handleUpdate);
+    };
+  }, []);
 
   const {
     register,
@@ -56,7 +75,10 @@ export default function ContactSection() {
           {/* Left Column: Transparent Cleaner Image with Native Top Notched Corners */}
           <div className="lg:col-span-6 relative w-full h-[460px] sm:h-[540px] md:h-[580px] flex items-center justify-center group">
             <Image
-              src="https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630"
+              src={
+                cmsData.formCleanerImage ||
+                "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630"
+              }
               alt="Ready to Ship Smarter Contact Our Team"
               fill
               unoptimized
@@ -75,14 +97,18 @@ export default function ContactSection() {
               {/* Pill Badge */}
               <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-1.5 mb-6 bg-blue-50/10 backdrop-blur-md">
                 <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-                <span>CONTACT REQUEST</span>
+                <span>{cmsData.formBadge || "CONTACT REQUEST"}</span>
               </div>
 
               {/* Main Headline */}
               <h2 className="text-3xl sm:text-4xl font-black uppercase text-white tracking-tight leading-[1.12] mb-8">
-                READY TO SHIP <br />
-                SMARTER <span className="text-[#007eff]">CONTACT</span> <br />
-                OUR TEAM
+                {cmsData.formTitleLine1} <br />
+                {cmsData.formTitleLine2}{" "}
+                {cmsData.formTitleHighlight && (
+                  <span className="text-[#007eff]">{cmsData.formTitleHighlight}</span>
+                )}{" "}
+                <br />
+                {cmsData.formTitleLine3}
               </h2>
 
               {submitted ? (
@@ -208,7 +234,7 @@ export default function ContactSection() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-[0_0_25px_rgba(0,126,255,0.4)] hover:shadow-[0_0_35px_rgba(0,126,255,0.7)] hover:scale-[1.01] disabled:opacity-50"
+                    className="w-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm uppercase tracking-wider py-4 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-[0_0_25px_rgba(0,126,255,0.4)] hover:shadow-[0_0_35px_rgba(0,126,255,0.7)] hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                     <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
@@ -228,11 +254,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                Location
+                {cmsData.locationTitle || "Location"}
               </h3>
-              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-                House 42, Road 11, Block D, Gulshan 2 <br />
-                Dhaka-1212, Bangladesh
+              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
+                {cmsData.locationText}
               </p>
             </div>
           </div>
@@ -244,11 +269,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                Support Clients
+                {cmsData.supportTitle || "Support Clients"}
               </h3>
-              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-                +880 1774-500815 <br />
-                +880 1894-654254
+              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
+                {cmsData.supportText}
               </p>
             </div>
           </div>
@@ -260,11 +284,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                Opening Hours
+                {cmsData.hoursTitle || "Opening Hours"}
               </h3>
-              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-                Saturday - Thursday <br />
-                09 : 00 AM - 10 : 30 PM
+              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
+                {cmsData.hoursText}
               </p>
             </div>
           </div>
