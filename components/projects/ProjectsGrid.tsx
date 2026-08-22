@@ -1,45 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getStoredProjects, ProjectDetail } from "@/lib/projectsData";
 
 export default function ProjectsGrid() {
-  const projectsList = [
-    {
-      id: 1,
-      slug: "residential-deep-cleaning",
-      title: "RESIDENTIAL DEEP CLEANING",
-      category: "RESIDENTIAL",
-      year: "2026",
-      image: "https://framerusercontent.com/images/FoR4cz0nZxw4SE4IdXGcBqFVo.png?width=536&height=491",
-    },
-    {
-      id: 2,
-      slug: "commercial-office-cleaning",
-      title: "COMMERCIAL OFFICE CLEANING",
-      category: "COMMERCIAL",
-      year: "2026",
-      image: "https://framerusercontent.com/images/2xPMy5ZILkyS0vKBXtkUtkotq4.png?width=536&height=491",
-    },
-    {
-      id: 3,
-      slug: "post-construction-cleaning",
-      title: "POST-CONSTRUCTION CLEANING",
-      category: "RENOVATION",
-      year: "2026",
-      image: "https://framerusercontent.com/images/rkv30jJZdslMW9PEgMFVtHvybU.png?width=536&height=491",
-    },
-    {
-      id: 4,
-      slug: "move-out-cleaning",
-      title: "MOVE-OUT CLEANING",
-      category: "TURNOVER",
-      year: "2026",
-      image: "https://framerusercontent.com/images/VPbp0YEDNhSD4N9sL93WPqjBM2o.png?width=536&height=491",
-    },
-  ];
+  const [projectsList, setProjectsList] = useState<ProjectDetail[]>([]);
+
+  useEffect(() => {
+    setProjectsList(getStoredProjects());
+
+    const handleUpdate = () => {
+      setProjectsList(getStoredProjects());
+    };
+
+    window.addEventListener("cleanix_projects_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_projects_updated", handleUpdate);
+    };
+  }, []);
+
+  const publishedProjects = projectsList.filter((p) => p.status !== "DRAFT");
 
   return (
     <section className="w-full bg-[#f0f2f4] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-200/60">
@@ -57,16 +40,16 @@ export default function ProjectsGrid() {
 
         {/* 4 Cards Grid (2x2 on Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 max-w-6xl mx-auto">
-          {projectsList.map((item) => (
+          {publishedProjects.map((item) => (
             <Link
-              key={item.id}
+              key={item.slug}
               href={`/projects/${item.slug}`}
               className="bg-white hover:bg-[#001837] rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-[0_20px_50px_rgba(0,126,255,0.25)] border border-slate-200/60 hover:border-[#007eff]/60 transition-all duration-500 hover:-translate-y-2 group flex flex-col justify-between"
             >
               {/* Card Image */}
               <div className="relative w-full h-[260px] sm:h-[300px] md:h-[330px] rounded-2xl overflow-hidden mb-6 bg-slate-100">
                 <Image
-                  src={item.image}
+                  src={item.heroImage}
                   alt={item.title}
                   fill
                   unoptimized
@@ -85,7 +68,7 @@ export default function ProjectsGrid() {
                       {item.category}
                     </span>
                     <span className="bg-slate-100 group-hover:bg-white/10 text-slate-500 group-hover:text-slate-200 font-bold text-[10px] sm:text-[11px] px-3 py-1 rounded-full border border-slate-200/80 group-hover:border-white/20 transition-colors">
-                      {item.year}
+                      {item.startDate ? item.startDate.split(" ").pop() : "2026"}
                     </span>
                   </div>
 

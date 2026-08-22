@@ -1,3 +1,5 @@
+"use client";
+
 export interface ProjectDetail {
   slug: string;
   title: string;
@@ -16,10 +18,11 @@ export interface ProjectDetail {
   benefitsPoints: string[];
   section4Title: string;
   section4Paragraph: string;
+  status: "PUBLISHED" | "DRAFT";
 }
 
-export const projectsData: Record<string, ProjectDetail> = {
-  "residential-deep-cleaning": {
+export const initialProjectsList: ProjectDetail[] = [
+  {
     slug: "residential-deep-cleaning",
     title: "GULSHAN 2 DUPLEX VILLA FULL RESIDENTIAL DEEP CLEAN",
     category: "RESIDENTIAL",
@@ -47,9 +50,9 @@ export const projectsData: Record<string, ProjectDetail> = {
     section4Title: "READY FOR HIGH-PROFILE GUEST RECEPTION",
     section4Paragraph:
       "প্রজেক্ট শেষে ভিলার প্রতিটি ঘর শতভাগ জীবাণুমুক্ত ও মেহমানদের অভ্যর্থনার জন্য প্রস্তুত হয়ে ওঠে। বাড়িওয়ালা চৌধুরী পরিবার কাজের দ্রুততা ও পরিচ্ছন্নতায় অত্যন্ত সন্তুষ্টি প্রকাশ করেন।",
+    status: "PUBLISHED",
   },
-
-  "commercial-office-cleaning": {
+  {
     slug: "commercial-office-cleaning",
     title: "BANANI CORPORATE TECH HQ FULL FLOOR SANITIZATION",
     category: "COMMERCIAL",
@@ -77,9 +80,9 @@ export const projectsData: Record<string, ProjectDetail> = {
     section4Title: "HYGIENIC & PRODUCTIVE WORKSPACE RESULT",
     section4Paragraph:
       "সোমবার সকালে অফিসে যোগ দিয়ে কোম্পানির টিম ১০০% ফ্রেশ ও সুবাসিত পরিবেশ উপভোগ করে এবং কর্মচারীদের অসুস্থতাজনিত অনুপস্থিতি উল্লেখযোগ্যভাবে হ্রাস পায়।",
+    status: "PUBLISHED",
   },
-
-  "post-construction-cleaning": {
+  {
     slug: "post-construction-cleaning",
     title: "DHANMONDI LUXURY APARTMENT COMPLEX POST-RENOVATION CLEANUP",
     category: "RENOVATION",
@@ -107,14 +110,14 @@ export const projectsData: Record<string, ProjectDetail> = {
     section4Title: "SPOTLESS HANDOVER READY FOR LANDLORD",
     section4Paragraph:
       "ইন্টেরিয়র ডিজাইনারদের চূড়ান্ত ইনসপেকশনে প্রজেক্টটি শতভাগ নম্বর পেয়ে উৎরে যায় এবং নতুন ফ্ল্যাটমালিকরা স্বাচ্ছন্দ্যে চাবি গ্রহণ করেন।",
+    status: "PUBLISHED",
   },
-
-  "move-out-cleaning": {
+  {
     slug: "move-out-cleaning",
     title: "UTTARA SECTOR 7 TURNOVER CLEANING FOR DEPOSIT GUARANTEE",
     category: "TURNOVER",
     heroImage: "https://framerusercontent.com/images/VPbp0YEDNhSD4N9sL93WPqjBM2o.png?width=536&height=491",
-    benefitImage: "https://framerusercontent.com/images/gRwXdPkLkyjS5JXnK04q3ttVLk.png?width=600&height=400",
+    benefitImage: "https://framerusercontent.com/images/gRwXdPkLkyJS5JXnK04q3ttVLk.png?width=600&height=400",
     client: "Khan Residence (Uttara Sector 7)",
     categoryFull: "Move-Out / Tenant Turnover",
     startDate: "01 August, 2026",
@@ -137,5 +140,67 @@ export const projectsData: Record<string, ProjectDetail> = {
     section4Title: "FULL SECURITY DEPOSIT REFUNDED",
     section4Paragraph:
       "বাড়িওয়ালা ফ্ল্যাটের পরিচ্ছন্নতায় অভিভূত হয়ে তাৎক্ষণিকভাবে পূর্ণাঙ্গ সিকিউরিটি ডিপোজিট রিফান্ড অনুমোদন করেন।",
+    status: "PUBLISHED",
   },
-};
+];
+
+export const projectsData: Record<string, ProjectDetail> = initialProjectsList.reduce(
+  (acc, item) => {
+    acc[item.slug] = item;
+    return acc;
+  },
+  {} as Record<string, ProjectDetail>
+);
+
+const STORAGE_KEY = "cleanix_projects_list_v1";
+
+export function getStoredProjects(): ProjectDetail[] {
+  if (typeof window === "undefined") return initialProjectsList;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProjectsList));
+      return initialProjectsList;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to load projects from localStorage:", e);
+    return initialProjectsList;
+  }
+}
+
+export function getProjectBySlug(slug: string): ProjectDetail | undefined {
+  const all = getStoredProjects();
+  return all.find((p) => p.slug === slug);
+}
+
+export function saveProjects(projects: ProjectDetail[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    window.dispatchEvent(new Event("cleanix_projects_updated"));
+  } catch (e) {
+    console.error("Failed to save projects to localStorage:", e);
+  }
+}
+
+export function addProject(project: ProjectDetail): ProjectDetail[] {
+  const current = getStoredProjects();
+  const updated = [project, ...current];
+  saveProjects(updated);
+  return updated;
+}
+
+export function updateProject(slug: string, fields: Partial<ProjectDetail>): ProjectDetail[] {
+  const current = getStoredProjects();
+  const updated = current.map((item) => (item.slug === slug ? { ...item, ...fields } : item));
+  saveProjects(updated);
+  return updated;
+}
+
+export function deleteProject(slug: string): ProjectDetail[] {
+  const current = getStoredProjects();
+  const updated = current.filter((item) => item.slug !== slug);
+  saveProjects(updated);
+  return updated;
+}

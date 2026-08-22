@@ -40,6 +40,7 @@ export default function AdminSidebar({
     { name: "Bookings & Dispatch", href: "/admin/bookings", icon: Truck, badge: "12 Pending" },
     { name: "Coverage Areas", href: "/admin/coverage", icon: MapPin, badge: "10 Zones" },
     { name: "Contact Messages", href: "/admin/messages", icon: MessageSquare, badge: "2 New" },
+    { name: "Projects Portfolio", href: "/admin/projects", icon: FileText, badge: "4" },
     { name: "Cleaners & Staff", href: "/admin/cleaners", icon: UserCheck, badge: "16 Active" },
     { name: "Services & Pricing", href: "/admin/services", icon: Sliders },
     { name: "Dynamic Content CMS", href: "/admin/content", icon: FileText, badge: "CMS" },
