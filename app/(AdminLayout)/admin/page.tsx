@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   LayoutDashboard,
   DollarSign,
@@ -20,8 +21,12 @@ import {
   ShieldCheck,
   Eye,
   Plus,
+  MessageSquare,
+  Mail,
+  Phone,
 } from "lucide-react";
 import AssignCleanerModal from "@/components/admin/AssignCleanerModal";
+import { ContactMessage, getStoredContactMessages } from "@/lib/contactMessagesData";
 
 export default function AdminOverviewPage() {
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<{
@@ -29,6 +34,21 @@ export default function AdminOverviewPage() {
     customer: string;
     service: string;
   } | null>(null);
+
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+
+  useEffect(() => {
+    setContactMessages(getStoredContactMessages());
+
+    const handleUpdate = () => {
+      setContactMessages(getStoredContactMessages());
+    };
+
+    window.addEventListener("cleanix_contact_messages_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("cleanix_contact_messages_updated", handleUpdate);
+    };
+  }, []);
 
   // Mock Real-Time Cleaner Job Application Requests (from /cleaner/available-jobs)
   const [cleanerApplications, setCleanerApplications] = useState([
@@ -178,87 +198,113 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* KPI Metric Overview Cards - Dashed Border Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* KPI Metric Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
         {/* Card 1: Total Revenue */}
-        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-6 space-y-3">
+        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
               Total Revenue
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4.5 h-4.5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳1,48,500</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">৳1,48,500</p>
             <div className="pt-1">
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 inline-block">
-                📈 +24% vs last month
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 inline-block">
+                📈 +24% vs last mo
               </span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Total Bookings */}
-        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-6 space-y-3">
+        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
               Total Bookings
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
-              <Truck className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <Truck className="w-4.5 h-4.5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">142</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">142</p>
             <div className="pt-1">
-              <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 inline-block">
-                ⏱ 12 Pending Approval
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 inline-block">
+                ⏱ 12 Pending
               </span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Active Subscriptions */}
-        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-6 space-y-3">
+        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              Active Subscriptions
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+              Subscriptions
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
-              <Users className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <Users className="w-4.5 h-4.5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">38</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">38</p>
             <div className="pt-1">
-              <span className="text-xs font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded-full border border-blue-300 inline-block">
-                ★ Basic, Standard, Premium
+              <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300 inline-block">
+                ★ 3 Active Tiers
               </span>
             </div>
           </div>
         </div>
 
         {/* Card 4: Verified Pro Cleaners */}
-        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-6 space-y-3">
+        <div className="bg-white border-2 border-dashed border-blue-300 rounded-3xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              Verified Pro Cleaners
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+              Pro Cleaners
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
-              <UserCheck className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
+              <UserCheck className="w-4.5 h-4.5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">16 Staff</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">16 Staff</p>
             <div className="pt-1">
-              <span className="text-xs font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded-full border border-blue-300 inline-block">
-                ⚡ Across 4 Hub Units
+              <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300 inline-block">
+                ⚡ 4 Hub Units
               </span>
             </div>
           </div>
         </div>
+
+        {/* Card 5: Contact Form Inquiries Counter */}
+        <Link
+          href="/admin/messages"
+          className="bg-white border-2 border-dashed border-amber-300 hover:border-amber-500 transition-all rounded-3xl p-5 space-y-3 cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider group-hover:text-[#007eff]">
+              Inquiries Inbox
+            </span>
+            <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-4.5 h-4.5 stroke-[2.5]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {contactMessages.filter((m) => m.status === "NEW").length} Unread
+            </p>
+            <div className="pt-1">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 w-fit">
+                <span>View Messages</span>
+                <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+              </span>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* REAL-TIME CLEANER MARKETPLACE JOB APPLICATION REQUESTS (APPROVAL CENTER) */}

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MapPin, Headphones, Clock, Send, Sparkles, CheckCircle2 } from "lucide-react";
 
+import { addContactMessage } from "@/lib/contactMessagesData";
+
 interface ContactFormInputs {
   name: string;
   number: string;
@@ -23,9 +25,16 @@ export default function ContactSection() {
   } = useForm<ContactFormInputs>();
 
   const onSubmit: SubmitHandler<ContactFormInputs> = async (data) => {
-    // Simulated async form submission
     await new Promise((resolve) => setTimeout(resolve, 600));
-    console.log("React Hook Form Submitted:", data);
+
+    // Store message for Admin Dashboard
+    addContactMessage({
+      name: data.name,
+      phone: data.number,
+      email: data.email,
+      message: data.message,
+    });
+
     setSubmitted(true);
     reset();
 

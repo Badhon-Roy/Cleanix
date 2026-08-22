@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Activity,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 
@@ -36,6 +37,7 @@ export default function AdminSidebar({
   const navItems = [
     { name: "Overview & KPIs", href: "/admin", icon: LayoutDashboard },
     { name: "Bookings & Dispatch", href: "/admin/bookings", icon: Truck, badge: "12 Pending" },
+    { name: "Contact Messages", href: "/admin/messages", icon: MessageSquare, badge: "2 New" },
     { name: "Cleaners & Staff", href: "/admin/cleaners", icon: UserCheck, badge: "16 Active" },
     { name: "Services & Pricing", href: "/admin/services", icon: Sliders },
     { name: "Dynamic Content CMS", href: "/admin/content", icon: FileText, badge: "CMS" },
