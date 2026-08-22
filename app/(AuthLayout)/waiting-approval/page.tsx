@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
 import { getAuthUser, setAuthUser, removeAuthUser, removeAuthRole, removeAuthToken } from "@/utils/cookie";
+import { fetchUserProfileAPI } from "@/services/authService";
 
 export default function WaitingApprovalPage() {
   const router = useRouter();
@@ -47,31 +48,43 @@ export default function WaitingApprovalPage() {
     }
   }, [router]);
 
-  // Demo Admin Approval Toggle (Simulates Admin Approving Cleaner)
-  const handleSimulateAdminApproval = () => {
+  // Check Live Admin Approval Status from Backend API
+  const handleCheckApprovalStatus = async () => {
     setIsChecking(true);
-    toast.info("Checking Admin System Approval Status...", {
-      description: "Verifying credentials with Cleanix Admin Portal",
-    });
 
-    setTimeout(() => {
-      if (user) {
-        const updatedUser = {
-          ...user,
-          status: "APPROVED",
-          isApproved: true,
-        };
-        setAuthUser(updatedUser);
-        setUser(updatedUser);
-        toast.success("Admin Approval Granted! 🎉", {
-          description: "Your Cleaner account is now active. Redirecting to Portal...",
-        });
-        setTimeout(() => {
-          router.push("/cleaner");
-        }, 1200);
+    try {
+      const res = await fetchUserProfileAPI();
+      const dbUser = res?.data?.user || res?.data;
+
+      if (res?.success && dbUser) {
+        const isApproved = dbUser.isApproved === true || dbUser.status === "APPROVED";
+
+        if (isApproved) {
+          const updatedUser = {
+            ...user,
+            ...dbUser,
+            status: "APPROVED",
+            isApproved: true,
+          };
+          setAuthUser(updatedUser);
+          setUser(updatedUser);
+          toast.success(res?.message || "Cleaner account is approved and active!");
+          setTimeout(() => {
+            router.push("/cleaner");
+          }, 1200);
+          return;
+        }
+
+        toast.info(res?.message || "Your Cleaner application has been submitted and is currently pending Admin approval.");
+        return;
       }
+
+      toast.info(res?.message || "Your Cleaner application has been submitted and is currently pending Admin approval.");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to fetch approval status from server.");
+    } finally {
       setIsChecking(false);
-    }, 1500);
+    }
   };
 
   const handleSignOut = () => {
@@ -99,20 +112,13 @@ export default function WaitingApprovalPage() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="text-slate-600 hover:text-[#11233F] text-xs sm:text-sm font-semibold transition-colors inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-slate-100 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4 text-blue-600" />
-            <span>Back to Home</span>
-          </Link>
-
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleSignOut}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-[#11233F] shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
           >
-            <LogOut className="w-4 h-4 text-slate-500" />
+            <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
           </button>
         </div>
@@ -120,19 +126,18 @@ export default function WaitingApprovalPage() {
 
       {/* Main Content Card */}
       <main className="flex-1 flex items-center justify-center my-auto py-6">
-        <div className="w-full max-w-xl mx-auto">
-          {/* Main Card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-300/30 relative">
-            {/* Top Amber Accent Edge */}
+        <div className="w-full max-w-lg mx-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-300/30 relative text-center space-y-6">
+            {/* Top Glowing Edge */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
 
-            {/* Status Header Badge & Icon */}
-            <div className="text-center space-y-4 mb-8">
-              {/* TOP CENTERED LARGE ICON */}
-              <div className="flex justify-center mx-auto mb-2">
-                <span className="text-6xl sm:text-7xl animate-pulse select-none filter drop-shadow-md">⏳</span>
-              </div>
+            {/* Hourglass Animated Icon */}
+            <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200/80 flex items-center justify-center mx-auto shadow-sm">
+              <Clock className="w-10 h-10 text-amber-500 animate-pulse" />
+            </div>
 
+            {/* Status Information Header */}
+            <div className="space-y-2">
               {/* Waiting Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold uppercase tracking-wider shadow-xs">
                 <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -150,21 +155,21 @@ export default function WaitingApprovalPage() {
 
             {/* Action Buttons */}
             <div className="space-y-4">
-              {/* Simulate Admin Approval Button */}
+              {/* Live Admin Approval Status Check Button */}
               <button
-                onClick={handleSimulateAdminApproval}
+                onClick={handleCheckApprovalStatus}
                 disabled={isChecking}
                 className="w-full bg-gradient-to-r from-[#007eff] via-blue-600 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isChecking ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Checking Admin System...</span>
+                    <span>Checking Status...</span>
                   </>
                 ) : (
                   <>
                     <RefreshCw className="w-4 h-4" />
-                    <span>Check Approval Status (Simulate Admin Approval)</span>
+                    <span>Check Approval Status</span>
                   </>
                 )}
               </button>
