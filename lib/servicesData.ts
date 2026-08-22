@@ -1,8 +1,29 @@
+"use client";
+
+export interface ServiceOfferItem {
+  iconName: string;
+  title: string;
+  desc: string;
+}
+
+export interface ServiceWhyPoint {
+  title: string;
+  desc: string;
+}
+
+export interface ServiceFaqItem {
+  num: string;
+  question: string;
+  answer: string;
+}
+
 export interface ServiceDetail {
   slug: string;
   title: string;
   category: string;
   badge: string;
+  price: string;
+  slaTime: string;
   heroImage: string;
   contentImage: string;
   shortDesc: string;
@@ -10,30 +31,22 @@ export interface ServiceDetail {
   introParagraph2: string;
   offersTitle: string;
   offersDesc: string;
-  offers: {
-    iconName: string;
-    title: string;
-    desc: string;
-  }[];
+  offers: ServiceOfferItem[];
   whyChooseTitle: string;
   whyChooseDesc: string;
-  whyChoosePoints: {
-    title: string;
-    desc: string;
-  }[];
-  faqs: {
-    num: string;
-    question: string;
-    answer: string;
-  }[];
+  whyChoosePoints: ServiceWhyPoint[];
+  faqs: ServiceFaqItem[];
+  status: "ACTIVE" | "INACTIVE";
 }
 
-export const servicesData: Record<string, ServiceDetail> = {
-  "residential-deep-cleaning": {
+export const initialServicesList: ServiceDetail[] = [
+  {
     slug: "residential-deep-cleaning",
     title: "RESIDENTIAL DEEP CLEANING (আবাসিক ডিপ ক্লিনিং)",
     category: "HOME CARE",
     badge: "B2C HOME CLEANING",
+    price: "৳3,500 BDT",
+    slaTime: "30 Mins SLA",
     heroImage: "/RESIDENTIAL-DEEP-CLEANING.png",
     contentImage: "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=600&height=400",
     shortDesc:
@@ -58,7 +71,7 @@ export const servicesData: Record<string, ServiceDetail> = {
       },
       {
         iconName: "Clock",
-        title: "Flexible Scheduling & Monthly Subscriptions",
+        title: "Flexible Scheduling & Subscriptions",
         desc: "৳6,000 বা ৳14,000 মান্থলি প্যাকেজে অথবা ওয়ান-টাইম ইন্সট্যান্ট বুকিংয়ের সুবিধা।",
       },
     ],
@@ -103,13 +116,16 @@ export const servicesData: Record<string, ServiceDetail> = {
           "গুলশান, বনানী, উত্তরা, ধানমন্ডি, বসুন্ধরা, মিরপুর, মহাখালী সহ সমগ্র ঢাকা সিটিতে সার্ভিস প্রদান করা হয়।",
       },
     ],
+    status: "ACTIVE",
   },
 
-  "commercial-office-cleaning": {
+  {
     slug: "commercial-office-cleaning",
     title: "COMMERCIAL OFFICE CLEANING (কমার্শিয়াল অফিস ক্লিনিং)",
     category: "OFFICE",
     badge: "B2B CORPORATE SOLUTIONS",
+    price: "৳8,500 BDT",
+    slaTime: "25 Mins SLA",
     heroImage: "/COMMERCIAL-OFFICE-CLEANING.png",
     contentImage: "https://framerusercontent.com/images/71kz5iX4crWQYqbcukrbVWogYA.png?width=600&height=400",
     shortDesc:
@@ -179,14 +195,17 @@ export const servicesData: Record<string, ServiceDetail> = {
           "আমাদের সকল ক্লিনার সিকিউরিটি ভেরিফাইড এবং কর্পোরেট এথিক্স মেনে চলায় শতভাগ প্রতিশ্রুতিবদ্ধ।",
       },
     ],
+    status: "ACTIVE",
   },
 
-  "post-construction-cleaning": {
+  {
     slug: "post-construction-cleaning",
     title: "POST-CONSTRUCTION CLEANING (পোস্ট-কনস্ট্রাকশন ক্লিনিং)",
     category: "RENOVATION",
     badge: "CONSTRUCTION & BUILD",
-    heroImage: "https://framerusercontent.com/images/P64qFbW7sjXKqLCWX5Fd9KuqA.png?width=600&height=400",
+    price: "৳6,000 BDT",
+    slaTime: "35 Mins SLA",
+    heroImage: "/POST-CONSTRUCTION CLEANING.png",
     contentImage: "https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750",
     shortDesc:
       "নতুন বিল্ডিং বা রেনোভেশনের পর জমে থাকা সিমেন্টের ধুলোবালি, রঙের দাগ ও সিভিল কেমিক্যাল দ্রুত পরিষ্কারের জন্য হেভি-ডিউটি স্পেস ক্লিনিং।",
@@ -255,15 +274,18 @@ export const servicesData: Record<string, ServiceDetail> = {
           "আমাদের সারফেস সেফ অর্গানিক স্ক্রাবার রঙের ফোঁটা ও সিমেন্টের সূক্ষ্ম আস্তর সহজেই তুলে ফেলে।",
       },
     ],
+    status: "ACTIVE",
   },
 
-  "move-out-cleaning": {
+  {
     slug: "move-out-cleaning",
     title: "MOVE-IN / MOVE-OUT CLEANING (মুভ-ইন / আউট ক্লিনিং)",
     category: "TURNOVER",
     badge: "RELOCATION & TURNOVER",
-    heroImage: "/SANITIZATION-DISINFECTION.png",
-    contentImage: "https://framerusercontent.com/images/gRwXdPkLkyjS5JXnK04q3ttVLk.png?width=600&height=400",
+    price: "৳4,000 BDT",
+    slaTime: "25 Mins SLA",
+    heroImage: "/MOVE-OUT-CLEANING.png",
+    contentImage: "https://framerusercontent.com/images/gRwXdPkLkyJS5JXnK04q3ttVLk.png?width=600&height=400",
     shortDesc:
       "নতুন বাসায় ওঠার আগে বা পুরোনো বাসা ছাড়ার সময় সম্পূর্ণ সিকিউরিটি ডিপোজিট রিফান্ড ও জীবাণুমুক্ত হ্যান্ডওভার সার্ভিস।",
     introParagraph1:
@@ -331,5 +353,67 @@ export const servicesData: Record<string, ServiceDetail> = {
           "কাজ শেষে বিকাশ (bKash), নগদ (Nagad), অনলাইন কালেকশন বা ক্যাশে পেমেন্ট করতে পারবেন।",
       },
     ],
+    status: "ACTIVE",
   },
-};
+];
+
+export const servicesData: Record<string, ServiceDetail> = initialServicesList.reduce(
+  (acc, item) => {
+    acc[item.slug] = item;
+    return acc;
+  },
+  {} as Record<string, ServiceDetail>
+);
+
+const STORAGE_KEY = "cleanix_services_catalog_v2";
+
+export function getStoredServices(): ServiceDetail[] {
+  if (typeof window === "undefined") return initialServicesList;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialServicesList));
+      return initialServicesList;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to load services from localStorage:", e);
+    return initialServicesList;
+  }
+}
+
+export function getServiceBySlug(slug: string): ServiceDetail | undefined {
+  const all = getStoredServices();
+  return all.find((s) => s.slug === slug);
+}
+
+export function saveServices(services: ServiceDetail[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
+    window.dispatchEvent(new Event("cleanix_services_updated"));
+  } catch (e) {
+    console.error("Failed to save services to localStorage:", e);
+  }
+}
+
+export function addService(service: ServiceDetail): ServiceDetail[] {
+  const current = getStoredServices();
+  const updated = [service, ...current];
+  saveServices(updated);
+  return updated;
+}
+
+export function updateService(slug: string, fields: Partial<ServiceDetail>): ServiceDetail[] {
+  const current = getStoredServices();
+  const updated = current.map((item) => (item.slug === slug ? { ...item, ...fields } : item));
+  saveServices(updated);
+  return updated;
+}
+
+export function deleteService(slug: string): ServiceDetail[] {
+  const current = getStoredServices();
+  const updated = current.filter((item) => item.slug !== slug);
+  saveServices(updated);
+  return updated;
+}
