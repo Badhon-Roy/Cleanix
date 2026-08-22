@@ -60,10 +60,10 @@ export interface HomeCMSContent {
   servicesTitleLine2: string;
   servicesSubtitle: string;
 
-  // FAQ Section Header & Dynamic Items
+  // FAQ Section Header, Right Image & Dynamic Items
   faqBadge: string;
   faqTitle: string;
-  faqHotlinePhone: string;
+  faqImage: string;
   faqItems: FaqItem[];
 }
 
@@ -135,7 +135,8 @@ export const defaultHomeCMSData: HomeCMSContent = {
 
   faqBadge: "FAQ & HELP",
   faqTitle: "FREQUENTLY ASKED QUESTIONS",
-  faqHotlinePhone: "+880 1774-500815",
+  faqImage:
+    "https://framerusercontent.com/images/UaZYgh11hZSeJVH37MEKUXPqJb0.png?width=708&height=450",
   faqItems: [
     {
       id: 1,
@@ -164,7 +165,7 @@ export const defaultHomeCMSData: HomeCMSContent = {
   ],
 };
 
-export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v6";
+export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v7";
 
 export function getStoredHomeCMSData(): HomeCMSContent {
   if (typeof window === "undefined") return defaultHomeCMSData;

@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import {
   getStoredHomeCMSData,
   saveHomeCMSData,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/homeCMSData";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
+import DeleteCardConfirmModal from "@/components/admin/DeleteCardConfirmModal";
 
 interface HomeCMSManagerProps {
   activeTab: "homePage" | "hero" | "impact" | "services" | "whyUs" | "faq";
@@ -39,13 +40,22 @@ function ChecklistArrayEditor({
   onChange: (items: string[]) => void;
 }) {
   const safeItems = Array.isArray(items) ? items : [];
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
 
   const handleAdd = () => {
+    const hasEmptyLine = safeItems.some((item) => !item?.trim());
+    if (hasEmptyLine) {
+      toast.error("আগে খালি চেকমার্ক লাইনটি ফিল-আপ করুন!");
+      return;
+    }
     onChange([...safeItems, ""]);
   };
 
-  const handleRemove = (index: number) => {
-    onChange(safeItems.filter((_, i) => i !== index));
+  const handleConfirmDelete = () => {
+    if (deleteIdx !== null) {
+      onChange(safeItems.filter((_, i) => i !== deleteIdx));
+      setDeleteIdx(null);
+    }
   };
 
   const handleChange = (index: number, val: string) => {
@@ -80,7 +90,7 @@ function ChecklistArrayEditor({
             />
             <button
               type="button"
-              onClick={() => handleRemove(idx)}
+              onClick={() => setDeleteIdx(idx)}
               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer flex-shrink-0"
               title="Remove Checkmark"
             >
@@ -93,109 +103,17 @@ function ChecklistArrayEditor({
           <p className="text-[11px] text-slate-400 italic">No checkmark lines added yet. Click &quot;Add Checkmark Line&quot; to add one.</p>
         )}
       </div>
-    </div>
-  );
-}
 
-function FaqItemsArrayEditor({
-  items,
-  onChange,
-}: {
-  items: FaqItem[];
-  onChange: (items: FaqItem[]) => void;
-}) {
-  const safeItems = Array.isArray(items) ? items : [];
-
-  const handleAdd = () => {
-    const newFaq: FaqItem = {
-      id: Date.now(),
-      question: "",
-      answer: "",
-    };
-    onChange([...safeItems, newFaq]);
-  };
-
-  const handleRemove = (index: number) => {
-    onChange(safeItems.filter((_, i) => i !== index));
-  };
-
-  const handleChangeQuestion = (index: number, val: string) => {
-    const next = [...safeItems];
-    next[index] = { ...next[index], question: val };
-    onChange(next);
-  };
-
-  const handleChangeAnswer = (index: number, val: string) => {
-    const next = [...safeItems];
-    next[index] = { ...next[index], answer: val };
-    onChange(next);
-  };
-
-  return (
-    <div className="space-y-4 pt-4 border-t border-slate-200">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h4 className="font-bold text-[#11233F] text-sm">Interactive FAQ Accordion Questions List</h4>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">Add new FAQs, edit questions &amp; answers, or delete items live.</p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#007eff] hover:bg-blue-600 text-white transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New FAQ</span>
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {safeItems.map((faq, idx) => (
-          <div key={faq.id || idx} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="text-xs font-black text-[#007eff]">
-                FAQ #{String(idx + 1).padStart(2, "0")}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleRemove(idx)}
-                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
-                title="Delete FAQ"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-[#11233F]">FAQ Question Text:</label>
-                <textarea
-                  rows={3}
-                  value={faq.question}
-                  onChange={(e) => handleChangeQuestion(idx, e.target.value)}
-                  placeholder="Enter FAQ question in Bangla or English..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[#11233F] font-bold text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-[#11233F]">FAQ Answer Text:</label>
-                <textarea
-                  rows={3}
-                  value={faq.answer}
-                  onChange={(e) => handleChangeAnswer(idx, e.target.value)}
-                  placeholder="Enter detailed answer..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {safeItems.length === 0 && (
-          <p className="text-xs text-slate-400 italic">No FAQ items added yet. Click &quot;Add New FAQ&quot; to add one.</p>
-        )}
-      </div>
+      <DeleteCardConfirmModal
+        isOpen={deleteIdx !== null}
+        onClose={() => setDeleteIdx(null)}
+        onConfirm={handleConfirmDelete}
+        cardTitle={
+          deleteIdx !== null && safeItems[deleteIdx]
+            ? `Checkmark Line "${safeItems[deleteIdx] || 'Untitled Item'}"`
+            : "this checkmark line"
+        }
+      />
     </div>
   );
 }
@@ -205,12 +123,19 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
     "hero" | "impact" | "services" | "whyUs" | "faq"
   >(activeTab === "homePage" ? "hero" : (activeTab as any));
 
+  const [deleteFaqIdx, setDeleteFaqIdx] = useState<number | null>(null);
+
   useEffect(() => {
     setCurrentSection(activeTab === "homePage" ? "hero" : (activeTab as any));
   }, [activeTab]);
 
-  const { register, handleSubmit, reset, control } = useForm<HomeCMSContent>({
+  const { register, handleSubmit, reset, control, watch, getValues } = useForm<HomeCMSContent>({
     defaultValues: getStoredHomeCMSData(),
+  });
+
+  const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({
+    control,
+    name: "faqItems",
   });
 
   useEffect(() => {
@@ -221,6 +146,30 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
     saveHomeCMSData(data);
     toast.success("Home Page CMS updated live!");
   };
+
+  const handleAddFaq = () => {
+    const currentFaqs = getValues("faqItems") || [];
+    const hasEmptyFaq = currentFaqs.some(
+      (item) => !item?.question?.trim() || !item?.answer?.trim()
+    );
+
+    if (hasEmptyFaq) {
+      toast.error("আগে আগের FAQ-এর প্রশ্ন ও উত্তর ফিল-আপ করুন!");
+      return;
+    }
+
+    appendFaq({ id: Date.now(), question: "", answer: "" });
+  };
+
+  const handleConfirmDeleteFaq = () => {
+    if (deleteFaqIdx !== null) {
+      removeFaq(deleteFaqIdx);
+      toast.success("FAQ item deleted");
+      setDeleteFaqIdx(null);
+    }
+  };
+
+  const currentFaqItems = watch("faqItems") || [];
 
   return (
     <div className="space-y-8 w-full">
@@ -850,7 +799,7 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
                 <HelpCircle className="w-5 h-5 text-[#007eff]" /> 5. FAQ Section Settings
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Manage FAQ section pill badge, main title, hotline phone, and dynamic FAQ questions list.
+                Manage FAQ section pill badge, main title, right feature photo, and dynamic FAQ questions list.
               </p>
             </div>
 
@@ -868,17 +817,6 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
 
               <div className="space-y-1.5 sm:col-span-6">
                 <label className="font-bold text-[#11233F] text-xs sm:text-sm">
-                  Support Hotline Phone Number:
-                </label>
-                <input
-                  type="text"
-                  {...register("faqHotlinePhone")}
-                  className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-[#11233F] font-bold focus:outline-none focus:border-[#007eff]"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-12">
-                <label className="font-bold text-[#11233F] text-xs sm:text-sm">
                   Main FAQ Title:
                 </label>
                 <input
@@ -890,14 +828,93 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
 
               <div className="sm:col-span-12">
                 <Controller
-                  name="faqItems"
+                  name="faqImage"
                   control={control}
                   render={({ field }) => (
-                    <FaqItemsArrayEditor
-                      items={field.value || []}
+                    <ImageUploadPreview
+                      label="FAQ Right Column Feature Photo:"
+                      value={field.value}
                       onChange={field.onChange}
+                      recommendedSize="Recommended: 708x450px (PNG, JPG)"
+                      aspectRatio="banner"
                     />
                   )}
+                />
+              </div>
+
+              {/* Dynamic FAQ List with useFieldArray */}
+              <div className="sm:col-span-12 pt-4 border-t border-slate-200 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="font-bold text-[#11233F] text-sm">Interactive FAQ Accordion Questions List</h4>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Add new FAQs, edit questions &amp; answers, or delete items live.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddFaq}
+                    className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#007eff] hover:bg-blue-600 text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add New FAQ</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {faqFields.map((fieldItem, idx) => (
+                    <div key={fieldItem.id} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 relative">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="text-xs font-black text-[#007eff]">
+                          FAQ #{String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteFaqIdx(idx)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+                          title="Delete FAQ"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-[#11233F]">FAQ Question Text:</label>
+                          <textarea
+                            rows={3}
+                            {...register(`faqItems.${idx}.question` as const)}
+                            placeholder="Enter FAQ question in Bangla or English..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[#11233F] font-bold text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-[#11233F]">FAQ Answer Text:</label>
+                          <textarea
+                            rows={3}
+                            {...register(`faqItems.${idx}.answer` as const)}
+                            placeholder="Enter detailed answer..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium text-xs focus:outline-none focus:border-[#007eff] min-h-[80px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {faqFields.length === 0 && (
+                    <p className="text-xs text-slate-400 italic">No FAQ items added yet. Click &quot;Add New FAQ&quot; to add one.</p>
+                  )}
+                </div>
+
+                <DeleteCardConfirmModal
+                  isOpen={deleteFaqIdx !== null}
+                  onClose={() => setDeleteFaqIdx(null)}
+                  onConfirm={handleConfirmDeleteFaq}
+                  cardTitle={
+                    deleteFaqIdx !== null && currentFaqItems[deleteFaqIdx]
+                      ? `FAQ #${String(deleteFaqIdx + 1).padStart(2, "0")} (${currentFaqItems[deleteFaqIdx].question || "Untitled Question"})`
+                      : "this FAQ item"
+                  }
                 />
               </div>
             </div>

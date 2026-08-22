@@ -123,10 +123,14 @@ export default function FaqSection() {
           {/* Right Column: Feature Image Card */}
           <div className="lg:col-span-6 relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-3xl overflow-hidden border border-slate-200/80">
             <Image
-              src="https://framerusercontent.com/images/UaZYgh11hZSeJVH37MEKUXPqJb0.png?width=708&height=450"
+              src={
+                cmsData.faqImage ||
+                "https://framerusercontent.com/images/UaZYgh11hZSeJVH37MEKUXPqJb0.png?width=708&height=450"
+              }
               alt="Two Professional Cleaners at Work"
               fill
               priority
+              unoptimized
               className="object-cover object-center transition-transform duration-700 hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
