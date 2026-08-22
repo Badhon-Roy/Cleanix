@@ -36,7 +36,6 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
     { name: "Invoices & Receipts", href: "/dashboard/invoices", icon: FileText },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: "3" },
     { name: "Account Settings", href: "/dashboard/settings", icon: Settings },
-    { name: "Admin HQ Control", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
   const checkIsActive = (href: string) => {
