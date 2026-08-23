@@ -31,14 +31,43 @@ export const removeCookie = (name: string) => {
 // Auth specific cookie helpers
 export const setAuthToken = (token: string, days = 7) => {
   setCookie("cleanix_token", token, days);
+  setCookie("accessToken", token, days);
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("cleanix_token", token);
+      localStorage.setItem("accessToken", token);
+    } catch {}
+  }
 };
 
 export const getAuthToken = () => {
-  return getCookie("cleanix_token");
+  if (typeof window !== "undefined") {
+    const tokenFromCookie =
+      getCookie("cleanix_token") ||
+      getCookie("accessToken") ||
+      getCookie("token");
+    if (tokenFromCookie) return tokenFromCookie;
+
+    try {
+      const tokenFromStorage =
+        localStorage.getItem("cleanix_token") ||
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("token");
+      if (tokenFromStorage) return tokenFromStorage;
+    } catch {}
+  }
+  return getCookie("cleanix_token") || getCookie("accessToken") || getCookie("token") || "";
 };
 
 export const removeAuthToken = () => {
   removeCookie("cleanix_token");
+  removeCookie("accessToken");
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("cleanix_token");
+      localStorage.removeItem("accessToken");
+    } catch {}
+  }
 };
 
 export const setAuthUser = (user: any, days = 7) => {

@@ -6,7 +6,7 @@ const getHeaders = () => {
   const token = getAuthToken();
   return {
     "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
+    ...(token && token.trim() !== "" ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 

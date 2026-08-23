@@ -21,8 +21,8 @@ import {
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { SwirlLogo } from "@/components/Navbar";
-import { loginUserAPI, googleLoginAPI, getGoogleAuthUrl } from "@/services/authService";
-import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
+import { loginUserAPI, getGoogleAuthUrl } from "@/services/authService";
+import { setAuthUser, setAuthRole, setAuthToken } from "@/utils/cookie";
 
 export interface ILoginForm {
   email: string;
@@ -84,6 +84,11 @@ export default function LoginPage() {
         toast.error(res?.message || "Sign-in failed. Please check your credentials.");
         setIsLoading(false);
         return;
+      }
+
+      const token = res.data?.accessToken || res.accessToken;
+      if (token) {
+        setAuthToken(token);
       }
 
       const role = res.data?.user?.role || "CUSTOMER";

@@ -119,7 +119,13 @@ export const loginUserAPI = async (payload: ILoginPayload) => {
     const data = await res.json();
     if (data?.success && (data?.data?.accessToken || data?.accessToken)) {
       const token = data?.data?.accessToken || data?.accessToken;
-      setAuthToken(token);
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set("cleanix_token", token, { path: "/", maxAge: 7 * 86400 });
+        cookieStore.set("accessToken", token, { path: "/", maxAge: 7 * 86400 });
+      } catch (e) {
+        console.error("Error setting server cookies:", e);
+      }
     }
     return data;
   } catch (error: any) {

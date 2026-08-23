@@ -80,6 +80,7 @@ export default function AdminServicesClientView({
   // Add-on Services Catalog State - Initialized directly from SSR props
   const [addonsList, setAddonsList] = useState<any[]>(initialAddons);
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
+  const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
   const [addonFormName, setAddonFormName] = useState("");
   const [addonFormPrice, setAddonFormPrice] = useState("");
   const [addonFormSubLabel, setAddonFormSubLabel] = useState("");
@@ -253,31 +254,86 @@ export default function AdminServicesClientView({
     }
   };
 
-  const handleCreateAddon = async (e: React.FormEvent) => {
+  const getAddonIcon = (name: string, iconName?: string) => {
+    const n = (name || "").toLowerCase();
+    if (n.includes("sofa") || n.includes("carpet") || iconName === "sofa") {
+      return <Home className="w-5 h-5" />;
+    }
+    if (n.includes("oven") || n.includes("kitchen") || n.includes("chimney") || iconName === "oven") {
+      return <Utensils className="w-5 h-5" />;
+    }
+    if (n.includes("fridge") || n.includes("refrigerator") || iconName === "fridge") {
+      return <Layers className="w-5 h-5" />;
+    }
+    if (n.includes("window") || n.includes("glass") || iconName === "window") {
+      return <Sparkles className="w-5 h-5" />;
+    }
+    if (n.includes("pet") || iconName === "pet") {
+      return <ShieldCheck className="w-5 h-5" />;
+    }
+    return <Sparkles className="w-5 h-5" />;
+  };
+
+  const handleOpenAddAddonModal = () => {
+    setEditingAddonId(null);
+    setAddonFormName("");
+    setAddonFormPrice("");
+    setAddonFormSubLabel("");
+    setAddonFormTag("ADD-ON");
+    setIsAddonModalOpen(true);
+  };
+
+  const handleOpenEditAddonModal = (addon: any) => {
+    setEditingAddonId(addon._id || addon.id);
+    setAddonFormName(addon.name || "");
+    setAddonFormPrice(String(addon.price || ""));
+    setAddonFormSubLabel(addon.subLabel || "");
+    setAddonFormTag(addon.tag || "ADD-ON");
+    setIsAddonModalOpen(true);
+  };
+
+  const handleSaveAddon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addonFormName || !addonFormPrice) {
       toast.error("Please provide Add-on Name and Price!");
       return;
     }
     setIsSubmittingAddon(true);
-    const numPrice = Number(addonFormPrice.replace(/[^0-9]/g, ""));
-    const res = await createAddonAPI({
-      name: addonFormName,
-      price: numPrice || 1000,
-      subLabel: addonFormSubLabel || "সার্ভিস বিবরণ",
-      tag: addonFormTag || "ADD-ON",
-      active: true,
-    });
+    const numPrice = Number(String(addonFormPrice).replace(/[^0-9]/g, ""));
+
+    let res: any;
+    if (editingAddonId) {
+      res = await updateAddonAPI(editingAddonId, {
+        name: addonFormName,
+        price: numPrice || 1000,
+        subLabel: addonFormSubLabel || "সার্ভিস বিবরণ",
+        tag: addonFormTag || "ADD-ON",
+      });
+    } else {
+      res = await createAddonAPI({
+        name: addonFormName,
+        price: numPrice || 1000,
+        subLabel: addonFormSubLabel || "সার্ভিস বিবরণ",
+        tag: addonFormTag || "ADD-ON",
+        active: true,
+      });
+    }
+
     setIsSubmittingAddon(false);
     if (res?.success) {
-      toast.success("New Add-On Cleaning Service created successfully!");
+      toast.success(
+        editingAddonId
+          ? "Add-On Cleaning Service updated successfully!"
+          : "New Add-On Cleaning Service created successfully!"
+      );
       setIsAddonModalOpen(false);
+      setEditingAddonId(null);
       setAddonFormName("");
       setAddonFormPrice("");
       setAddonFormSubLabel("");
       refreshAddons();
     } else {
-      toast.error(res?.message || "Failed to create Add-on service.");
+      toast.error(res?.message || "Failed to save Add-on service.");
     }
   };
 
@@ -622,7 +678,7 @@ export default function AdminServicesClientView({
 
           <button
             type="button"
-            onClick={() => setIsAddonModalOpen(true)}
+            onClick={handleOpenAddAddonModal}
             className="px-4 py-2 rounded-2xl bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-xs transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
@@ -630,50 +686,80 @@ export default function AdminServicesClientView({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {addonsList.map((addon) => (
             <div
               key={addon._id || addon.id}
-              className={`p-4 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+              className={`p-5 sm:p-6 rounded-3xl border flex items-center justify-between transition-all duration-300 ${
                 addon.active
-                  ? "bg-slate-50 border-slate-200"
-                  : "bg-slate-100/70 border-slate-200 opacity-60"
+                  ? "bg-white border-slate-200/90 shadow-2xs hover:border-slate-300"
+                  : "bg-slate-50/80 border-slate-200 opacity-60"
               }`}
             >
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <p className="font-extrabold text-slate-900 text-xs sm:text-sm">{addon.name}</p>
-                  {addon.tag && (
-                    <span className="text-[9px] font-extrabold text-[#007eff] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 uppercase">
-                      {addon.tag}
-                    </span>
-                  )}
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
+                    addon.active
+                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      : "bg-slate-200 text-slate-500 border border-slate-300"
+                  }`}
+                >
+                  {getAddonIcon(addon.name, addon.iconName)}
                 </div>
-                <p className="text-xs font-semibold text-slate-500">{addon.subLabel}</p>
-                <p className="text-xs font-black text-[#007eff]">
-                  +৳{(addon.price || 0).toLocaleString()}
-                </p>
+
+                <div>
+                  <p className="text-base font-bold text-slate-900 leading-snug">
+                    {addon.name}
+                  </p>
+                  <p className="text-xs font-medium text-slate-500 mt-1">
+                    {addon.subLabel}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                <span
+                  className={`text-xs sm:text-sm font-extrabold px-3.5 py-1.5 rounded-xl transition-colors ${
+                    addon.active
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : "bg-slate-200 text-slate-600 border border-slate-300"
+                  }`}
+                >
+                  +৳{(addon.price || 0).toLocaleString()}
+                </span>
+
+                {/* Modern Sliding Toggle Switch */}
                 <button
                   type="button"
                   onClick={() => toggleAddonActive(addon)}
-                  className={`px-3 py-1 rounded-full text-[10px] font-extrabold cursor-pointer border ${
-                    addon.active
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-slate-200 text-slate-600 border-slate-300"
+                  className={`w-12 h-6.5 rounded-full p-1 transition-colors duration-300 cursor-pointer flex items-center shadow-inner ${
+                    addon.active ? "bg-emerald-500" : "bg-slate-300"
                   }`}
+                  title={addon.active ? "Click to Disable" : "Click to Enable"}
                 >
-                  {addon.active ? "ON" : "OFF"}
+                  <span
+                    className={`w-4.5 h-4.5 rounded-full bg-white shadow-md transform transition-transform duration-300 block ${
+                      addon.active ? "translate-x-[22px]" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditAddonModal(addon)}
+                  className="w-8 h-8 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Edit Add-On Details"
+                >
+                  <Edit3 className="w-4 h-4" />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleDeleteAddon(addon)}
-                  className="w-7 h-7 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Delete Add-On"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -681,14 +767,14 @@ export default function AdminServicesClientView({
         </div>
       </div>
 
-      {/* ADD NEW ADD-ON MODAL */}
+      {/* ADD / EDIT ADD-ON MODAL */}
       {isAddonModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-5 relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#007eff]" />
-                Add New Add-On Service
+                {editingAddonId ? "Edit Add-On Service" : "Add New Add-On Service"}
               </h3>
               <button
                 type="button"
@@ -699,7 +785,7 @@ export default function AdminServicesClientView({
               </button>
             </div>
 
-            <form onSubmit={handleCreateAddon} className="space-y-4">
+            <form onSubmit={handleSaveAddon} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">Service Add-On Title (নাম):</label>
                 <input
@@ -748,7 +834,11 @@ export default function AdminServicesClientView({
                   disabled={isSubmittingAddon}
                   className="px-5 py-2.5 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white text-xs font-extrabold cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmittingAddon ? "Creating..." : "Save Add-On Service"}
+                  {isSubmittingAddon
+                    ? "Saving..."
+                    : editingAddonId
+                    ? "Update Add-On Service"
+                    : "Save Add-On Service"}
                 </button>
               </div>
             </form>
