@@ -16,6 +16,7 @@ export interface IBookingPayload {
   bedrooms: number;
   bathrooms: number;
   selectedAddons?: string[];
+  customFieldValues?: Record<string, any>;
   scheduledDate: string;
   timeSlot: string;
   address: string;
