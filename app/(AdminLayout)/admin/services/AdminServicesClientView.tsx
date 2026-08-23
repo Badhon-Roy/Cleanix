@@ -160,7 +160,7 @@ export default function AdminServicesClientView({
     setFormTitle("");
     setFormCategory("HOME CARE");
     setFormBadge("B2C HOME CLEANING");
-    setFormPrice("৳3,500 BDT");
+    setFormPrice("3500");
     setFormSlaTime("30 Mins SLA");
     setFormHeroImage("/RESIDENTIAL-DEEP-CLEANING.png");
     setFormContentImage(
@@ -179,7 +179,7 @@ export default function AdminServicesClientView({
     setFormTitle(item.title);
     setFormCategory(item.category);
     setFormBadge(item.badge);
-    setFormPrice(item.price || "৳3,500 BDT");
+    setFormPrice(String(item.price || "3500").replace(/[^0-9]/g, "") || "3500");
     setFormSlaTime(item.slaTime || "30 Mins SLA");
     setFormHeroImage(item.heroImage);
     setFormContentImage(item.contentImage);
@@ -205,12 +205,15 @@ export default function AdminServicesClientView({
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
-    const serviceObj: ServiceDetail = {
+    const numPrice = Number(String(formPrice).replace(/[^0-9]/g, "")) || 3500;
+    const formattedPrice = `৳${numPrice.toLocaleString()}`;
+
+    const serviceObj: any = {
       slug: computedSlug,
       title: formTitle,
       category: formCategory.toUpperCase(),
       badge: formBadge.toUpperCase(),
-      price: formPrice,
+      price: formattedPrice,
       slaTime: formSlaTime,
       heroImage: formHeroImage,
       contentImage: formContentImage,
@@ -632,7 +635,7 @@ export default function AdminServicesClientView({
                   </div>
 
                   <p className="text-xs font-black text-[#007eff]">
-                    Starting Rate: {item.price || "৳3,500 BDT"}
+                    Starting Rate: {item.price ? item.price.replace(/\s*BDT\s*/gi, "") : "৳3,500"}
                   </p>
 
                   <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed pt-1">
@@ -706,21 +709,11 @@ export default function AdminServicesClientView({
             <Calculator className="w-5 h-5 text-[#007eff]" /> Instant Estimate Dynamic Pricing Multipliers
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Formula: Base Service Fee + (SqFt × Rate) + (Bedrooms × Rate) + (Bathrooms × Rate) + Addons
+            Formula: Category Starting Rate (Base Fee) + (SqFt × Rate) + (Bedrooms × Rate) + (Bathrooms × Rate) + Addons
           </p>
         </div>
 
-        <form onSubmit={handleSaveDynamicConfig} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="space-y-1.5">
-            <label className="font-extrabold text-slate-800 text-xs sm:text-sm">Base Service Fee (৳):</label>
-            <input
-              type="text"
-              value={dynamicPricingConfig.baseFee}
-              onChange={(e) => setDynamicPricingConfig({ ...dynamicPricingConfig, baseFee: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
-            />
-          </div>
-
+        <form onSubmit={handleSaveDynamicConfig} className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="space-y-1.5">
             <label className="font-extrabold text-slate-800 text-xs sm:text-sm">Per SqFt Rate (৳):</label>
             <input
@@ -751,7 +744,7 @@ export default function AdminServicesClientView({
             />
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+          <div className="md:col-span-3 flex justify-end">
             <button
               type="submit"
               className="px-6 py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-slate-900 hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-2"
@@ -1019,16 +1012,22 @@ export default function AdminServicesClientView({
 
                 <div className="space-y-1.5">
                   <label className="font-extrabold text-slate-800 block">
-                    Starting Price (e.g. ৳3,500 BDT):
+                    Starting Price (৳):
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. ৳3,500 BDT"
-                    value={formPrice}
-                    onChange={(e) => setFormPrice(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-900 text-sm">
+                      ৳
+                    </span>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      placeholder="3500"
+                      value={formPrice}
+                      onChange={(e) => setFormPrice(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-8 pr-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
