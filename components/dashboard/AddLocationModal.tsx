@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
-import { MapPin, X, Home, Building, Plus, AlertCircle } from "lucide-react";
+import { MapPin, X, Home, Building, Plus, AlertCircle, Save } from "lucide-react";
+import { ILocationData } from "@/services/locationService";
 
 export interface NewAddressFormData {
   tag: string;
@@ -18,12 +19,14 @@ interface AddLocationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddLocation: (data: NewAddressFormData) => void;
+  initialValues?: ILocationData | null;
 }
 
 export default function AddLocationModal({
   isOpen,
   onClose,
   onAddLocation,
+  initialValues,
 }: AddLocationModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -49,14 +52,37 @@ export default function AddLocationModal({
     },
   });
 
+  useEffect(() => {
+    if (initialValues) {
+      reset({
+        tag: initialValues.tag || "",
+        street: initialValues.street || "",
+        area: initialValues.area || "Gulshan-2",
+        city: initialValues.city || "Dhaka",
+        zip: initialValues.zip || "1212",
+        type: (initialValues.type as "home" | "office") || "home",
+      });
+    } else {
+      reset({
+        tag: "",
+        street: "",
+        area: "Gulshan-2",
+        city: "Dhaka",
+        zip: "1212",
+        type: "home",
+      });
+    }
+  }, [initialValues, isOpen, reset]);
+
   const selectedType = watch("type");
 
   if (!isOpen || !mounted) return null;
 
   const onSubmitForm = (data: NewAddressFormData) => {
     onAddLocation(data);
-    reset();
   };
+
+  const isEditing = !!initialValues;
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150">
@@ -68,8 +94,14 @@ export default function AddLocationModal({
               <MapPin className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Add New Service Location</h3>
-              <p className="text-xs text-slate-500 font-medium">নতুন সার্ভিস ডিলিভারি লোকেশন যুক্ত করুন।</p>
+              <h3 className="text-xl font-bold text-slate-900">
+                {isEditing ? "Edit Service Location" : "Add New Service Location"}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                {isEditing
+                  ? "সার্ভিস লোকেশনের তথ্য আপডেট করুন।"
+                  : "নতুন সার্ভিস ডিলিভারি লোকেশন যুক্ত করুন।"}
+              </p>
             </div>
           </div>
 
@@ -203,8 +235,17 @@ export default function AddLocationModal({
               type="submit"
               className="py-3 px-6 rounded-2xl bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center gap-1.5 border border-blue-400"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Save & Add Location</span>
+              {isEditing ? (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Update Location</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Save & Add Location</span>
+                </>
+              )}
             </button>
           </div>
         </form>

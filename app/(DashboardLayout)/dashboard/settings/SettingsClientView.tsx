@@ -26,6 +26,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import AddLocationModal, { NewAddressFormData } from "@/components/dashboard/AddLocationModal";
 import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
@@ -35,6 +36,7 @@ import { changePasswordAPI } from "@/services/authService";
 import {
   fetchMyLocationsAPI,
   createLocationAPI,
+  updateLocationAPI,
   setDefaultLocationAPI,
   deleteLocationAPI,
 } from "@/services/locationService";
@@ -61,6 +63,7 @@ export default function SettingsClientView({
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [passwordSavedSuccess, setPasswordSavedSuccess] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<any | null>(null);
   const [deleteAddressId, setDeleteAddressId] = useState<string | number | null>(null);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
 
@@ -154,26 +157,50 @@ export default function SettingsClientView({
     }
   };
 
-  const handleAddLocationSubmit = async (newLoc: NewAddressFormData) => {
-    const payload = {
-      tag: newLoc.tag,
-      type: newLoc.type,
-      street: newLoc.street,
-      area: newLoc.area,
-      city: newLoc.city,
-      zip: newLoc.zip || "1200",
-      isDefault: false,
-    };
-    const res = await createLocationAPI(payload);
-    if (res?.success) {
-      toast.success(res?.message || "Service location added successfully!");
-      setIsAddressModalOpen(false);
-      const fresh = await fetchMyLocationsAPI();
-      if (fresh?.success && Array.isArray(fresh?.data)) {
-        setAddresses(fresh.data);
+  const handleAddOrUpdateLocationSubmit = async (formData: NewAddressFormData) => {
+    if (editingLocation) {
+      const locId = String(editingLocation._id || editingLocation.id);
+      const payload = {
+        tag: formData.tag,
+        type: formData.type,
+        street: formData.street,
+        area: formData.area,
+        city: formData.city,
+        zip: formData.zip || "1200",
+      };
+      const res = await updateLocationAPI(locId, payload);
+      if (res?.success) {
+        toast.success(res?.message || "Service location updated successfully!");
+        setIsAddressModalOpen(false);
+        setEditingLocation(null);
+        const fresh = await fetchMyLocationsAPI();
+        if (fresh?.success && Array.isArray(fresh?.data)) {
+          setAddresses(fresh.data);
+        }
+      } else {
+        toast.error(res?.message || "Failed to update location");
       }
     } else {
-      toast.error(res?.message || "Failed to add service location");
+      const payload = {
+        tag: formData.tag,
+        type: formData.type,
+        street: formData.street,
+        area: formData.area,
+        city: formData.city,
+        zip: formData.zip || "1200",
+        isDefault: false,
+      };
+      const res = await createLocationAPI(payload);
+      if (res?.success) {
+        toast.success(res?.message || "Service location added successfully!");
+        setIsAddressModalOpen(false);
+        const fresh = await fetchMyLocationsAPI();
+        if (fresh?.success && Array.isArray(fresh?.data)) {
+          setAddresses(fresh.data);
+        }
+      } else {
+        toast.error(res?.message || "Failed to add service location");
+      }
     }
   };
 
@@ -526,7 +553,10 @@ export default function SettingsClientView({
               </div>
               <button
                 type="button"
-                onClick={() => setIsAddressModalOpen(true)}
+                onClick={() => {
+                  setEditingLocation(null);
+                  setIsAddressModalOpen(true);
+                }}
                 className="bg-blue-50 hover:bg-blue-100 text-[#007eff] border border-blue-200 font-bold text-xs px-4 py-2.5 rounded-2xl flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4 stroke-[3]" /> Add New Location
@@ -603,27 +633,45 @@ export default function SettingsClientView({
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-200/60 text-xs">
+                      {/* Footer Actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-bold">
                         {!addr.isDefault ? (
                           <button
                             type="button"
                             onClick={() => handleSetDefaultLocation(addr)}
-                            className="text-[#007eff] hover:underline font-bold cursor-pointer"
+                            className="text-[#007eff] hover:text-blue-700 font-extrabold flex items-center gap-1.5 hover:underline transition-all cursor-pointer"
                           >
-                            Set Default
+                            <CheckCircle2 className="w-4 h-4 text-[#007eff]" />
+                            <span>Set as Primary Default</span>
                           </button>
                         ) : (
-                          <span className="text-[#007eff] font-bold">Default Selected</span>
+                          <span className="text-emerald-600 font-extrabold flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <span>Primary Default Selected</span>
+                          </span>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => setDeleteAddressId(addrId)}
-                          className="text-red-500 hover:text-red-700 font-bold p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Delete Address"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingLocation(addr);
+                              setIsAddressModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-[#007eff] hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Edit Location"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteAddressId(addrId)}
+                            className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Delete Location"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -859,11 +907,15 @@ export default function SettingsClientView({
         </div>
       </div>
 
-      {/* Add New Location Popup Modal with React Hook Form */}
+      {/* Add / Edit Location Popup Modal with React Hook Form */}
       <AddLocationModal
         isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        onAddLocation={handleAddLocationSubmit}
+        onClose={() => {
+          setIsAddressModalOpen(false);
+          setEditingLocation(null);
+        }}
+        onAddLocation={handleAddOrUpdateLocationSubmit}
+        initialValues={editingLocation}
       />
 
       {/* Delete Address Confirmation Modal */}
