@@ -11,7 +11,7 @@ const getHeaders = () => {
 };
 
 export interface IBookingPayload {
-  serviceType: "RESIDENTIAL" | "COMMERCIAL" | "MOVE_IN_OUT" | "POST_CONSTRUCTION";
+  serviceType: string; // ServiceCategory _id (ObjectId string)
   sqft: number;
   bedrooms: number;
   bathrooms: number;

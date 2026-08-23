@@ -543,8 +543,19 @@ export default function NewBookingClientView({
       (key) => selectedAddons[key],
     );
 
+    // Find selected service category object to get its _id
+    const selectedServiceObj = coreServicesList.find(
+      (s) => s.slug === serviceType || s.category === serviceType || s._id === serviceType,
+    );
+
+    if (!selectedServiceObj?._id) {
+      toast.error("অনুগ্রহ করে একটি সার্ভিস ক্যাটাগরি নির্বাচন করুন।");
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
-      serviceType: serviceType as any,
+      serviceType: selectedServiceObj._id, // ObjectId
       sqft,
       bedrooms,
       bathrooms,
@@ -792,6 +803,7 @@ export default function NewBookingClientView({
       ) : (
         <form
           onSubmit={handleSubmitBooking}
+          onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
         >
           {/* Left Configuration Column (8 Cols) */}
