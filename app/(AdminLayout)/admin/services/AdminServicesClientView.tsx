@@ -41,15 +41,23 @@ import {
   deleteAddonAPI,
 } from "@/services/addonService";
 import { updatePricingConfigAPI } from "@/services/pricingService";
+import {
+  fetchAdminServicesAPI,
+  createServiceAPI,
+  updateServiceAPI,
+  deleteServiceAPI,
+} from "@/services/serviceCategoryService";
 
 export default function AdminServicesClientView({
   initialAddons = [],
   initialPricing,
+  initialCoreServices = [],
 }: {
   initialAddons?: any[];
   initialPricing?: any;
+  initialCoreServices?: any[];
 }) {
-  const [services, setServices] = useState<ServiceDetail[]>([]);
+  const [services, setServices] = useState<any[]>(initialCoreServices);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
@@ -105,10 +113,29 @@ export default function AdminServicesClientView({
   const [isDeletingAddon, setIsDeletingAddon] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<{ slug: string; title: string } | null>(null);
 
-  // Load static services catalog into state
+  // Sync services state with initialCoreServices prop
   useEffect(() => {
-    setServices(getStoredServices());
-  }, []);
+    if (initialCoreServices && initialCoreServices.length > 0) {
+      setServices(initialCoreServices);
+    }
+  }, [initialCoreServices]);
+
+  const refreshServices = async () => {
+    const res = await fetchAdminServicesAPI();
+    if (res?.success && Array.isArray(res?.data)) {
+      setServices(res.data);
+    }
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const channel = new BroadcastChannel("cleanix_services_channel");
+        channel.postMessage({ type: "SERVICES_UPDATED", timestamp: Date.now() });
+        channel.close();
+      }
+      window.dispatchEvent(new CustomEvent("cleanix_services_updated"));
+    } catch (e) {
+      console.error("Error broadcasting service update:", e);
+    }
+  };
 
   const refreshAddons = async () => {
     const res = await fetchAdminAddonsAPI();
@@ -163,7 +190,7 @@ export default function AdminServicesClientView({
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formTitle.trim() || !formShortDesc.trim()) {
@@ -221,34 +248,55 @@ export default function AdminServicesClientView({
     };
 
     if (editingSlug) {
-      const updated = updateService(editingSlug, serviceObj);
-      setServices(updated);
-      toast.success(`Service "${formTitle}" updated successfully!`);
+      const targetService = services.find((s) => s.slug === editingSlug || s._id === editingSlug);
+      const targetId = targetService?._id || editingSlug;
+      const res = await updateServiceAPI(targetId, serviceObj);
+      if (res?.success) {
+        toast.success(`Service "${formTitle}" updated successfully!`);
+        refreshServices();
+      } else {
+        toast.error(res?.message || "Failed to update service.");
+      }
     } else {
-      const updated = addService(serviceObj);
-      setServices(updated);
-      toast.success(`New Service "${formTitle}" created successfully!`);
+      const res = await createServiceAPI(serviceObj);
+      if (res?.success) {
+        toast.success(`New Service "${formTitle}" created successfully!`);
+        refreshServices();
+      } else {
+        toast.error(res?.message || "Failed to create service.");
+      }
     }
 
     setIsModalOpen(false);
   };
 
-  const handleToggleStatus = (item: ServiceDetail) => {
+  const handleToggleStatus = async (item: any) => {
+    const serviceId = item._id || item.slug;
     const nextStatus = item.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    const updated = updateService(item.slug, { status: nextStatus });
-    setServices(updated);
-    toast.info(`Service "${item.title}" set to ${nextStatus}`);
+    const res = await updateServiceAPI(serviceId, { status: nextStatus });
+    if (res?.success) {
+      toast.info(`Service "${item.title}" set to ${nextStatus}`);
+      refreshServices();
+    } else {
+      toast.error(res?.message || "Failed to update service status.");
+    }
   };
 
   const promptDeleteService = (slug: string, title: string) => {
     setServiceToDelete({ slug, title });
   };
 
-  const confirmExecuteDeleteService = () => {
+  const confirmExecuteDeleteService = async () => {
     if (!serviceToDelete) return;
-    const updated = deleteService(serviceToDelete.slug);
-    setServices(updated);
-    toast.error(`Service "${serviceToDelete.title}" deleted.`);
+    const targetService = services.find((s) => s.slug === serviceToDelete.slug || s._id === serviceToDelete.slug);
+    const targetId = targetService?._id || serviceToDelete.slug;
+    const res = await deleteServiceAPI(targetId);
+    if (res?.success) {
+      toast.error(`Service "${serviceToDelete.title}" deleted.`);
+      refreshServices();
+    } else {
+      toast.error(res?.message || "Failed to delete service.");
+    }
     setServiceToDelete(null);
   };
 
@@ -604,18 +652,21 @@ export default function AdminServicesClientView({
                   <span>Public View</span>
                 </Link>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                  {/* Modern Sliding Toggle Switch */}
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(item)}
-                    className={`px-3 py-2 rounded-xl font-extrabold text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
-                      item.status === "ACTIVE"
-                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                        : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      item.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
                     }`}
+                    title={item.status === "ACTIVE" ? "Click to Disable" : "Click to Enable"}
                   >
-                    <Power className="w-3.5 h-3.5" />
-                    <span>{item.status === "ACTIVE" ? "Active" : "Disabled"}</span>
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        item.status === "ACTIVE" ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
                   </button>
 
                   <button

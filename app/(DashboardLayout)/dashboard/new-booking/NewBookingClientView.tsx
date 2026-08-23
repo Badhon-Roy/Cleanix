@@ -43,15 +43,18 @@ import { io } from "socket.io-client";
 import { createBookingAPI } from "@/services/bookingService";
 import { fetchActiveAddonsAPI } from "@/services/addonService";
 import { fetchPricingConfigAPI } from "@/services/pricingService";
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
 
 export default function NewBookingClientView({
   initialLocations = [],
   initialAddons = [],
   initialPricing,
+  initialCoreServices = [],
 }: {
   initialLocations?: any[];
   initialAddons?: any[];
   initialPricing?: any;
+  initialCoreServices?: any[];
 }) {
   const [serviceType, setServiceType] = useState<string>("RESIDENTIAL");
   const [sqft, setSqft] = useState<number>(1200);
@@ -320,6 +323,74 @@ export default function NewBookingClientView({
     };
   }, []);
 
+  // Core Services Catalog State & Real-time Listener (Socket.io + BroadcastChannel + Window Event)
+  const [coreServicesList, setCoreServicesList] = useState<any[]>(initialCoreServices || []);
+
+  useEffect(() => {
+    if (initialCoreServices && initialCoreServices.length > 0) {
+      setCoreServicesList(initialCoreServices);
+    }
+  }, [initialCoreServices]);
+
+  useEffect(() => {
+    const fetchLatestActiveServices = async () => {
+      try {
+        const res = await fetchActiveServicesAPI();
+        if (res?.success && Array.isArray(res?.data)) {
+          setCoreServicesList(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch active core services in real-time:", err);
+      }
+    };
+
+    // 1. Socket.io Listener
+    let socket: any = null;
+    try {
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      socket = io(serverUrl, { withCredentials: true });
+      socket.on("service_catalog_updated", () => {
+        fetchLatestActiveServices();
+      });
+    } catch (e) {
+      console.error("Socket error in core services listener:", e);
+    }
+
+    // 2. BroadcastChannel Listener
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("cleanix_services_channel");
+        channel.onmessage = () => {
+          fetchLatestActiveServices();
+        };
+      }
+    } catch (e) {
+      console.error("BroadcastChannel error in core services:", e);
+    }
+
+    // 3. Custom Window Event Listener
+    const handleServicesUpdate = () => {
+      fetchLatestActiveServices();
+    };
+    window.addEventListener("cleanix_services_updated", handleServicesUpdate);
+
+    return () => {
+      if (socket) socket.disconnect();
+      if (channel) channel.close();
+      window.removeEventListener("cleanix_services_updated", handleServicesUpdate);
+    };
+  }, []);
+
+  const getCategoryIcon = (category: string, title: string, slug: string) => {
+    const text = `${category} ${title} ${slug}`.toLowerCase();
+    if (text.includes("commercial") || text.includes("office")) return <Building2 className="w-6 h-6 stroke-[2]" />;
+    if (text.includes("move") || text.includes("out") || text.includes("relocation")) return <Truck className="w-6 h-6 stroke-[2]" />;
+    if (text.includes("construction") || text.includes("build") || text.includes("renovation")) return <HardHat className="w-6 h-6 stroke-[2]" />;
+    if (text.includes("sofa") || text.includes("carpet") || text.includes("furniture")) return <Sofa className="w-6 h-6 stroke-[2]" />;
+    return <Home className="w-6 h-6 stroke-[2]" />;
+  };
+
   // Helper for dynamic addon icons
   const getAddonIcon = (name: string, iconName?: string) => {
     const key = (iconName || name).toLowerCase();
@@ -338,8 +409,24 @@ export default function NewBookingClientView({
     setSelectedAddons((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Dynamic Pricing Calculation Algorithm using Admin configured multipliers
-  const baseFee = pricingConfig.baseFee ?? 1500;
+  // Helper to parse price string to number
+  const parsePriceNumber = (priceStr?: string, fallback = 1500): number => {
+    if (!priceStr) return fallback;
+    const numStr = String(priceStr).replace(/[^0-9.]/g, "");
+    const val = parseFloat(numStr);
+    return isNaN(val) || val <= 0 ? fallback : val;
+  };
+
+  // Selected Category Object
+  const selectedCategoryObj = coreServicesList.find(
+    (s) => s.slug === serviceType || s.category === serviceType
+  );
+
+  // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
+  const baseFee = selectedCategoryObj?.price
+    ? parsePriceNumber(selectedCategoryObj.price, pricingConfig.baseFee ?? 1500)
+    : pricingConfig.baseFee ?? 1500;
+
   const sqftCost = sqft * (pricingConfig.sqftRate ?? 2.5);
   const bedroomCost = bedrooms * (pricingConfig.bedroomRate ?? 500);
   const bathroomCost = bathrooms * (pricingConfig.bathroomRate ?? 400);
@@ -594,68 +681,41 @@ export default function NewBookingClientView({
                 </span>
               </div>
 
-              {/* Grid of 4 Category Cards */}
+              {/* Grid of Dynamic Category Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  {
-                    id: "RESIDENTIAL",
-                    label: "Residential Home",
-                    sub: "বাসাবাড়ি ও অ্যাপার্টমেন্ট",
-                    tag: "POPULAR",
-                    icon: <Home className="w-6 h-6 stroke-[2]" />,
-                  },
-                  {
-                    id: "COMMERCIAL",
-                    label: "Commercial Office",
-                    sub: "অফিস ও কর্পোরেট স্পেস",
-                    tag: "CORPORATE",
-                    icon: <Building2 className="w-6 h-6 stroke-[2]" />,
-                  },
-                  {
-                    id: "MOVE_IN_OUT",
-                    label: "Move-In / Out",
-                    sub: "বাসা শিফটিং ডিপ ক্লিন",
-                    tag: "DEEP CLEAN",
-                    icon: <Truck className="w-6 h-6 stroke-[2]" />,
-                  },
-                  {
-                    id: "POST_CONSTRUCTION",
-                    label: "Post Construction",
-                    sub: "নতুন বিল্ডিং ফিনিশিং",
-                    tag: "SPECIALIST",
-                    icon: <HardHat className="w-6 h-6 stroke-[2]" />,
-                  },
-                ].map((s) => {
-                  const isSelected = serviceType === s.id;
+                {coreServicesList.map((s) => {
+                  const isSelected = serviceType === s.slug || serviceType === s.category;
                   return (
                     <button
-                      key={s.id}
+                      key={s.slug}
                       type="button"
-                      onClick={() => setServiceType(s.id)}
+                      onClick={() => setServiceType(s.slug)}
                       className={`group relative p-5 sm:p-6 rounded-3xl text-left transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-4 min-h-[160px] ${
                         isSelected
-                          ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400"
+                          ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400 shadow-md"
                           : "border border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-700"
                       }`}
                     >
                       {isSelected ? (
-                        <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white text-[#007eff] flex items-center justify-center">
+                        <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white text-[#007eff] flex items-center justify-center shadow-md">
                           <Check className="w-4 h-4 stroke-[3]" />
                         </div>
                       ) : (
-                        <span className="absolute top-4 right-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                          {s.tag}
-                        </span>
+                        s.badge && (
+                          <span className="absolute top-4 right-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                            {s.badge}
+                          </span>
+                        )
                       )}
 
                       <div
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                           isSelected
                             ? "bg-white/20 text-white backdrop-blur-md"
-                            : "bg-slate-100 text-slate-700 group-hover:scale-105 group-hover:bg-slate-200"
+                            : "bg-blue-50 text-[#007eff] border border-blue-200 group-hover:scale-105"
                         }`}
                       >
-                        {s.icon}
+                        {getCategoryIcon(s.category, s.title, s.slug)}
                       </div>
 
                       <div>
@@ -664,14 +724,14 @@ export default function NewBookingClientView({
                             isSelected ? "text-white" : "text-slate-900 group-hover:text-[#007eff]"
                           }`}
                         >
-                          {s.label}
+                          {s.title.split("(")[0].trim()}
                         </p>
                         <p
-                          className={`text-xs font-semibold mt-1 ${
+                          className={`text-xs font-semibold mt-1 line-clamp-1 ${
                             isSelected ? "text-blue-100" : "text-slate-500"
                           }`}
                         >
-                          {s.sub}
+                          {s.shortDesc || s.introParagraph1 || "সম্পূর্ণ সার্ভিস প্রসেস"}
                         </p>
                       </div>
                     </button>
@@ -1193,12 +1253,13 @@ export default function NewBookingClientView({
                     <Tag className="w-4 h-4 text-[#007eff]" /> Selected Category:
                   </span>
                   <span className="font-bold text-[#007eff] text-xs uppercase bg-white px-2.5 py-1 rounded-xl border border-blue-200">
-                    {categoryLabels[serviceType]?.name || serviceType}
+                    {coreServicesList.find((s) => s.slug === serviceType || s.category === serviceType)
+                      ?.title.split("(")[0].trim() || serviceType}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-slate-600">
-                  <span>বেসিক সার্ভিস ফি:</span>
+                  <span>বেসিক সার্ভিস ফি ({selectedCategoryObj ? selectedCategoryObj.title.split("(")[0].trim() : "ক্যাটাগরি"}):</span>
                   <span className="font-bold text-slate-900">৳{baseFee.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
