@@ -425,13 +425,19 @@ export default function RegisterPage() {
   };
 
   // Google OAuth Handler
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     toast.info("Redirecting to Google Sign-In...", {
       description: "Connecting to Google OAuth 2.0 service",
     });
-    const googleUrl = getGoogleAuthUrl();
-    window.location.href = `${googleUrl}?role=${accountType}`;
+    try {
+      const googleUrl = await getGoogleAuthUrl();
+      window.location.href = `${googleUrl}?role=${accountType}`;
+    } catch (error) {
+      console.error("Failed to get Google Auth URL:", error);
+      toast.error("Failed to connect to Google OAuth service.");
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -741,6 +747,33 @@ export default function RegisterPage() {
                 >
                   <span>Continue as {accountType === "CUSTOMER" ? "Customer" : "Cleaner"}</span>
                   <ArrowRight className="w-4.5 h-4.5 stroke-[2.5]" />
+                </button>
+
+                {/* Divider */}
+                <div className="relative my-3 sm:my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">
+                      OR
+                    </span>
+                  </div>
+                </div>
+
+                {/* Google Signup Button */}
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-[#11233F] font-bold py-2.5 sm:py-3 px-4 rounded-full border border-slate-300 hover:border-slate-400 transition-all duration-150 flex items-center justify-center gap-2.5 text-xs sm:text-sm shadow-xs cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isGoogleLoading ? (
+                    <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <GoogleIcon />
+                  )}
+                  <span>Continue with Google as {accountType === "CUSTOMER" ? "Customer" : "Cleaner"}</span>
                 </button>
 
                 <div className="pt-1 text-center text-xs text-slate-600">
@@ -1071,7 +1104,7 @@ export default function RegisterPage() {
                   ) : (
                     <GoogleIcon />
                   )}
-                  <span>Continue with Google</span>
+                  <span>Continue with Google as {accountType === "CUSTOMER" ? "Customer" : "Cleaner"}</span>
                 </button>
               </div>
             )}

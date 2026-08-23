@@ -130,8 +130,14 @@ export default function LoginPage() {
     toast.info("Redirecting to Google Sign-In...", {
       description: "Connecting to Google OAuth 2.0 service",
     });
-    const googleUrl = await getGoogleAuthUrl();
-    window.location.href = `${googleUrl}?role=CUSTOMER`;
+    try {
+      const googleUrl = await getGoogleAuthUrl();
+      window.location.href = `${googleUrl}?role=CUSTOMER`;
+    } catch (error) {
+      console.error("Failed to get Google Auth URL:", error);
+      toast.error("Failed to connect to Google OAuth service.");
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
