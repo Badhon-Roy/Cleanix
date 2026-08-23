@@ -51,8 +51,19 @@ export const updatePricingConfigAPI = async (payload: Partial<IPricingConfigItem
   }
 };
 
+export interface ICustomFieldBreakdownItem {
+  fieldId: string;
+  label: string;
+  detailLabel?: string;
+  value: any;
+  cost: number;
+}
+
 export interface IBookingPriceBreakdown {
   categoryName: string;
+  categoryFields?: any[];
+  customFieldsBreakdown?: ICustomFieldBreakdownItem[];
+  customFieldsTotal?: number;
   baseFee: number;
   sqft: number;
   sqftRate: number;

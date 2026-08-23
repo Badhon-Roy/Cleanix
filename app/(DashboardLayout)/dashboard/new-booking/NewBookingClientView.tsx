@@ -1606,33 +1606,39 @@ export default function NewBookingClientView({
                     ৳{priceBreakdown.baseFee.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>
-                    SqFt চার্জ ({priceBreakdown.sqft} × ৳
-                    {priceBreakdown.sqftRate}):
-                  </span>
-                  <span className="font-bold text-slate-900">
-                    ৳{priceBreakdown.sqftCost.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>
-                    বেডরুম ({priceBreakdown.bedrooms} × ৳
-                    {priceBreakdown.bedroomRate}):
-                  </span>
-                  <span className="font-bold text-slate-900">
-                    ৳{priceBreakdown.bedroomCost.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>
-                    বাথরুম ({priceBreakdown.bathrooms} × ৳
-                    {priceBreakdown.bathroomRate}):
-                  </span>
-                  <span className="font-bold text-slate-900">
-                    ৳{priceBreakdown.bathroomCost.toLocaleString()}
-                  </span>
-                </div>
+
+                {/* Dynamic Field Breakdown calculated from Backend */}
+                {Array.isArray(priceBreakdown.customFieldsBreakdown) && priceBreakdown.customFieldsBreakdown.length > 0 ? (
+                  priceBreakdown.customFieldsBreakdown.map((item) => (
+                    <div key={item.fieldId} className="flex justify-between text-slate-600">
+                      <span>{item.detailLabel || item.label}:</span>
+                      <span className="font-bold text-slate-900">
+                        ৳{item.cost.toLocaleString()}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    {priceBreakdown.sqftCost > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>SqFt চার্জ ({priceBreakdown.sqft} SqFt × ৳{priceBreakdown.sqftRate}):</span>
+                        <span className="font-bold text-slate-900">৳{priceBreakdown.sqftCost.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {priceBreakdown.bedroomCost > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>বেডরুম ({priceBreakdown.bedrooms} × ৳{priceBreakdown.bedroomRate}):</span>
+                        <span className="font-bold text-slate-900">৳{priceBreakdown.bedroomCost.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {priceBreakdown.bathroomCost > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>বাথরুম ({priceBreakdown.bathrooms} × ৳{priceBreakdown.bathroomRate}):</span>
+                        <span className="font-bold text-slate-900">৳{priceBreakdown.bathroomCost.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {priceBreakdown.addons.length > 0 && (
                   <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
