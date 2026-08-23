@@ -103,3 +103,19 @@ export const fetchServiceCatalogOverviewAPI = async () => {
     return { success: false, data: null };
   }
 };
+
+export const fetchSingleServiceBySlugAPI = async (slugOrId: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/services/slug/${slugOrId}`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching single service category:", error);
+    return { success: false, data: null };
+  }
+};

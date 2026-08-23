@@ -60,6 +60,7 @@ import { fetchPricingConfigAPI, updatePricingConfigAPI } from "@/services/pricin
 import {
   fetchAdminServicesAPI,
   fetchServiceCatalogOverviewAPI,
+  fetchSingleServiceBySlugAPI,
   createServiceAPI,
   updateServiceAPI,
   deleteServiceAPI,
@@ -154,6 +155,106 @@ export default function AdminServicesClientView({
   const [formOffers, setFormOffers] = useState<{ title: string; desc: string }[]>([]);
   const [formWhyChoosePoints, setFormWhyChoosePoints] = useState<{ title: string; desc: string }[]>([]);
   const [formFaqs, setFormFaqs] = useState<{ num: string; question: string; answer: string }[]>([]);
+  const [formFields, setFormFields] = useState<any[]>([]);
+
+  // Predefined System Cleaning Fields Catalog
+  const PREDEFINED_FIELDS_CATALOG = [
+    { id: "sqft", label: "Property Size (SqFt)", fieldType: "NUMBER", unit: "SqFt", unitPrice: 2.5, isPredefined: true, enabled: true },
+    { id: "bedrooms", label: "Bedrooms (বেডরুম)", fieldType: "COUNTER", unit: "Bedrooms", unitPrice: 500, isPredefined: true, enabled: true },
+    { id: "bathrooms", label: "Bathrooms (বাথরুম)", fieldType: "COUNTER", unit: "Bathrooms", unitPrice: 400, isPredefined: true, enabled: true },
+    { id: "floors", label: "Number of Floors (ফ্লোর সংখ্যা)", fieldType: "COUNTER", unit: "Floors", unitPrice: 800, isPredefined: true, enabled: true },
+    { id: "workstations", label: "Workstations / Desks (ডেস্ক সংখ্যা)", fieldType: "COUNTER", unit: "Desks", unitPrice: 200, isPredefined: true, enabled: true },
+    { id: "window_count", label: "Window Count (গ্লাসের সংখ্যা)", fieldType: "COUNTER", unit: "Windows", unitPrice: 350, isPredefined: true, enabled: true },
+    { id: "carpet_area", label: "Carpet Area Size (SqFt)", fieldType: "NUMBER", unit: "SqFt", unitPrice: 15, isPredefined: true, enabled: true },
+    { id: "guest_capacity", label: "Guest Capacity", fieldType: "COUNTER", unit: "Guests", unitPrice: 0, isPredefined: true, enabled: true },
+    {
+      id: "cleaning_level",
+      label: "Cleaning Level (ক্লিনিংয়ের মাত্রা)",
+      fieldType: "SELECT",
+      isPredefined: true,
+      enabled: true,
+      options: [
+        { label: "Standard Deep Reset (+৳0)", value: "standard", price: 0 },
+        { label: "Deep Steam Reset (+৳1,500)", value: "steam", price: 1500 },
+        { label: "Hospital Grade Sanitized (+৳3,000)", value: "sanitized", price: 3000 },
+      ],
+    },
+    {
+      id: "property_status",
+      label: "Property Status (বাসার অবস্থা)",
+      fieldType: "SELECT",
+      isPredefined: true,
+      enabled: true,
+      options: [
+        { label: "Vacant / Empty (+৳0)", value: "empty", price: 0 },
+        { label: "Partially Furnished (+৳1,000)", value: "partial", price: 1000 },
+        { label: "Fully Furnished (+৳2,500)", value: "furnished", price: 2500 },
+      ],
+    },
+    {
+      id: "construction_stage",
+      label: "Construction Stage (কাজের পর্যায়)",
+      fieldType: "SELECT",
+      isPredefined: true,
+      enabled: true,
+      options: [
+        { label: "Rough Clean (+৳0)", value: "rough", price: 0 },
+        { label: "Final Clean (+৳2,000)", value: "final", price: 2000 },
+        { label: "Touch-Up Clean (+৳1,000)", value: "touchup", price: 1000 },
+      ],
+    },
+    {
+      id: "debris_level",
+      label: "Debris Level (ময়লার পরিমাণ)",
+      fieldType: "SELECT",
+      isPredefined: true,
+      enabled: true,
+      options: [
+        { label: "Light Debris (+৳0)", value: "light", price: 0 },
+        { label: "Medium Debris (+৳1,500)", value: "medium", price: 1500 },
+        { label: "Heavy Debris (+৳3,500)", value: "heavy", price: 3500 },
+      ],
+    },
+  ];
+
+  const togglePredefinedField = (predefinedItem: any) => {
+    setFormFields((prev) => {
+      const exists = prev.find((f) => f.id === predefinedItem.id);
+      if (exists) {
+        return prev.filter((f) => f.id !== predefinedItem.id);
+      } else {
+        return [...prev, { ...predefinedItem }];
+      }
+    });
+  };
+
+  const addCustomField = () => {
+    const newId = `custom_${Date.now()}`;
+    setFormFields((prev) => [
+      ...prev,
+      {
+        id: newId,
+        label: "Solar Panel Count",
+        fieldType: "COUNTER",
+        isPredefined: false,
+        required: true,
+        unit: "Panels",
+        unitPrice: 150,
+        enabled: true,
+        options: [],
+      },
+    ]);
+  };
+
+  const removeField = (fieldId: string) => {
+    setFormFields((prev) => prev.filter((f) => f.id !== fieldId));
+  };
+
+  const handleFieldChange = (fieldId: string, key: string, val: any) => {
+    setFormFields((prev) => {
+      return prev.map((f) => (f.id === fieldId ? { ...f, [key]: val } : f));
+    });
+  };
 
   const handleAddOfferItem = () => {
     setFormOffers((prev) => [...prev, { title: "", desc: "" }]);
@@ -386,32 +487,59 @@ export default function AdminServicesClientView({
     setFormFaqs([
       { num: "01", question: "সার্ভিস শুরু হতে কত সময় লাগে?", answer: "আমাদের ট্র্যাকিং টিম ২৫-৩০ মিনিটের মধ্যে সার্ভিস লোকেশনে পৌঁছায়।" },
     ]);
+    setFormFields([
+      { id: "sqft", label: "Property Size (SqFt)", fieldType: "NUMBER", unit: "SqFt", unitPrice: 2.5, isPredefined: true, enabled: true },
+      { id: "bedrooms", label: "Bedrooms (বেডরুম)", fieldType: "COUNTER", unit: "Bedrooms", unitPrice: 500, isPredefined: true, enabled: true },
+      { id: "bathrooms", label: "Bathrooms (বাথরুম)", fieldType: "COUNTER", unit: "Bathrooms", unitPrice: 400, isPredefined: true, enabled: true },
+    ]);
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (item: ServiceDetail) => {
-    setEditingSlug(item.slug);
-    setFormSlug(item.slug);
+  const handleOpenEditModal = async (item: any) => {
+    const targetSlugOrId = item.slug || item._id;
+    setEditingSlug(targetSlugOrId);
+    setFormSlug(item.slug || "");
+
+    let activeItem = item;
+    try {
+      const res = await fetchSingleServiceBySlugAPI(targetSlugOrId);
+      if (res?.success && res?.data) {
+        activeItem = res.data;
+      }
+    } catch (e) {
+      console.error("Error fetching single service detail:", e);
+    }
+
+    setEditingSlug(activeItem.slug || activeItem._id);
+    setFormSlug(activeItem.slug || "");
     resetServiceForm({
-      title: item.title,
-      category: item.category,
-      badge: item.badge,
-      price: String(item.price || "3500").replace(/[^0-9]/g, "") || "3500",
-      slaTime: item.slaTime || "30 Mins SLA",
-      heroImage: item.heroImage || "",
-      contentImage: item.contentImage || "",
-      shortDesc: item.shortDesc || "",
-      introParagraph1: item.introParagraph1 || "",
-      introParagraph2: item.introParagraph2 || "",
-      offersTitle: item.offersTitle || "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
-      offersDesc: item.offersDesc || "",
-      whyChooseTitle: item.whyChooseTitle || "WHY CHOOSE OUR SERVICE",
-      whyChooseDesc: item.whyChooseDesc || "",
-      status: item.status,
+      title: activeItem.title || "",
+      category: activeItem.category || "HOME CARE",
+      badge: activeItem.badge || "B2C HOME CLEANING",
+      price: String(activeItem.price || "3500").replace(/[^0-9]/g, "") || "3500",
+      slaTime: activeItem.slaTime || "30 Mins SLA",
+      heroImage: activeItem.heroImage || "",
+      contentImage: activeItem.contentImage || "",
+      shortDesc: activeItem.shortDesc || "",
+      introParagraph1: activeItem.introParagraph1 || "",
+      introParagraph2: activeItem.introParagraph2 || "",
+      offersTitle: activeItem.offersTitle || "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
+      offersDesc: activeItem.offersDesc || "",
+      whyChooseTitle: activeItem.whyChooseTitle || "WHY CHOOSE OUR SERVICE",
+      whyChooseDesc: activeItem.whyChooseDesc || "",
+      status: activeItem.status || "ACTIVE",
     });
-    setFormOffers(Array.isArray(item.offers) ? item.offers : []);
-    setFormWhyChoosePoints(Array.isArray(item.whyChoosePoints) ? item.whyChoosePoints : []);
-    setFormFaqs(Array.isArray(item.faqs) ? item.faqs : []);
+    setFormOffers(Array.isArray(activeItem.offers) ? activeItem.offers : []);
+    setFormWhyChoosePoints(Array.isArray(activeItem.whyChoosePoints) ? activeItem.whyChoosePoints : []);
+    setFormFaqs(Array.isArray(activeItem.faqs) ? activeItem.faqs : []);
+
+    const savedFields = Array.isArray(activeItem.fields) && activeItem.fields.length > 0
+      ? activeItem.fields
+      : Array.isArray(activeItem.customFields)
+      ? activeItem.customFields
+      : [];
+
+    setFormFields(savedFields);
     setIsModalOpen(true);
   };
 
@@ -448,6 +576,8 @@ export default function AdminServicesClientView({
         whyChoosePoints: formWhyChoosePoints,
         faqs: formFaqs,
         status: data.status,
+        fields: formFields,
+        customFields: formFields,
       };
 
       if (editingSlug) {
@@ -916,60 +1046,6 @@ export default function AdminServicesClientView({
         </div>
       </div>
 
-      {/* DYNAMIC PRICING ENGINE FORMULA CONFIGURATOR */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-            <Calculator className="w-5 h-5 text-[#007eff]" /> Instant Estimate Dynamic Pricing Multipliers
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-            Formula: Category Starting Rate (Base Fee) + (SqFt × Rate) + (Bedrooms × Rate) + (Bathrooms × Rate) + Addons
-          </p>
-        </div>
-
-        <form onSubmit={handleSaveDynamicConfig} className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="space-y-1.5">
-            <label className="font-extrabold text-slate-800 text-xs sm:text-sm">Per SqFt Rate (৳):</label>
-            <input
-              type="text"
-              value={dynamicPricingConfig.sqftRate}
-              onChange={(e) => setDynamicPricingConfig({ ...dynamicPricingConfig, sqftRate: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="font-extrabold text-slate-800 text-xs sm:text-sm">Per Bedroom Rate (৳):</label>
-            <input
-              type="text"
-              value={dynamicPricingConfig.bedroomRate}
-              onChange={(e) => setDynamicPricingConfig({ ...dynamicPricingConfig, bedroomRate: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="font-extrabold text-slate-800 text-xs sm:text-sm">Per Bathroom Rate (৳):</label>
-            <input
-              type="text"
-              value={dynamicPricingConfig.bathroomRate}
-              onChange={(e) => setDynamicPricingConfig({ ...dynamicPricingConfig, bathroomRate: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
-            />
-          </div>
-
-          <div className="md:col-span-3 flex justify-end">
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-slate-900 hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-2"
-            >
-              <Save className="w-4 h-4 text-blue-400" />
-              <span>Update Pricing Formula</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
       {/* ADD-ON SERVICES CATALOG */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -1309,6 +1385,364 @@ export default function AdminServicesClientView({
                       <option value="ACTIVE">ACTIVE (Accepting Bookings)</option>
                       <option value="INACTIVE">INACTIVE (Temporarily Disabled)</option>
                     </select>
+                  </div>
+
+                  {/* ⚡ BOOKING FIELD CONFIGURATION (PREDEFINED & CUSTOM FIELDS) */}
+                  <div className="pt-4 border-t border-slate-100 space-y-6">
+                    {/* SECTION A: PREDEFINED FIELDS */}
+                    {(!editingSlug || formFields.some((f) => f.isPredefined !== false)) && (
+                      <div className="bg-slate-50/80 border border-slate-200/90 p-5 rounded-2xl space-y-4">
+                        <div>
+                          <h5 className="font-extrabold text-slate-900 text-xs sm:text-sm uppercase tracking-wider text-[#007eff] flex items-center gap-2">
+                            Section A: Predefined Fields (কমন ক্লিনিং ইনপুটসমূহ)
+                          </h5>
+                          <p className="text-xs text-slate-500 font-medium">
+                            কমন ফিল্ডগুলো ১-ক্লিকে অন/অফ করুন এবং ফিল্ডের নাম, কন্ট্রোল টাইপ ও প্রাইসিং রেট পরিবর্তন করুন:
+                          </p>
+                        </div>
+
+                        {/* QUICK TOGGLE BUTTONS CATALOG (Only show when creating a new service category) */}
+                        {!editingSlug && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                            {PREDEFINED_FIELDS_CATALOG.map((predefinedItem) => {
+                              const isEnabled = formFields.some((f) => f.id === predefinedItem.id);
+                              return (
+                                <button
+                                  key={predefinedItem.id}
+                                  type="button"
+                                  onClick={() => togglePredefinedField(predefinedItem)}
+                                  className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-1 cursor-pointer select-none ${
+                                    isEnabled
+                                      ? "bg-blue-50 border-[#007eff] ring-2 ring-blue-400/30 text-blue-900 font-bold"
+                                      : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-100"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-xs font-bold truncate">{predefinedItem.label.split("(")[0]}</span>
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={() => {}} // Handled by button onClick
+                                      className="w-4 h-4 accent-[#007eff] rounded cursor-pointer"
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                                    {predefinedItem.fieldType} {predefinedItem.unitPrice ? `(৳${predefinedItem.unitPrice})` : ""}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* ACTIVE PREDEFINED FIELDS CARDS (SAME TO SAME AS SECTION B) */}
+                        <div className="space-y-3 pt-2">
+                          {formFields.filter((f) => f.isPredefined !== false).map((field, fieldIdx) => (
+                            <div
+                              key={field.id || fieldIdx}
+                              className="bg-white border border-slate-200 p-4 rounded-2xl space-y-3 shadow-2xs"
+                            >
+                              <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                                    Predefined Field #{fieldIdx + 1}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-700">{field.label}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeField(field.id)}
+                                  className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Field Name / Label:</label>
+                                  <input
+                                    type="text"
+                                    value={field.label}
+                                    onChange={(e) => handleFieldChange(field.id, "label", e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Control Type:</label>
+                                  <select
+                                    value={field.fieldType}
+                                    onChange={(e) => handleFieldChange(field.id, "fieldType", e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                  >
+                                    <option value="COUNTER">COUNTER ([-] 20 [+])</option>
+                                    <option value="NUMBER">NUMBER / SqFt Input</option>
+                                    <option value="SELECT">SELECT (Dropdown Options)</option>
+                                    <option value="RADIO">RADIO (Option Cards)</option>
+                                    <option value="TEXT">TEXT (Note Input)</option>
+                                  </select>
+                                </div>
+
+                                {(field.fieldType === "COUNTER" || field.fieldType === "NUMBER") && (
+                                  <div>
+                                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Pricing Rate (৳ per unit):</label>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step="any"
+                                      value={field.unitPrice ?? ""}
+                                      onChange={(e) => handleFieldChange(field.id, "unitPrice", e.target.value === "" ? 0 : Number(e.target.value))}
+                                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Dropdown Options Editor for SELECT/RADIO */}
+                              {(field.fieldType === "SELECT" || field.fieldType === "RADIO") && (
+                                <div className="pt-2 border-t border-slate-100 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-700">Options & Pricing:</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const opts = field.options || [];
+                                        handleFieldChange(field.id, "options", [
+                                          ...opts,
+                                          { label: "New Option", value: `opt_${Date.now()}`, price: 0 },
+                                        ]);
+                                      }}
+                                      className="text-[11px] font-bold text-[#007eff] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 hover:bg-blue-100"
+                                    >
+                                      + Add Option
+                                    </button>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {(field.options || []).map((opt: any, optIdx: number) => (
+                                      <div key={optIdx} className="flex items-center gap-2">
+                                        <input
+                                          type="text"
+                                          placeholder="Option Name"
+                                          value={opt.label}
+                                          onChange={(e) => {
+                                            const updatedOpts = [...field.options];
+                                            updatedOpts[optIdx].label = e.target.value;
+                                            handleFieldChange(field.id, "options", updatedOpts);
+                                          }}
+                                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800"
+                                        />
+                                        <input
+                                          type="text"
+                                          placeholder="value"
+                                          value={opt.value}
+                                          onChange={(e) => {
+                                            const updatedOpts = [...field.options];
+                                            updatedOpts[optIdx].value = e.target.value;
+                                            handleFieldChange(field.id, "options", updatedOpts);
+                                          }}
+                                          className="w-24 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-mono text-slate-700"
+                                        />
+                                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                                          <span className="text-xs font-bold text-slate-500">৳</span>
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            step="any"
+                                            value={opt.price ?? ""}
+                                            onChange={(e) => {
+                                              const updatedOpts = [...field.options];
+                                              updatedOpts[optIdx].price = e.target.value === "" ? 0 : Number(e.target.value);
+                                              handleFieldChange(field.id, "options", updatedOpts);
+                                            }}
+                                            className="w-16 text-xs font-bold text-slate-900 focus:outline-none"
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updatedOpts = field.options.filter((_: any, i: number) => i !== optIdx);
+                                            handleFieldChange(field.id, "options", updatedOpts);
+                                          }}
+                                          className="text-red-500 hover:text-red-700 p-1"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SECTION B: CUSTOM FIELDS BUILDER */}
+                    <div className="bg-gradient-to-r from-blue-50/50 via-slate-50 to-indigo-50/50 border border-blue-200/80 p-5 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h5 className="font-extrabold text-slate-900 text-xs sm:text-sm uppercase tracking-wider text-indigo-700 flex items-center gap-2">
+                          Section B: Custom Fields Builder (+ Create Custom Field)
+                          </h5>
+                          <p className="text-xs text-slate-500 font-medium">
+                            বিশেষ কোনো সার্ভিসের জন্য (যেমন: Solar Panel Count @ ৳150/panel) নতুন ফিল্ড তৈরি করুন:
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={addCustomField}
+                          className="px-3.5 py-2 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Create Custom Field</span>
+                        </button>
+                      </div>
+
+                      {/* ACTIVE CUSTOM FIELDS EDIT LIST */}
+                      <div className="space-y-3">
+                        {formFields.filter((f) => f.isPredefined === false).map((field, fieldIdx) => (
+                          <div
+                            key={field.id || fieldIdx}
+                            className="bg-white border border-slate-200 p-4 rounded-2xl space-y-3 shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                                  Custom Field #{fieldIdx + 1}
+                                </span>
+                                <span className="text-xs font-bold text-slate-700">{field.label}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeField(field.id)}
+                                className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Remove
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-600 block mb-1">Field Name / Label:</label>
+                                <input
+                                  type="text"
+                                  value={field.label}
+                                  onChange={(e) => handleFieldChange(field.id, "label", e.target.value)}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-600 block mb-1">Control Type:</label>
+                                <select
+                                  value={field.fieldType}
+                                  onChange={(e) => handleFieldChange(field.id, "fieldType", e.target.value)}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                >
+                                  <option value="COUNTER">COUNTER ([-] 20 [+])</option>
+                                  <option value="NUMBER">NUMBER / SqFt Input</option>
+                                  <option value="SELECT">SELECT (Dropdown Options)</option>
+                                  <option value="RADIO">RADIO (Option Cards)</option>
+                                  <option value="TEXT">TEXT (Note Input)</option>
+                                </select>
+                              </div>
+
+                              {(field.fieldType === "COUNTER" || field.fieldType === "NUMBER") && (
+                                <div>
+                                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Pricing Rate (৳ per unit):</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step="any"
+                                    value={field.unitPrice ?? ""}
+                                    onChange={(e) => handleFieldChange(field.id, "unitPrice", e.target.value === "" ? 0 : Number(e.target.value))}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Dropdown Options Editor for SELECT/RADIO */}
+                            {(field.fieldType === "SELECT" || field.fieldType === "RADIO") && (
+                              <div className="pt-2 border-t border-slate-100 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-slate-700">Options & Pricing:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const opts = field.options || [];
+                                      handleFieldChange(field.id, "options", [
+                                        ...opts,
+                                        { label: "New Option", value: `opt_${Date.now()}`, price: 0 },
+                                      ]);
+                                    }}
+                                    className="text-[11px] font-bold text-[#007eff] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 hover:bg-blue-100"
+                                  >
+                                    + Add Option
+                                  </button>
+                                </div>
+                                <div className="space-y-2">
+                                  {(field.options || []).map((opt: any, optIdx: number) => (
+                                    <div key={optIdx} className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder="Option Name"
+                                        value={opt.label}
+                                        onChange={(e) => {
+                                          const updatedOpts = [...field.options];
+                                          updatedOpts[optIdx].label = e.target.value;
+                                          handleFieldChange(field.id, "options", updatedOpts);
+                                        }}
+                                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800"
+                                      />
+                                      <input
+                                        type="text"
+                                        placeholder="value"
+                                        value={opt.value}
+                                        onChange={(e) => {
+                                          const updatedOpts = [...field.options];
+                                          updatedOpts[optIdx].value = e.target.value;
+                                          handleFieldChange(field.id, "options", updatedOpts);
+                                        }}
+                                        className="w-24 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-mono text-slate-700"
+                                      />
+                                      <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                                        <span className="text-xs font-bold text-slate-500">৳</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          step="any"
+                                          value={opt.price ?? ""}
+                                          onChange={(e) => {
+                                            const updatedOpts = [...field.options];
+                                            updatedOpts[optIdx].price = e.target.value === "" ? 0 : Number(e.target.value);
+                                            handleFieldChange(field.id, "options", updatedOpts);
+                                          }}
+                                          className="w-16 text-xs font-bold text-slate-900 focus:outline-none"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updatedOpts = field.options.filter((_: any, i: number) => i !== optIdx);
+                                          handleFieldChange(field.id, "options", updatedOpts);
+                                        }}
+                                        className="text-red-500 hover:text-red-700 p-1"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
