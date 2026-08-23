@@ -87,6 +87,11 @@ export default function AdminServicesClientView({
   const [addonFormTag, setAddonFormTag] = useState("ADD-ON");
   const [isSubmittingAddon, setIsSubmittingAddon] = useState(false);
 
+  // Delete Confirmation Modal States
+  const [addonToDelete, setAddonToDelete] = useState<any | null>(null);
+  const [isDeletingAddon, setIsDeletingAddon] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<{ slug: string; title: string } | null>(null);
+
   // Load static services catalog into state
   useEffect(() => {
     setServices(getStoredServices());
@@ -212,15 +217,16 @@ export default function AdminServicesClientView({
     toast.info(`Service "${item.title}" set to ${nextStatus}`);
   };
 
-  const handleDelete = (slug: string, title: string) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete service "${title}"?`
-    );
-    if (confirmDelete) {
-      const updated = deleteService(slug);
-      setServices(updated);
-      toast.error(`Service "${title}" deleted.`);
-    }
+  const promptDeleteService = (slug: string, title: string) => {
+    setServiceToDelete({ slug, title });
+  };
+
+  const confirmExecuteDeleteService = () => {
+    if (!serviceToDelete) return;
+    const updated = deleteService(serviceToDelete.slug);
+    setServices(updated);
+    toast.error(`Service "${serviceToDelete.title}" deleted.`);
+    setServiceToDelete(null);
   };
 
   const handleSaveDynamicConfig = (e: React.FormEvent) => {
@@ -242,12 +248,19 @@ export default function AdminServicesClientView({
     }
   };
 
-  const handleDeleteAddon = async (addon: any) => {
-    if (!window.confirm(`Are you sure you want to delete add-on service "${addon.name}"?`)) return;
-    const addonId = addon._id || addon.id;
+  const promptDeleteAddon = (addon: any) => {
+    setAddonToDelete(addon);
+  };
+
+  const confirmExecuteDeleteAddon = async () => {
+    if (!addonToDelete) return;
+    setIsDeletingAddon(true);
+    const addonId = addonToDelete._id || addonToDelete.id;
     const res = await deleteAddonAPI(addonId);
+    setIsDeletingAddon(false);
     if (res?.success) {
-      toast.success(`Add-on service "${addon.name}" deleted.`);
+      toast.success(`Add-on service "${addonToDelete.name}" deleted successfully.`);
+      setAddonToDelete(null);
       refreshAddons();
     } else {
       toast.error(res?.message || "Failed to delete add-on.");
@@ -574,7 +587,7 @@ export default function AdminServicesClientView({
 
                   <button
                     type="button"
-                    onClick={() => handleDelete(item.slug, item.title)}
+                    onClick={() => promptDeleteService(item.slug, item.title)}
                     className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                     title="Delete Service"
                   >
@@ -755,7 +768,7 @@ export default function AdminServicesClientView({
 
                 <button
                   type="button"
-                  onClick={() => handleDeleteAddon(addon)}
+                  onClick={() => promptDeleteAddon(addon)}
                   className="w-8 h-8 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 flex items-center justify-center transition-colors cursor-pointer"
                   title="Delete Add-On"
                 >
@@ -1006,6 +1019,100 @@ export default function AdminServicesClientView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* DELETE ADD-ON CONFIRMATION MODAL */}
+      {addonToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 sm:p-7 space-y-6 text-center relative shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setAddonToDelete(null)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center absolute top-4 right-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-16 h-16 rounded-3xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center mx-auto mt-2">
+              <Trash2 className="w-8 h-8 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-slate-900">
+                Delete Add-On Service?
+              </h3>
+              <p className="text-xs sm:text-sm font-medium text-slate-600 px-2 leading-relaxed">
+                Are you sure you want to delete add-on service{" "}
+                <span className="font-bold text-slate-900">&quot;{addonToDelete.name}&quot;</span>?
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAddonToDelete(null)}
+                className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer w-1/2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingAddon}
+                onClick={confirmExecuteDeleteAddon}
+                className="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 w-1/2 disabled:opacity-50 shadow-lg shadow-red-500/20"
+              >
+                {isDeletingAddon ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CORE SERVICE CONFIRMATION MODAL */}
+      {serviceToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 sm:p-7 space-y-6 text-center relative shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setServiceToDelete(null)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center absolute top-4 right-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-16 h-16 rounded-3xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center mx-auto mt-2">
+              <Trash2 className="w-8 h-8 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-slate-900">
+                Delete Service Offering?
+              </h3>
+              <p className="text-xs sm:text-sm font-medium text-slate-600 px-2 leading-relaxed">
+                Are you sure you want to delete service offering{" "}
+                <span className="font-bold text-slate-900">&quot;{serviceToDelete.title}&quot;</span>?
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setServiceToDelete(null)}
+                className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer w-1/2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmExecuteDeleteService}
+                className="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 w-1/2 shadow-lg shadow-red-500/20"
+              >
+                Yes, Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
