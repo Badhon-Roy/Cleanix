@@ -45,3 +45,18 @@ export const updateCustomerProfileAPI = async (payload: {
     return { success: false, message: error.message || "Failed to update profile" };
   }
 };
+
+export const deleteCustomerAccountAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/customers/me`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error deleting customer account:", error);
+    return { success: false, message: error.message || "Failed to delete account" };
+  }
+};

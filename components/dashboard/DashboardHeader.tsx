@@ -18,16 +18,22 @@ import {
 } from "lucide-react";
 
 interface DashboardHeaderProps {
-  onToggleMobileMenu: () => void;
+  user?: any;
+  onToggleMobileMenu?: () => void;
 }
 
-export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderProps) {
+export default function DashboardHeader({ user, onToggleMobileMenu }: DashboardHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const avatarSrc = user?.avatar || user?.profile?.avatar;
+  const userName = user?.name || "Customer";
+  const userEmail = user?.email || "";
+  const userInitials = userName.slice(0, 2).toUpperCase();
 
   // Close dropdowns automatically when clicking outside
   useEffect(() => {
@@ -78,8 +84,14 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
       {/* Left Area: Mobile Menu Toggle & Title/Search */}
       <div className="flex items-center gap-3 sm:gap-5 flex-1">
         <button
-          onClick={onToggleMobileMenu}
-          className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900"
+          onClick={() => {
+            if (onToggleMobileMenu) {
+              onToggleMobileMenu();
+            } else if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("toggle-mobile-sidebar"));
+            }
+          }}
+          className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 cursor-pointer"
           aria-label="Toggle mobile navigation"
         >
           <Menu className="w-5 h-5" />
@@ -131,7 +143,7 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 border border-slate-200">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Header */}
               <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
@@ -207,22 +219,30 @@ export default function DashboardHeader({ onToggleMobileMenu }: DashboardHeaderP
               setUserMenuOpen(!userMenuOpen);
               setNotificationsOpen(false);
             }}
-            className="flex items-center gap-2.5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors focus:outline-none"
+            className="flex items-center gap-2.5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors focus:outline-none cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center font-bold text-xs text-white">
-              TH
+            <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center font-extrabold text-xs text-white overflow-hidden flex-shrink-0 shadow-sm border border-blue-400/40">
+              {avatarSrc ? (
+                <img
+                  src={avatarSrc}
+                  alt={userName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                userInitials
+              )}
             </div>
-            <span className="hidden md:inline text-xs font-bold text-slate-800">
-              Tanvir Hasan
+            <span className="hidden md:inline text-xs font-extrabold text-slate-800 max-w-[120px] truncate">
+              {userName}
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl py-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl py-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl">
               <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-                <p className="font-bold text-slate-900 text-sm">Tanvir Hasan</p>
-                <p className="text-slate-500 text-[11px] truncate">tanvir.hasan@gmail.com</p>
+                <p className="font-extrabold text-slate-900 text-sm truncate">{userName}</p>
+                {userEmail && <p className="text-slate-500 text-[11px] truncate">{userEmail}</p>}
               </div>
 
               <Link

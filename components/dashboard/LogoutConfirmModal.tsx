@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { LogOut, X } from "lucide-react";
+import { logoutUser } from "@/services/authService";
 
 interface LogoutConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
 }
 
 export default function LogoutConfirmModal({
@@ -61,8 +62,9 @@ export default function LogoutConfirmModal({
           <button
             type="button"
             onClick={() => {
-              onConfirm();
+              if (onConfirm) onConfirm();
               onClose();
+              logoutUser("/login");
             }}
             className="py-3 px-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors flex items-center gap-1.5 border border-red-500 shadow-xs"
           >

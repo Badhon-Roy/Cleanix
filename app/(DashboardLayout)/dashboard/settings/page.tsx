@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import AddLocationModal, { NewAddressFormData } from "@/components/dashboard/AddLocationModal";
 import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
+import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import { fetchCustomerProfileAPI, updateCustomerProfileAPI } from "@/services/customerService";
 import { getAuthUser, setAuthUser } from "@/utils/cookie";
 
@@ -47,6 +48,7 @@ export default function CustomerSettingsPage() {
   const [passwordSavedSuccess, setPasswordSavedSuccess] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [deleteAddressId, setDeleteAddressId] = useState<number | null>(null);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
 
   // Loading & Customer Profile States
   const [customerData, setCustomerData] = useState<any>(null);
@@ -683,6 +685,33 @@ export default function CustomerSettingsPage() {
               </button>
             </form>
           </div>
+
+          {/* SECTION 5: Danger Zone & Account Deletion */}
+          <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 space-y-4">
+            <div className="border-b border-red-200/60 pb-3.5">
+              <h3 className="text-lg font-extrabold text-red-900 flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-600" /> Delete Your Account
+              </h3>
+              <p className="text-xs text-red-700 font-medium mt-0.5">
+                Permanently close and delete your Cleanix customer account profile and booking data.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Deleting your account will deactivate your saved addresses, active subscriptions, and profile information.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setIsDeleteAccountModalOpen(true)}
+                className="w-full py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-red-500/20 border border-red-500 hover:scale-[1.01]"
+              >
+                <Trash2 className="w-4 h-4 stroke-[2.5]" />
+                <span>Delete Your Account</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -723,6 +752,12 @@ export default function CustomerSettingsPage() {
             setDeleteAddressId(null);
           }
         }}
+      />
+
+      {/* Delete Account Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteAccountModalOpen}
+        onClose={() => setIsDeleteAccountModalOpen(false)}
       />
     </div>
   );
