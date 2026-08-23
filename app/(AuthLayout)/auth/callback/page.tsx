@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { setAuthToken, setAuthUser, setAuthRole } from "@/utils/cookie";
@@ -9,8 +9,11 @@ import { SwirlLogo } from "@/components/Navbar";
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const hasProcessedRef = useRef(false);
 
   useEffect(() => {
+    if (hasProcessedRef.current) return;
+
     const token = searchParams.get("token");
     const role = searchParams.get("role") || "CUSTOMER";
     const status = searchParams.get("status") || "APPROVED";
@@ -18,12 +21,16 @@ function CallbackContent() {
     const error = searchParams.get("error");
 
     if (error) {
+      hasProcessedRef.current = true;
+      toast.dismiss();
       toast.error("Google Sign-In failed. Please try again.");
       router.push("/login");
       return;
     }
 
     if (token) {
+      hasProcessedRef.current = true;
+
       // 1. Save JWT Access Token to Cookie
       setAuthToken(token);
 
@@ -51,6 +58,7 @@ function CallbackContent() {
 
       const msg = searchParams.get("message");
       if (msg) {
+        toast.dismiss();
         toast.success(msg);
       }
 
