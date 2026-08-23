@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
@@ -20,13 +20,26 @@ import {
 import { SwirlLogo } from "@/components/Navbar";
 
 interface SidebarProps {
+  user?: any;
   mobileOpen?: boolean;
   setMobileOpen?: (open: boolean) => void;
 }
 
-export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarProps) {
+export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, setMobileOpen: externalSetMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+
+  const isMobileOpen = externalSetMobileOpen ? externalMobileOpen : internalMobileOpen;
+  const setMobileOpen = externalSetMobileOpen || setInternalMobileOpen;
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setInternalMobileOpen((prev) => !prev);
+    };
+    window.addEventListener("toggle-mobile-sidebar", handleToggle);
+    return () => window.removeEventListener("toggle-mobile-sidebar", handleToggle);
+  }, []);
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -155,7 +168,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen }: SidebarPr
       </aside>
 
       {/* Mobile Drawer Backdrop & Sidebar */}
-      {mobileOpen && (
+      {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"

@@ -392,6 +392,13 @@ export function saveServices(services: ServiceDetail[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
     window.dispatchEvent(new Event("cleanix_services_updated"));
+    try {
+      if ("BroadcastChannel" in window) {
+        const channel = new BroadcastChannel("cleanix_services_channel");
+        channel.postMessage({ type: "SERVICES_UPDATED", timestamp: Date.now() });
+        channel.close();
+      }
+    } catch {}
   } catch (e) {
     console.error("Failed to save services to localStorage:", e);
   }

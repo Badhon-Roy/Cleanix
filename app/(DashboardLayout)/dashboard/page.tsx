@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -16,10 +16,16 @@ import {
 import LiveJobTracker from "@/components/dashboard/LiveJobTracker";
 import InvoiceModal, { InvoiceData } from "@/components/dashboard/InvoiceModal";
 import JobDetailsModal from "@/components/dashboard/JobDetailsModal";
+import { getAuthUser } from "@/utils/cookie";
 
 export default function CustomerDashboardPage() {
+  const [user, setUser] = useState<any>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [selectedJobSpec, setSelectedJobSpec] = useState<{ id: string; service: string; date: string; location: string } | null>(null);
+
+  useEffect(() => {
+    setUser(getAuthUser());
+  }, []);
 
   const mockInvoices: Record<string, InvoiceData> = {
     "CLN-2026-8891": {
@@ -125,10 +131,10 @@ export default function CustomerDashboardPage() {
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs sm:text-sm font-bold mb-3">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Customer VIP Dashboard</span>
+              <span>Customer Portal Dashboard</span>
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
-              Welcome back, Tanvir Hasan! 👋
+              Welcome back, {user?.name || "Customer"}! 👋
             </h1>
             <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-2xl font-medium">
               Your next scheduled weekly visit is active today in <strong className="text-white">Gulshan-2</strong>. Cleaner Team Delta is en route.
