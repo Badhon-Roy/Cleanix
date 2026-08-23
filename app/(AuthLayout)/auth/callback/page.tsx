@@ -43,21 +43,19 @@ function CallbackContent() {
       setAuthUser(googleUser);
       setAuthRole(role);
 
+      const msg = searchParams.get("message");
+      if (msg) {
+        toast.success(msg);
+      }
+
       // 3. Role-Based Navigation
-      if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
-        toast.info("Account Pending Admin Approval ⏳", {
-          description: "Redirecting to your application status page...",
-        });
+      if (role === "ADMIN") {
+        setTimeout(() => router.push("/admin"), 800);
+      } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
         setTimeout(() => router.push("/waiting-approval"), 800);
       } else if (role === "CLEANER") {
-        toast.success("Welcome back, Cleaner! 🧹", {
-          description: "Redirecting to Cleaner Dispatch Portal...",
-        });
         setTimeout(() => router.push("/cleaner"), 800);
       } else {
-        toast.success("Welcome! Google Sign-In Successful. 🎉", {
-          description: "Redirecting to your Cleanix dashboard...",
-        });
         setTimeout(() => router.push("/dashboard"), 800);
       }
     } else {

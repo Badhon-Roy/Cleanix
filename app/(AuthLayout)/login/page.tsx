@@ -85,8 +85,6 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success(res?.message || "User logged in successfully!");
-
       const role = res.data?.user?.role || "CUSTOMER";
       const status = res.data?.user?.status || "APPROVED";
       const isApproved = res.data?.user?.isApproved !== undefined ? res.data?.user?.isApproved : true;
@@ -105,7 +103,15 @@ export default function LoginPage() {
       setAuthUser(userData);
       setAuthRole(role);
 
-      if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
+      if (res?.message) {
+        toast.success(res.message);
+      }
+
+      if (role === "ADMIN") {
+        setTimeout(() => {
+          router.push("/admin");
+        }, 800);
+      } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
         setTimeout(() => {
           router.push("/waiting-approval");
         }, 800);

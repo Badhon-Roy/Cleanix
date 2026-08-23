@@ -409,7 +409,11 @@ export default function RegisterPage() {
       setAuthRole(userData.role);
 
       // Auto-login: Redirect directly to application pages based on role
-      if (isCleaner) {
+      if (userData.role === "ADMIN") {
+        setTimeout(() => {
+          router.push("/admin");
+        }, 800);
+      } else if (isCleaner) {
         setTimeout(() => {
           router.push("/waiting-approval");
         }, 800);
