@@ -1489,8 +1489,8 @@ export default function RegisterPage() {
                         </div>
                       )}
                       {step3Errors.dob && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{step3Errors.dob}</span>
                         </p>
                       )}
@@ -1553,8 +1553,8 @@ export default function RegisterPage() {
                         </div>
                       )}
                       {step3Errors.gender && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{step3Errors.gender}</span>
                         </p>
                       )}
@@ -1585,8 +1585,8 @@ export default function RegisterPage() {
                       </span>
                     </label>
                     {step3Errors.agreeTerms && (
-                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-1 flex items-center gap-1">
-                        <span>⚠️</span>
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-1 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                         <span>{step3Errors.agreeTerms}</span>
                       </p>
                     )}
