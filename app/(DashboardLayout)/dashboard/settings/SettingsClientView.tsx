@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -669,8 +670,16 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
               {/* Current Password Field (Only required for normal password accounts) */}
               {!customerData?.isGoogleUser && (
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-slate-800">Current Password:</label>
-                  <div className="relative mt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-slate-800">Current Password:</label>
+                    <Link
+                      href={`/forgot-password?email=${encodeURIComponent(customerData?.email || "")}`}
+                      className="text-xs font-extrabold text-[#007eff] hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  <div className="relative mt-1">
                     <input
                       type={showCurrentPassword ? "text" : "password"}
                       placeholder="Enter current password"
