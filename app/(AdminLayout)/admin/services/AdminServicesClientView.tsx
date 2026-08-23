@@ -12,27 +12,43 @@ import {
   ShieldCheck,
   Calculator,
   Save,
-  Check,
   X,
   Layers,
   Search,
   Edit3,
   Trash2,
   ExternalLink,
-  Power,
   Clock,
-  Building2,
   Utensils,
-  Wrench,
   Home,
+  AlertCircle,
+  Loader2,
+  UploadCloud,
+  Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { io } from "socket.io-client";
+import { useForm } from "react-hook-form";
+
+export interface ServiceFormValues {
+  title: string;
+  category: string;
+  badge: string;
+  price: string | number;
+  slaTime: string;
+  heroImage: string;
+  contentImage: string;
+  shortDesc: string;
+  introParagraph1: string;
+  introParagraph2: string;
+  offersTitle: string;
+  offersDesc: string;
+  whyChooseTitle: string;
+  whyChooseDesc: string;
+  status: "ACTIVE" | "INACTIVE";
+}
 import {
   ServiceDetail,
-  getStoredServices,
-  addService,
-  updateService,
-  deleteService,
 } from "@/lib/servicesData";
 import {
   fetchAdminAddonsAPI,
@@ -40,9 +56,10 @@ import {
   updateAddonAPI,
   deleteAddonAPI,
 } from "@/services/addonService";
-import { updatePricingConfigAPI } from "@/services/pricingService";
+import { fetchPricingConfigAPI, updatePricingConfigAPI } from "@/services/pricingService";
 import {
   fetchAdminServicesAPI,
+  fetchServiceCatalogOverviewAPI,
   createServiceAPI,
   updateServiceAPI,
   deleteServiceAPI,
@@ -52,32 +69,136 @@ export default function AdminServicesClientView({
   initialAddons = [],
   initialPricing,
   initialCoreServices = [],
+  initialOverview,
 }: {
   initialAddons?: any[];
   initialPricing?: any;
   initialCoreServices?: any[];
+  initialOverview?: any;
 }) {
   const [services, setServices] = useState<any[]>(initialCoreServices);
+  const [overviewStats, setOverviewStats] = useState<any>(
+    initialOverview || {
+      totalServices: initialCoreServices.length,
+      activeServices: initialCoreServices.filter((s) => s.status === "ACTIVE").length,
+      startingRate: "৳3,500",
+      avgSlaResponse: "25-30 Mins",
+    }
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [isSubmittingService, setIsSubmittingService] = useState(false);
 
-  // Form State
+  // React Hook Form for Service Category Modal
+  const {
+    register,
+    handleSubmit: handleHookFormSubmit,
+    reset: resetServiceForm,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<ServiceFormValues>({
+    defaultValues: {
+      title: "",
+      category: "HOME CARE",
+      badge: "B2C HOME CLEANING",
+      price: "3500",
+      slaTime: "30 Mins SLA",
+      heroImage: "/RESIDENTIAL-DEEP-CLEANING.png",
+      contentImage: "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=600&height=400",
+      shortDesc: "",
+      introParagraph1: "",
+      introParagraph2: "",
+      offersTitle: "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
+      offersDesc: "ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।",
+      whyChooseTitle: "WHY CHOOSE OUR SERVICE",
+      whyChooseDesc: "",
+      status: "ACTIVE",
+    },
+  });
+
+  // Watch live image values for preview
+  const heroImageVal = watch("heroImage");
+  const contentImageVal = watch("contentImage");
+
+  const handleHeroFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue("heroImage", reader.result as string, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleContentFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue("contentImage", reader.result as string, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Form Slug State
   const [formSlug, setFormSlug] = useState("");
-  const [formTitle, setFormTitle] = useState("");
-  const [formCategory, setFormCategory] = useState("HOME CARE");
-  const [formBadge, setFormBadge] = useState("B2C HOME CLEANING");
-  const [formPrice, setFormPrice] = useState("৳3,500 BDT");
-  const [formSlaTime, setFormSlaTime] = useState("30 Mins SLA");
-  const [formHeroImage, setFormHeroImage] = useState("");
-  const [formContentImage, setFormContentImage] = useState("");
-  const [formShortDesc, setFormShortDesc] = useState("");
-  const [formIntroParagraph1, setFormIntroParagraph1] = useState("");
-  const [formIntroParagraph2, setFormIntroParagraph2] = useState("");
-  const [formStatus, setFormStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
+
+  // Detailed Content Form States for Offers, Why Choose & FAQs
+  const [formOffers, setFormOffers] = useState<{ title: string; desc: string }[]>([]);
+  const [formWhyChoosePoints, setFormWhyChoosePoints] = useState<{ title: string; desc: string }[]>([]);
+  const [formFaqs, setFormFaqs] = useState<{ num: string; question: string; answer: string }[]>([]);
+
+  const handleAddOfferItem = () => {
+    setFormOffers((prev) => [...prev, { title: "", desc: "" }]);
+  };
+  const handleRemoveOfferItem = (index: number) => {
+    setFormOffers((prev) => prev.filter((_, i) => i !== index));
+  };
+  const handleOfferChange = (index: number, field: "title" | "desc", val: string) => {
+    setFormOffers((prev) => {
+      const updated = [...prev];
+      updated[index][field] = val;
+      return updated;
+    });
+  };
+
+  const handleAddWhyPoint = () => {
+    setFormWhyChoosePoints((prev) => [...prev, { title: "", desc: "" }]);
+  };
+  const handleRemoveWhyPoint = (index: number) => {
+    setFormWhyChoosePoints((prev) => prev.filter((_, i) => i !== index));
+  };
+  const handleWhyPointChange = (index: number, field: "title" | "desc", val: string) => {
+    setFormWhyChoosePoints((prev) => {
+      const updated = [...prev];
+      updated[index][field] = val;
+      return updated;
+    });
+  };
+
+  const handleAddFaqItem = () => {
+    setFormFaqs((prev) => {
+      const nextNum = String(prev.length + 1).padStart(2, "0");
+      return [...prev, { num: nextNum, question: "", answer: "" }];
+    });
+  };
+  const handleRemoveFaqItem = (index: number) => {
+    setFormFaqs((prev) => prev.filter((_, i) => i !== index));
+  };
+  const handleFaqChange = (index: number, field: "num" | "question" | "answer", val: string) => {
+    setFormFaqs((prev) => {
+      const updated = [...prev];
+      updated[index][field] = val;
+      return updated;
+    });
+  };
 
   // Dynamic Pricing Multiplier Formula State
   const [dynamicPricingConfig, setDynamicPricingConfig] = useState({
@@ -120,10 +241,89 @@ export default function AdminServicesClientView({
     }
   }, [initialCoreServices]);
 
+  // Real-time Socket.io + BroadcastChannel listeners for Admin Services, Addons & Pricing
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      socket = io(serverUrl, { withCredentials: true });
+
+      socket.on("service_catalog_updated", () => {
+        refreshServices();
+      });
+
+      socket.on("addon_updated", () => {
+        refreshAddons();
+      });
+
+      socket.on("pricing_updated", () => {
+        fetchPricingConfigAPI().then((res) => {
+          if (res?.success && res?.data) {
+            setDynamicPricingConfig({
+              baseFee: String(res.data.baseFee ?? 1500),
+              sqftRate: String(res.data.sqftRate ?? 2.5),
+              bedroomRate: String(res.data.bedroomRate ?? 500),
+              bathroomRate: String(res.data.bathroomRate ?? 400),
+            });
+          }
+        });
+      });
+    } catch (e) {
+      console.error("Socket error in Admin services listener:", e);
+    }
+
+    let serviceChannel: BroadcastChannel | null = null;
+    let addonChannel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        serviceChannel = new BroadcastChannel("cleanix_services_channel");
+        serviceChannel.onmessage = () => refreshServices();
+
+        addonChannel = new BroadcastChannel("cleanix_addons_channel");
+        addonChannel.onmessage = () => refreshAddons();
+      }
+    } catch (e) {
+      console.error("BroadcastChannel error in Admin services:", e);
+    }
+
+    const handleServicesUpdate = () => refreshServices();
+    const handleAddonsUpdate = () => refreshAddons();
+
+    window.addEventListener("cleanix_services_updated", handleServicesUpdate);
+    window.addEventListener("cleanix_addons_updated", handleAddonsUpdate);
+
+    return () => {
+      if (socket) socket.disconnect();
+      if (serviceChannel) serviceChannel.close();
+      if (addonChannel) addonChannel.close();
+      window.removeEventListener("cleanix_services_updated", handleServicesUpdate);
+      window.removeEventListener("cleanix_addons_updated", handleAddonsUpdate);
+    };
+  }, []);
+
+  // Prevent body scroll when any modal is open and handle Lenis smooth scroll prevention
+  useEffect(() => {
+    if (isModalOpen || isAddonModalOpen || addonToDelete || serviceToDelete) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isModalOpen, isAddonModalOpen, addonToDelete, serviceToDelete]);
+
   const refreshServices = async () => {
-    const res = await fetchAdminServicesAPI();
-    if (res?.success && Array.isArray(res?.data)) {
-      setServices(res.data);
+    const [resServices, resOverview] = await Promise.all([
+      fetchAdminServicesAPI(),
+      fetchServiceCatalogOverviewAPI(),
+    ]);
+
+    if (resServices?.success && Array.isArray(resServices?.data)) {
+      setServices(resServices.data);
+    }
+    if (resOverview?.success && resOverview?.data) {
+      setOverviewStats(resOverview.data);
     }
     try {
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -157,120 +357,126 @@ export default function AdminServicesClientView({
   const handleOpenAddModal = () => {
     setEditingSlug(null);
     setFormSlug("");
-    setFormTitle("");
-    setFormCategory("HOME CARE");
-    setFormBadge("B2C HOME CLEANING");
-    setFormPrice("3500");
-    setFormSlaTime("30 Mins SLA");
-    setFormHeroImage("/RESIDENTIAL-DEEP-CLEANING.png");
-    setFormContentImage(
-      "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=600&height=400"
-    );
-    setFormShortDesc("");
-    setFormIntroParagraph1("");
-    setFormIntroParagraph2("");
-    setFormStatus("ACTIVE");
+    resetServiceForm({
+      title: "",
+      category: "HOME CARE",
+      badge: "B2C HOME CLEANING",
+      price: "3500",
+      slaTime: "30 Mins SLA",
+      heroImage: "/RESIDENTIAL-DEEP-CLEANING.png",
+      contentImage:
+        "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=600&height=400",
+      shortDesc: "",
+      introParagraph1: "",
+      introParagraph2: "",
+      offersTitle: "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
+      offersDesc: "ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।",
+      whyChooseTitle: "WHY CHOOSE OUR SERVICE",
+      whyChooseDesc: "Cleanix-এর ভেরিফাইড ক্লিনার টিম ও আধুনিক ভ্যাকুয়াম প্রযুক্তিতে শতভাগ নিশ্চিন্তি।",
+      status: "ACTIVE",
+    });
+    setFormOffers([
+      { title: "Detailed Deep Clean & Wash", desc: "প্রতিটি রুম, বাথরুম, কিচেন ও হাই-টাচ সারফেস জীবাণুমুক্ত ডাস্টিং।" },
+      { title: "Anti-Bacterial Sanitization", desc: "আন্তর্জাতিক সার্টিফাইড ইকো কেমিক্যালস দ্বারা জীবাণুমুক্তকরণ।" },
+    ]);
+    setFormWhyChoosePoints([
+      { title: "NID Verified Staff", desc: "সিকিউরিটি চেককৃত সুসজ্জিত টিম।" },
+      { title: "Eco-Friendly Chemicals", desc: "শিশু ও পোষা প্রাণীর জন্য নিরাপদ।" },
+    ]);
+    setFormFaqs([
+      { num: "01", question: "সার্ভিস শুরু হতে কত সময় লাগে?", answer: "আমাদের ট্র্যাকিং টিম ২৫-৩০ মিনিটের মধ্যে সার্ভিস লোকেশনে পৌঁছায়।" },
+    ]);
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (item: ServiceDetail) => {
     setEditingSlug(item.slug);
     setFormSlug(item.slug);
-    setFormTitle(item.title);
-    setFormCategory(item.category);
-    setFormBadge(item.badge);
-    setFormPrice(String(item.price || "3500").replace(/[^0-9]/g, "") || "3500");
-    setFormSlaTime(item.slaTime || "30 Mins SLA");
-    setFormHeroImage(item.heroImage);
-    setFormContentImage(item.contentImage);
-    setFormShortDesc(item.shortDesc);
-    setFormIntroParagraph1(item.introParagraph1);
-    setFormIntroParagraph2(item.introParagraph2);
-    setFormStatus(item.status);
+    resetServiceForm({
+      title: item.title,
+      category: item.category,
+      badge: item.badge,
+      price: String(item.price || "3500").replace(/[^0-9]/g, "") || "3500",
+      slaTime: item.slaTime || "30 Mins SLA",
+      heroImage: item.heroImage || "",
+      contentImage: item.contentImage || "",
+      shortDesc: item.shortDesc || "",
+      introParagraph1: item.introParagraph1 || "",
+      introParagraph2: item.introParagraph2 || "",
+      offersTitle: item.offersTitle || "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
+      offersDesc: item.offersDesc || "",
+      whyChooseTitle: item.whyChooseTitle || "WHY CHOOSE OUR SERVICE",
+      whyChooseDesc: item.whyChooseDesc || "",
+      status: item.status,
+    });
+    setFormOffers(Array.isArray(item.offers) ? item.offers : []);
+    setFormWhyChoosePoints(Array.isArray(item.whyChoosePoints) ? item.whyChoosePoints : []);
+    setFormFaqs(Array.isArray(item.faqs) ? item.faqs : []);
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmitServiceForm = async (data: ServiceFormValues) => {
+    try {
+      setIsSubmittingService(true);
+      const computedSlug =
+        formSlug.trim() ||
+        data.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
 
-    if (!formTitle.trim() || !formShortDesc.trim()) {
-      toast.error("Please fill in Service Title and Short Description.");
-      return;
-    }
+      const numPrice = Number(String(data.price).replace(/[^0-9]/g, "")) || 3500;
+      const formattedPrice = `৳${numPrice.toLocaleString()}`;
 
-    const computedSlug =
-      formSlug.trim() ||
-      formTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+      const serviceObj: any = {
+        slug: computedSlug,
+        title: data.title,
+        category: data.category.toUpperCase(),
+        badge: data.badge.toUpperCase(),
+        price: formattedPrice,
+        slaTime: data.slaTime,
+        heroImage: data.heroImage,
+        contentImage: data.contentImage,
+        shortDesc: data.shortDesc,
+        introParagraph1: data.introParagraph1,
+        introParagraph2: data.introParagraph2,
+        offersTitle: data.offersTitle,
+        offersDesc: data.offersDesc,
+        offers: formOffers,
+        whyChooseTitle: data.whyChooseTitle,
+        whyChooseDesc: data.whyChooseDesc,
+        whyChoosePoints: formWhyChoosePoints,
+        faqs: formFaqs,
+        status: data.status,
+      };
 
-    const numPrice = Number(String(formPrice).replace(/[^0-9]/g, "")) || 3500;
-    const formattedPrice = `৳${numPrice.toLocaleString()}`;
-
-    const serviceObj: any = {
-      slug: computedSlug,
-      title: formTitle,
-      category: formCategory.toUpperCase(),
-      badge: formBadge.toUpperCase(),
-      price: formattedPrice,
-      slaTime: formSlaTime,
-      heroImage: formHeroImage,
-      contentImage: formContentImage,
-      shortDesc: formShortDesc,
-      introParagraph1: formIntroParagraph1 || formShortDesc,
-      introParagraph2: formIntroParagraph2,
-      offersTitle: "WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)",
-      offersDesc: "ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।",
-      offers: [
-        {
-          iconName: "Sparkles",
-          title: "Detailed Deep Clean & Wash",
-          desc: "প্রতিটি রুম, বাথরুম, কিচেন ও হাই-টাচ সারফেস জীবাণুমুক্ত ডাস্টিং।",
-        },
-        {
-          iconName: "ShieldCheck",
-          title: "Anti-Bacterial Sanitization",
-          desc: "আন্তর্জাতিক সার্টিফাইড ইকো কেমিক্যালস দ্বারা জীবাণুমুক্তকরণ।",
-        },
-      ],
-      whyChooseTitle: "WHY CHOOSE OUR SERVICE",
-      whyChooseDesc: "Cleanix-এর ভেরিফাইড ক্লিনার টিম ও আধুনিক ভ্যাকুয়াম প্রযুক্তিতে শতভাগ নিশ্চিন্তি।",
-      whyChoosePoints: [
-        { title: "NID Verified Staff", desc: "সিকিউরিটি চেককৃত সুসজ্জিত টিম।" },
-        { title: "Eco-Friendly Chemicals", desc: "শিশু ও পোষা প্রাণীর জন্য নিরাপদ।" },
-      ],
-      faqs: [
-        {
-          num: "01",
-          question: "সার্ভিস শুরু হতে কত সময় লাগে?",
-          answer: "আমাদের ট্র্যাকিং টিম ২৫-৩০ মিনিটের মধ্যে সার্ভিস লোকেশনে পৌঁছায়।",
-        },
-      ],
-      status: formStatus,
-    };
-
-    if (editingSlug) {
-      const targetService = services.find((s) => s.slug === editingSlug || s._id === editingSlug);
-      const targetId = targetService?._id || editingSlug;
-      const res = await updateServiceAPI(targetId, serviceObj);
-      if (res?.success) {
-        toast.success(`Service "${formTitle}" updated successfully!`);
-        refreshServices();
+      if (editingSlug) {
+        const targetService = services.find((s) => s.slug === editingSlug || s._id === editingSlug);
+        const targetId = targetService?._id || editingSlug;
+        const res = await updateServiceAPI(targetId, serviceObj);
+        if (res?.success) {
+          toast.success(`Service "${data.title}" updated successfully!`);
+          refreshServices();
+        } else {
+          toast.error(res?.message || "Failed to update service.");
+        }
       } else {
-        toast.error(res?.message || "Failed to update service.");
+        const res = await createServiceAPI(serviceObj);
+        if (res?.success) {
+          toast.success(`New Service "${data.title}" created successfully!`);
+          refreshServices();
+        } else {
+          toast.error(res?.message || "Failed to create service.");
+        }
       }
-    } else {
-      const res = await createServiceAPI(serviceObj);
-      if (res?.success) {
-        toast.success(`New Service "${formTitle}" created successfully!`);
-        refreshServices();
-      } else {
-        toast.error(res?.message || "Failed to create service.");
-      }
-    }
 
-    setIsModalOpen(false);
+      setIsModalOpen(false);
+    } catch (err: any) {
+      toast.error("An unexpected error occurred while saving service offering.");
+      console.error("Error submitting service offering:", err);
+    } finally {
+      setIsSubmittingService(false);
+    }
   };
 
   const handleToggleStatus = async (item: any) => {
@@ -504,7 +710,9 @@ export default function AdminServicesClientView({
               <Sliders className="w-4 h-4 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900 tracking-tight">{totalCount} Services</p>
+          <p className="text-3xl font-black text-slate-900 tracking-tight">
+            {overviewStats?.totalServices ?? totalCount} Services
+          </p>
           <p className="text-xs font-semibold text-slate-500">Core platform catalog</p>
         </div>
 
@@ -517,7 +725,9 @@ export default function AdminServicesClientView({
               <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-emerald-950 tracking-tight">{activeCount} Live</p>
+          <p className="text-3xl font-black text-emerald-950 tracking-tight">
+            {overviewStats?.activeServices ?? activeCount} Live
+          </p>
           <p className="text-xs font-bold text-emerald-800">Accepting online bookings</p>
         </div>
 
@@ -530,7 +740,9 @@ export default function AdminServicesClientView({
               <DollarSign className="w-4 h-4 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-blue-950 tracking-tight">৳3,500 BDT</p>
+          <p className="text-3xl font-black text-blue-950 tracking-tight">
+            {overviewStats?.startingRate || "৳3,500"}
+          </p>
           <p className="text-xs font-medium text-slate-500">Base deep clean rate</p>
         </div>
 
@@ -543,7 +755,9 @@ export default function AdminServicesClientView({
               <Clock className="w-4 h-4 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-amber-950 tracking-tight">25-30 Mins</p>
+          <p className="text-3xl font-black text-amber-950 tracking-tight">
+            {overviewStats?.avgSlaResponse || "25-30 Mins"}
+          </p>
           <p className="text-xs font-semibold text-amber-800">Cleaner arrival SLA</p>
         </div>
       </div>
@@ -940,19 +1154,20 @@ export default function AdminServicesClientView({
 
       {/* ADD / EDIT SERVICE MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 space-y-6 relative my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 sticky top-0 bg-white z-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200 w-[94vw] max-w-6xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative">
+            {/* MODAL HEADER */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white flex-shrink-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-extrabold">
                   <Sliders className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">
-                    {editingSlug ? "Edit Service Offering" : "Add New Service Offering"}
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                    {editingSlug ? "Edit Service Offering Catalog" : "Add New Service Offering"}
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold">
-                    {editingSlug ? editingSlug : "Configure new core service offering"}
+                    {editingSlug ? editingSlug : "Configure complete core service offering details, pricing, content paragraphs, features & FAQs."}
                   </p>
                 </div>
               </div>
@@ -966,128 +1181,524 @@ export default function AdminServicesClientView({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1.5">
-                <label className="font-extrabold text-slate-800 block">
-                  Service Title (Bangla / English):
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. RESIDENTIAL DEEP CLEANING (আবাসিক ডিপ ক্লিনিং)"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
-                />
-              </div>
+            {/* FORM CONTAINER WITH INTEGRATED FOOTER */}
+            <form onSubmit={handleHookFormSubmit(onSubmitServiceForm)} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* SCROLLABLE FORM BODY (WITH LENIS SCROLL PREVENT) */}
+              <div
+                className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-slate-50/30 custom-scrollbar"
+                data-lenis-prevent
+                data-lenis-prevent-wheel
+              >
+                {/* 1. BASIC INFORMATION & PRICING */}
+                <div className="space-y-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                  <h4 className="font-black text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <CheckCircle2 className="w-4 h-4 text-[#007eff]" /> 1. Basic Information & SLA
+                  </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="font-extrabold text-slate-800 block">
-                    Category Tag (e.g. HOME CARE, OFFICE):
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. HOME CARE"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-extrabold text-slate-800 block">
-                    Badge Title (e.g. B2C HOME CLEANING):
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. B2C HOME CLEANING"
-                    value={formBadge}
-                    onChange={(e) => setFormBadge(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-extrabold text-slate-800 block">
-                    Starting Price (৳):
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-900 text-sm">
-                      ৳
-                    </span>
+                  <div className="space-y-1.5">
+                    <label className="font-extrabold text-slate-800 block">
+                      Service Title (Bangla / English) <span className="text-red-500">*</span>:
+                    </label>
                     <input
-                      type="number"
-                      required
-                      min={0}
-                      placeholder="3500"
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-8 pr-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                      type="text"
+                      placeholder="e.g. RESIDENTIAL DEEP CLEANING (আবাসিক ডিপ ক্লিনিং)"
+                      {...register("title", { required: "Service Title is required" })}
+                      className={`w-full bg-slate-50 border rounded-xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white transition-all ${
+                        errors.title ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-[#007eff]"
+                      }`}
                     />
+                    {errors.title && (
+                      <p className="text-red-500 text-xs font-bold mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {errors.title.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        Category Tag <span className="text-red-500">*</span>:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. HOME CARE"
+                        {...register("category", { required: "Category Tag is required" })}
+                        className={`w-full bg-slate-50 border rounded-xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:bg-white transition-all ${
+                          errors.category ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-[#007eff]"
+                        }`}
+                      />
+                      {errors.category && (
+                        <p className="text-red-500 text-xs font-bold mt-1 flex items-center gap-1 animate-in fade-in">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {errors.category.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        Badge Title <span className="text-red-500">*</span>:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. B2C HOME CLEANING"
+                        {...register("badge", { required: "Badge Title is required" })}
+                        className={`w-full bg-slate-50 border rounded-xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:bg-white transition-all ${
+                          errors.badge ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-[#007eff]"
+                        }`}
+                      />
+                      {errors.badge && (
+                        <p className="text-red-500 text-xs font-bold mt-1 flex items-center gap-1 animate-in fade-in">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {errors.badge.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        Starting Price (৳) <span className="text-red-500">*</span>:
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-900 text-sm">
+                          ৳
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="3500"
+                          {...register("price", {
+                            required: "Starting Price is required",
+                            min: { value: 0, message: "Price must be a positive number" },
+                          })}
+                          className={`w-full bg-slate-50 border rounded-xl pl-8 pr-4 py-3 text-slate-900 font-bold focus:outline-none focus:bg-white transition-all ${
+                            errors.price ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-[#007eff]"
+                          }`}
+                        />
+                      </div>
+                      {errors.price && (
+                        <p className="text-red-500 text-xs font-bold mt-1 flex items-center gap-1 animate-in fade-in">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {errors.price.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        SLA Response Time:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 30 Mins SLA"
+                        {...register("slaTime")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-extrabold text-slate-800 block">
+                      Service Status:
+                    </label>
+                    <select
+                      {...register("status")}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-extrabold focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                    >
+                      <option value="ACTIVE">ACTIVE (Accepting Bookings)</option>
+                      <option value="INACTIVE">INACTIVE (Temporarily Disabled)</option>
+                    </select>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-extrabold text-slate-800 block">
-                    SLA Response Time:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 30 Mins SLA"
-                    value={formSlaTime}
-                    onChange={(e) => setFormSlaTime(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
-                  />
+                {/* 2. IMAGES & INTRO PARAGRAPHS */}
+                <div className="space-y-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                  <h4 className="font-black text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <Layers className="w-4 h-4 text-[#007eff]" /> 2. Images & Overview Content
+                  </h4>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* HERO COVER IMAGE PICKER & PREVIEW */}
+                    <div className="space-y-2">
+                      <label className="font-extrabold text-slate-800 block text-xs sm:text-sm">
+                        Hero Cover Background Image:
+                      </label>
+                      <div className="border border-slate-200/90 bg-slate-50/40 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        {/* Preview Thumbnail */}
+                        <div className="relative w-32 h-20 sm:h-24 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center group shadow-2xs">
+                          {heroImageVal ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={heroImageVal}
+                              alt="Hero Preview"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="text-center p-2 text-slate-400">
+                              <UploadCloud className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                              <span className="text-[10px] font-bold block">No Image</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Controls & Input */}
+                        <div className="flex-1 space-y-2.5 w-full">
+                          <div className="flex items-center gap-2">
+                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
+                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                              <span>Choose Image File</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleHeroFileUpload}
+                                className="hidden"
+                              />
+                            </label>
+                            {heroImageVal && (
+                              <button
+                                type="button"
+                                onClick={() => setValue("heroImage", "", { shouldValidate: true })}
+                                className="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                                <span>Remove</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                              <LinkIcon className="w-3 h-3" /> Or paste Image URL directly:
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="/RESIDENTIAL-DEEP-CLEANING.png"
+                              {...register("heroImage")}
+                              className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff] transition-all"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CONTENT BANNER IMAGE PICKER & PREVIEW */}
+                    <div className="space-y-2">
+                      <label className="font-extrabold text-slate-800 block text-xs sm:text-sm">
+                        Content Banner Image:
+                      </label>
+                      <div className="border border-slate-200/90 bg-slate-50/40 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        {/* Preview Thumbnail */}
+                        <div className="relative w-32 h-20 sm:h-24 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center group shadow-2xs">
+                          {contentImageVal ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={contentImageVal}
+                              alt="Content Banner Preview"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="text-center p-2 text-slate-400">
+                              <UploadCloud className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                              <span className="text-[10px] font-bold block">No Image</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Controls & Input */}
+                        <div className="flex-1 space-y-2.5 w-full">
+                          <div className="flex items-center gap-2">
+                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
+                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                              <span>Choose Image File</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleContentFileUpload}
+                                className="hidden"
+                              />
+                            </label>
+                            {contentImageVal && (
+                              <button
+                                type="button"
+                                onClick={() => setValue("contentImage", "", { shouldValidate: true })}
+                                className="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                                <span>Remove</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                              <LinkIcon className="w-3 h-3" /> Or paste Image URL directly:
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="https://framerusercontent.com/..."
+                              {...register("contentImage")}
+                              className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff] transition-all"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-extrabold text-slate-800 block">
+                      Short Description (Catalog Card Text) <span className="text-red-500">*</span>:
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ রুম-বাই-রুম ডিপ রিফ্রেশ ক্লিনিং..."
+                      {...register("shortDesc", { required: "Short Description is required" })}
+                      className={`w-full bg-slate-50 border rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:bg-white transition-all ${
+                        errors.shortDesc ? "border-red-500 focus:border-red-500" : "border-slate-200 focus:border-[#007eff]"
+                      }`}
+                    />
+                    {errors.shortDesc && (
+                      <p className="text-red-500 text-xs font-bold mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {errors.shortDesc.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        Detailed Intro Paragraph 1:
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="e.g. Cleanix-এর আবাসিক ডিপ ক্লিনিং সার্ভিস আপনার বাসা বা অ্যাপার্টমেন্টকে করে তোলে সম্পূর্ণ জীবাণুমুক্ত..."
+                        {...register("introParagraph1")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">
+                        Detailed Intro Paragraph 2:
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="e.g. গুলশান, বনানী, উত্তরা, ধানমন্ডি বা বসুন্ধরার যেকোনো অ্যাপার্টমেন্টের জন্য আমাদের এনআইডি ট্র্যাকিংকৃত এক্সপার্ট টিম..."
+                        {...register("introParagraph2")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. DYNAMIC OFFERS LIST */}
+                <div className="space-y-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#007eff]" /> 3. What We Offer (আমাদের বিশেষ সেবাসমূহ)
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={handleAddOfferItem}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Offer Item</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">Offers Section Title:</label>
+                      <input
+                        type="text"
+                        placeholder="WHAT WE OFFER (আমাদের বিশেষ সেবাসমূহ)"
+                        {...register("offersTitle")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">Offers Section Description:</label>
+                      <input
+                        type="text"
+                        placeholder="ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।"
+                        {...register("offersDesc")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Offers Items List */}
+                  <div className="space-y-3">
+                    {formOffers.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5 relative group">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                          <span className="font-bold text-xs text-slate-800">Offer Item #{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOfferItem(idx)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Remove Offer Item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            placeholder="Offer Title (e.g. Detailed Deep Clean & Wash)"
+                            value={item.title}
+                            onChange={(e) => handleOfferChange(idx, "title", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#007eff]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Offer Description (e.g. প্রতিটি রুম ও হাই-টাচ সারফেস জীবাণুমুক্তকরণ)"
+                            value={item.desc}
+                            onChange={(e) => handleOfferChange(idx, "desc", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-[#007eff]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    {formOffers.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl">
+                        No offer items added yet. Click &quot;Add Offer Item&quot; to configure features.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. DYNAMIC WHY CHOOSE US & FAQS */}
+                <div className="space-y-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#007eff]" /> 4. Why Choose Us & FAQs
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAddWhyPoint}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Why Point</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddFaqItem}
+                        className="px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add FAQ</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2">
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">Why Choose Section Title:</label>
+                      <input
+                        type="text"
+                        placeholder="WHY CHOOSE OUR SERVICE"
+                        {...register("whyChooseTitle")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-slate-800 block">Why Choose Section Description:</label>
+                      <input
+                        type="text"
+                        placeholder="Cleanix-এর ভেরিফাইড ক্লিনার টিম..."
+                        {...register("whyChooseDesc")}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Why Choose Points Items */}
+                  <div className="space-y-3">
+                    <span className="font-bold text-xs text-slate-700 block">Why Choose Points:</span>
+                    {formWhyChoosePoints.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                          <span className="font-bold text-xs text-slate-800">Why Point #{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWhyPoint(idx)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            placeholder="Point Title (e.g. NID Verified Staff)"
+                            value={item.title}
+                            onChange={(e) => handleWhyPointChange(idx, "title", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#007eff]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Point Description (e.g. সিকিউরিটি চেককৃত টিম)"
+                            value={item.desc}
+                            onChange={(e) => handleWhyPointChange(idx, "desc", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-[#007eff]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* FAQs Items */}
+                  <div className="space-y-3 pt-2">
+                    <span className="font-bold text-xs text-slate-700 block">Frequently Asked Questions (FAQs):</span>
+                    {formFaqs.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                          <span className="font-bold text-xs text-slate-800">FAQ #{item.num || idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFaqItem(idx)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Question (e.g. সার্ভিস শুরু হতে কত সময় লাগে?)"
+                            value={item.question}
+                            onChange={(e) => handleFaqChange(idx, "question", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#007eff]"
+                          />
+                          <textarea
+                            rows={2}
+                            placeholder="Answer (e.g. আমাদের ট্র্যাকিং টিম ২৫-৩০ মিনিটের মধ্যে...)"
+                            value={item.answer}
+                            onChange={(e) => handleFaqChange(idx, "answer", e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-[#007eff]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-extrabold text-slate-800 block">
-                  Hero Cover Image Path / URL:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. /RESIDENTIAL-DEEP-CLEANING.png"
-                  value={formHeroImage}
-                  onChange={(e) => setFormHeroImage(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-extrabold text-slate-800 block">
-                  Short Description (Bangla / English):
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="e.g. ঢাকার যেকোনো অ্যাপার্টমেন্ট ও আবাসিক বাড়ির জন্য সম্পূর্ণ রুম-বাই-রুম ডিপ রিফ্রেশ ক্লিনিং..."
-                  value={formShortDesc}
-                  onChange={(e) => setFormShortDesc(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-extrabold text-slate-800 block">
-                  Service Status:
-                </label>
-                <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value as "ACTIVE" | "INACTIVE")}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-extrabold focus:outline-none focus:border-[#007eff]"
-                >
-                  <option value="ACTIVE">ACTIVE (Accepting Bookings)</option>
-                  <option value="INACTIVE">INACTIVE (Temporarily Disabled)</option>
-                </select>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3 sticky bottom-0 bg-white py-2">
+              {/* FIXED MODAL FOOTER */}
+              <div className="p-4 sm:p-5 border-t border-slate-100 flex items-center justify-end gap-3 bg-white flex-shrink-0 z-20">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -1097,10 +1708,20 @@ export default function AdminServicesClientView({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
+                  disabled={isSubmittingService}
+                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{editingSlug ? "Save Changes" : "Create Service"}</span>
+                  {isSubmittingService ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>{editingSlug ? "Saving Changes..." : "Creating Offering..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{editingSlug ? "Save Changes" : "Create Service Offering"}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

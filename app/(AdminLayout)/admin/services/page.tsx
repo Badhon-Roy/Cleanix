@@ -1,13 +1,17 @@
 import AdminServicesClientView from "./AdminServicesClientView";
 import { fetchAdminAddonsServer } from "@/services/addonServerService";
 import { fetchPricingConfigServer } from "@/services/pricingServerService";
-import { fetchAdminServicesServer } from "@/services/serviceCategoryServerService";
+import {
+  fetchAdminServicesServer,
+  fetchServiceCatalogOverviewServer,
+} from "@/services/serviceCategoryServerService";
 
 export default async function AdminServicesPage() {
-  const [initialAddons, initialPricing, initialCoreServices] = await Promise.all([
+  const [initialAddons, initialPricing, initialCoreServices, initialOverview] = await Promise.all([
     fetchAdminAddonsServer(),
     fetchPricingConfigServer(),
     fetchAdminServicesServer(),
+    fetchServiceCatalogOverviewServer(),
   ]);
 
   return (
@@ -15,6 +19,7 @@ export default async function AdminServicesPage() {
       initialAddons={initialAddons}
       initialPricing={initialPricing}
       initialCoreServices={initialCoreServices}
+      initialOverview={initialOverview}
     />
   );
 }

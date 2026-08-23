@@ -87,3 +87,19 @@ export const deleteServiceAPI = async (serviceId: string) => {
     return { success: false, message: error.message || "Failed to delete service category" };
   }
 };
+
+export const fetchServiceCatalogOverviewAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/services/overview`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching service catalog overview:", error);
+    return { success: false, data: null };
+  }
+};

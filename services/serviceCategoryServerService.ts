@@ -49,3 +49,32 @@ export const fetchAdminServicesServer = async () => {
     return [];
   }
 };
+
+export const fetchServiceCatalogOverviewServer = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get("accessToken")?.value ||
+      cookieStore.get("cleanix_token")?.value ||
+      "";
+
+    const res = await fetch(`${baseUrl}/services/overview`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error in fetchServiceCatalogOverviewServer:", error);
+    return null;
+  }
+};
