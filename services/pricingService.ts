@@ -50,3 +50,44 @@ export const updatePricingConfigAPI = async (payload: Partial<IPricingConfigItem
     return { success: false, message: error.message || "Failed to update pricing multipliers" };
   }
 };
+
+export interface IBookingPriceBreakdown {
+  categoryName: string;
+  baseFee: number;
+  sqft: number;
+  sqftRate: number;
+  sqftCost: number;
+  bedrooms: number;
+  bedroomRate: number;
+  bedroomCost: number;
+  bathrooms: number;
+  bathroomRate: number;
+  bathroomCost: number;
+  addons: { slug: string; name: string; price: number }[];
+  addonsTotal: number;
+  totalAmount: number;
+}
+
+export const calculateBookingPriceAPI = async (payload: {
+  serviceSlug?: string;
+  sqft?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  selectedAddons?: string[];
+}): Promise<{ success: boolean; data?: IBookingPriceBreakdown; message?: string }> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/pricing/calculate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error calculating booking price:", error);
+    return { success: false, message: error.message || "Failed to calculate price" };
+  }
+};
+

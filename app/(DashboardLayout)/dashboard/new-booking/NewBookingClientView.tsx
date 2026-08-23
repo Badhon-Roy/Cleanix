@@ -42,7 +42,10 @@ import {
 import { io } from "socket.io-client";
 import { createBookingAPI } from "@/services/bookingService";
 import { fetchActiveAddonsAPI } from "@/services/addonService";
-import { fetchPricingConfigAPI } from "@/services/pricingService";
+import {
+  fetchPricingConfigAPI,
+  IBookingPriceBreakdown,
+} from "@/services/pricingService";
 import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
 
 export default function NewBookingClientView({
@@ -469,38 +472,63 @@ export default function NewBookingClientView({
     setSelectedAddons((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Helper to parse price string to number
-  const parsePriceNumber = (priceStr?: string, fallback = 1500): number => {
-    if (!priceStr) return fallback;
-    const numStr = String(priceStr).replace(/[^0-9.]/g, "");
-    const val = parseFloat(numStr);
-    return isNaN(val) || val <= 0 ? fallback : val;
+  // ── Real-time Backend Price Calculation via Socket.io ────────────────────
+  const defaultBreakdown: IBookingPriceBreakdown = {
+    categoryName: "",
+    baseFee: 0,
+    sqft: 0,
+    sqftRate: 0,
+    sqftCost: 0,
+    bedrooms: 0,
+    bedroomRate: 0,
+    bedroomCost: 0,
+    bathrooms: 0,
+    bathroomRate: 0,
+    bathroomCost: 0,
+    addons: [],
+    addonsTotal: 0,
+    totalAmount: 0,
   };
 
-  // Selected Category Object
-  const selectedCategoryObj = coreServicesList.find(
-    (s) => s.slug === serviceType || s.category === serviceType,
-  );
+  const [priceBreakdown, setPriceBreakdown] =
+    useState<IBookingPriceBreakdown>(defaultBreakdown);
+  const priceSocketRef = useRef<any>(null);
 
-  // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
-  const baseFee = selectedCategoryObj?.price
-    ? parsePriceNumber(selectedCategoryObj.price, pricingConfig.baseFee ?? 1500)
-    : (pricingConfig.baseFee ?? 1500);
+  // Connect once on mount, listen for results
+  useEffect(() => {
+    const serverUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+    const sock = io(serverUrl, { withCredentials: true });
+    priceSocketRef.current = sock;
 
-  const sqftCost = sqft * (pricingConfig.sqftRate ?? 2.5);
-  const bedroomCost = bedrooms * (pricingConfig.bedroomRate ?? 500);
-  const bathroomCost = bathrooms * (pricingConfig.bathroomRate ?? 400);
+    sock.on(
+      "booking_price_result",
+      (res: { success: boolean; data?: IBookingPriceBreakdown }) => {
+        if (res?.success && res?.data) {
+          setPriceBreakdown(res.data);
+        }
+      },
+    );
 
-  const addonsTotal = activeAddonsCatalog.reduce((acc: number, item: any) => {
-    const key = item.slug || String(item._id);
-    if (selectedAddons[key]) {
-      return acc + (item.price || 0);
-    }
-    return acc;
-  }, 0);
+    return () => {
+      sock.disconnect();
+    };
+  }, []);
 
-  const totalAmount =
-    baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
+  // Emit whenever inputs change
+  useEffect(() => {
+    if (!priceSocketRef.current) return;
+    const activeAddonSlugs = Object.keys(selectedAddons).filter(
+      (k) => selectedAddons[k],
+    );
+    priceSocketRef.current.emit("calculate_booking_price", {
+      serviceSlug: serviceType,
+      sqft,
+      bedrooms,
+      bathrooms,
+      selectedAddons: activeAddonSlugs,
+    });
+  }, [serviceType, sqft, bedrooms, bathrooms, selectedAddons]);
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1383,85 +1411,73 @@ export default function NewBookingClientView({
 
               {/* Itemized Calculation Breakdown Table */}
               <div className="space-y-3 text-xs sm:text-sm border-y border-slate-100 py-4 font-medium">
+                {/* Selected Category Badge */}
                 <div className="flex justify-between items-center bg-blue-50/80 p-3 rounded-2xl border border-blue-200 mb-2">
                   <span className="text-slate-700 font-bold flex items-center gap-1.5">
                     <Tag className="w-4 h-4 text-[#007eff]" /> Selected
                     Category:
                   </span>
                   <span className="font-bold text-[#007eff] text-xs uppercase bg-white px-2.5 py-1 rounded-xl border border-blue-200">
-                    {coreServicesList
-                      .find(
-                        (s) =>
-                          s.slug === serviceType || s.category === serviceType,
-                      )
-                      ?.title.split("(")[0]
-                      .trim() || serviceType}
+                    {priceBreakdown.categoryName || "—"}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-slate-600">
                   <span>
-                    বেসিক সার্ভিস ফি (
-                    {selectedCategoryObj
-                      ? selectedCategoryObj.title.split("(")[0].trim()
-                      : "ক্যাটাগরি"}
-                    ):
+                    বেসিক সার্ভিস ফি ({priceBreakdown.categoryName || "—"}):
                   </span>
                   <span className="font-bold text-slate-900">
-                    ৳{baseFee.toLocaleString()}
+                    ৳{priceBreakdown.baseFee.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>
-                    SqFt চার্জ ({sqft} × ৳{pricingConfig.sqftRate ?? 2.5}):
+                    SqFt চার্জ ({priceBreakdown.sqft} × ৳
+                    {priceBreakdown.sqftRate}):
                   </span>
                   <span className="font-bold text-slate-900">
-                    ৳{sqftCost.toLocaleString()}
+                    ৳{priceBreakdown.sqftCost.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>
-                    বেডরুম ({bedrooms} × ৳{pricingConfig.bedroomRate ?? 500}):
+                    বেডরুম ({priceBreakdown.bedrooms} × ৳
+                    {priceBreakdown.bedroomRate}):
                   </span>
                   <span className="font-bold text-slate-900">
-                    ৳{bedroomCost.toLocaleString()}
+                    ৳{priceBreakdown.bedroomCost.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>
-                    বাথরুম ({bathrooms} × ৳{pricingConfig.bathroomRate ?? 400}):
+                    বাথরুম ({priceBreakdown.bathrooms} × ৳
+                    {priceBreakdown.bathroomRate}):
                   </span>
                   <span className="font-bold text-slate-900">
-                    ৳{bathroomCost.toLocaleString()}
+                    ৳{priceBreakdown.bathroomCost.toLocaleString()}
                   </span>
                 </div>
 
-                {activeAddonsCatalog.some(
-                  (item: any) => selectedAddons[item.slug || String(item._id)],
-                ) && (
+                {priceBreakdown.addons.length > 0 && (
                   <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
-                    {activeAddonsCatalog.map((item: any) => {
-                      const key = item.slug || String(item._id);
-                      if (!selectedAddons[key]) return null;
-                      return (
-                        <div
-                          key={key}
-                          className="flex justify-between text-emerald-800 font-semibold"
-                        >
-                          <span>+ {item.name}:</span>
-                          <span className="font-bold text-emerald-700">
-                            +৳{(item.price || 0).toLocaleString()}
-                          </span>
-                        </div>
-                      );
-                    })}
+                    {priceBreakdown.addons.map((addon) => (
+                      <div
+                        key={addon.slug}
+                        className="flex justify-between text-emerald-800 font-semibold"
+                      >
+                        <span>+ {addon.name}:</span>
+                        <span className="font-bold text-emerald-700">
+                          +৳{addon.price.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-base sm:text-lg font-bold text-slate-900">
                   <span>মোট প্রদেয় বিল:</span>
                   <span className="text-[#007eff] text-2xl font-bold">
-                    ৳{totalAmount.toLocaleString()}
+                    ৳{priceBreakdown.totalAmount.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -1521,7 +1537,10 @@ export default function NewBookingClientView({
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5 text-amber-300" />
-                    <span>Confirm & Pay ৳{totalAmount.toLocaleString()}</span>
+                    <span>
+                      Confirm & Pay ৳
+                      {priceBreakdown.totalAmount.toLocaleString()}
+                    </span>
                     <ChevronRight className="w-5 h-5 stroke-[3]" />
                   </>
                 )}
