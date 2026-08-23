@@ -13,12 +13,22 @@ const getBaseUrl = () => {
   );
 };
 
-const getHeaders = () => {
+const getHeaders = async () => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  const token = getAuthToken();
+  let token: string | undefined = undefined;
+
+  try {
+    const cookieStore = await cookies();
+    token =
+      cookieStore.get("cleanix_token")?.value ||
+      cookieStore.get("accessToken")?.value;
+  } catch {
+    token = getAuthToken();
+  }
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -99,9 +109,10 @@ export const registerUserAPI = async (payload: IRegisterPayload | FormData) => {
 export const loginUserAPI = async (payload: ILoginPayload) => {
   try {
     const baseUrl = getBaseUrl();
+    const headers = await getHeaders();
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
-      headers: getHeaders(),
+      headers,
       body: JSON.stringify(payload),
       credentials: "include", // 👈 Enables automatic HttpOnly cookie storage from Backend
     });
@@ -120,9 +131,10 @@ export const loginUserAPI = async (payload: ILoginPayload) => {
 export const fetchUserProfileAPI = async () => {
   try {
     const baseUrl = getBaseUrl();
+    const headers = await getHeaders();
     const res = await fetch(`${baseUrl}/auth/me`, {
       method: "GET",
-      headers: getHeaders(),
+      headers,
       credentials: "include",
       cache: "no-store",
     });
@@ -189,9 +201,10 @@ export const logoutUser = async (redirectUrl: string = "/login") => {
 export const changePasswordAPI = async (payload: Record<string, any>) => {
   try {
     const baseUrl = getBaseUrl();
+    const headers = await getHeaders();
     const res = await fetch(`${baseUrl}/auth/change-password`, {
       method: "POST",
-      headers: getHeaders(),
+      headers,
       body: JSON.stringify(payload),
       credentials: "include",
     });

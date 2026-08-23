@@ -30,6 +30,7 @@ import AddLocationModal, { NewAddressFormData } from "@/components/dashboard/Add
 import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import { fetchCustomerProfileAPI, updateCustomerProfileAPI } from "@/services/customerService";
+import { changePasswordAPI } from "@/services/authService";
 import { getAuthUser, setAuthUser } from "@/utils/cookie";
 
 interface ProfileFormData {
@@ -55,9 +56,10 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
   const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
-  // Password Visibility Toggle State
+  // Password Visibility & Updating States
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   // React Hook Form for Profile Info
   const {
@@ -196,7 +198,6 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
 
     if (res?.success) {
       setSavedSuccess(true);
-      toast.success(res?.message || "Personal information updated successfully!");
       if (res?.data) {
         setCustomerData(res.data);
         resetProfile({
@@ -216,17 +217,27 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
         });
       }
 
-      setTimeout(() => setSavedSuccess(false), 3000);
+      setTimeout(() => setSavedSuccess(false), 4000);
     } else {
       toast.error(res?.message || "Failed to update personal information.");
     }
   };
 
-  const onPasswordSubmit = (data: PasswordFormData) => {
-    setPasswordSavedSuccess(true);
-    toast.success("Password updated successfully!");
-    resetPasswordForm();
-    setTimeout(() => setPasswordSavedSuccess(false), 3000);
+  const onPasswordSubmit = async (data: PasswordFormData) => {
+    setIsUpdatingPassword(true);
+    const res = await changePasswordAPI({
+      oldPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    });
+    setIsUpdatingPassword(false);
+
+    if (res?.success) {
+      setPasswordSavedSuccess(true);
+      resetPasswordForm();
+      setTimeout(() => setPasswordSavedSuccess(false), 4000);
+    } else {
+      toast.error(res?.message || "Failed to update password!");
+    }
   };
 
   const toggleNotification = (key: keyof typeof notifications) => {
@@ -294,6 +305,8 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
                     <img
                       src={avatarUrl}
                       alt="Uploaded Avatar"
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarUrl(null)}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -629,9 +642,21 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
                 <Lock className="w-5 h-5 text-[#007eff]" /> Password & Security
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                অ্যাকাউন্টের সিকিউরিটি নিশ্চিত করতে নতুন পাসওয়ার্ড সেট করুন।
+                অ্যাকাউন্টের সিকিউরিটি নিশ্চিত করতে পাসওয়ার্ড ম্যানেজ করুন।
               </p>
             </div>
+
+            {customerData?.isGoogleUser && (
+              <div className="bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 p-4 rounded-2xl border border-blue-200/80 space-y-1.5">
+                <div className="flex items-center gap-2 text-blue-900 font-extrabold text-xs">
+                  <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-xs text-[11px] font-black text-[#007eff]">G</span>
+                  <span>Google Single Sign-On Active</span>
+                </div>
+                <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                  You logged in with <strong>Google OAuth</strong>. You do not need a current password. You can set a new password below to enable standard password login anytime.
+                </p>
+              </div>
+            )}
 
             {passwordSavedSuccess && (
               <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2">
@@ -641,49 +666,53 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
             )}
 
             <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4 text-xs sm:text-sm">
-              {/* Current Password Field */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-800">Current Password:</label>
-                <div className="relative mt-2">
-                  <input
-                    type={showCurrentPassword ? "text" : "password"}
-                    placeholder="Enter current password"
-                    {...registerPassword("currentPassword", {
-                      required: "Current password is required",
-                    })}
-                    className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
-                      passwordErrors.currentPassword
-                        ? "border-red-400 focus:border-red-500 bg-red-50/30"
-                        : "border-slate-200 focus:border-[#007eff]"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowCurrentPassword((prev) => !prev);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5 z-10"
-                    title={showCurrentPassword ? "Hide password" : "Show password"}
-                  >
-                    {showCurrentPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {/* Current Password Field (Only required for normal password accounts) */}
+              {!customerData?.isGoogleUser && (
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-800">Current Password:</label>
+                  <div className="relative mt-2">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="Enter current password"
+                      {...registerPassword("currentPassword", {
+                        required: customerData?.isGoogleUser ? false : "Current password is required",
+                      })}
+                      className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
+                        passwordErrors.currentPassword
+                          ? "border-red-400 focus:border-red-500 bg-red-50/30"
+                          : "border-slate-200 focus:border-[#007eff]"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowCurrentPassword((prev) => !prev);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5 z-10"
+                      title={showCurrentPassword ? "Hide password" : "Show password"}
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {passwordErrors.currentPassword && (
+                    <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.currentPassword.message}
+                    </p>
+                  )}
                 </div>
-                {passwordErrors.currentPassword && (
-                  <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.currentPassword.message}
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* New Password Field */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-slate-800">New Password:</label>
+                <label className="font-semibold text-slate-800">
+                  {customerData?.isGoogleUser ? "Set Account Password:" : "New Password:"}
+                </label>
                 <div className="relative mt-2">
                   <input
                     type={showNewPassword ? "text" : "password"}
-                    placeholder="Enter new password"
+                    placeholder={customerData?.isGoogleUser ? "Enter new account password" : "Enter new password"}
                     {...registerPassword("newPassword", {
                       required: "New password is required",
                       minLength: { value: 6, message: "New password must be at least 6 characters" },
@@ -716,9 +745,17 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+                disabled={isUpdatingPassword}
+                className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Update Password
+                {isUpdatingPassword ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <span>{customerData?.isGoogleUser ? "Set Account Password" : "Update Password"}</span>
+                )}
               </button>
             </form>
           </div>

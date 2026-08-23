@@ -16,6 +16,7 @@ import {
   Sparkles,
   PhoneCall,
 } from "lucide-react";
+import Image from "next/image";
 
 interface DashboardHeaderProps {
   user?: any;
@@ -226,6 +227,7 @@ export default function DashboardHeader({ user, onToggleMobileMenu }: DashboardH
                 <img
                   src={avatarSrc}
                   alt={userName}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
               ) : (
