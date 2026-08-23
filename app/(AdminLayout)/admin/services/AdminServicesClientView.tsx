@@ -40,11 +40,14 @@ import {
   updateAddonAPI,
   deleteAddonAPI,
 } from "@/services/addonService";
+import { updatePricingConfigAPI } from "@/services/pricingService";
 
 export default function AdminServicesClientView({
   initialAddons = [],
+  initialPricing,
 }: {
   initialAddons?: any[];
+  initialPricing?: any;
 }) {
   const [services, setServices] = useState<ServiceDetail[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,13 +72,23 @@ export default function AdminServicesClientView({
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
 
   // Dynamic Pricing Multiplier Formula State
-  const [pricingSavedSuccess, setPricingSavedSuccess] = useState(false);
   const [dynamicPricingConfig, setDynamicPricingConfig] = useState({
-    baseFee: "1500",
-    sqftRate: "2.5",
-    bedroomRate: "500",
-    bathroomRate: "400",
+    baseFee: String(initialPricing?.baseFee ?? 1500),
+    sqftRate: String(initialPricing?.sqftRate ?? 2.5),
+    bedroomRate: String(initialPricing?.bedroomRate ?? 500),
+    bathroomRate: String(initialPricing?.bathroomRate ?? 400),
   });
+
+  useEffect(() => {
+    if (initialPricing) {
+      setDynamicPricingConfig({
+        baseFee: String(initialPricing.baseFee ?? 1500),
+        sqftRate: String(initialPricing.sqftRate ?? 2.5),
+        bedroomRate: String(initialPricing.bedroomRate ?? 500),
+        bathroomRate: String(initialPricing.bathroomRate ?? 400),
+      });
+    }
+  }, [initialPricing]);
 
   // Add-on Services Catalog State - Initialized directly from SSR props
   const [addonsList, setAddonsList] = useState<any[]>(initialAddons);
@@ -101,6 +114,16 @@ export default function AdminServicesClientView({
     const res = await fetchAdminAddonsAPI();
     if (res?.success && Array.isArray(res?.data)) {
       setAddonsList(res.data);
+    }
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const channel = new BroadcastChannel("cleanix_addons_channel");
+        channel.postMessage({ type: "ADDON_UPDATED", timestamp: Date.now() });
+        channel.close();
+      }
+      window.dispatchEvent(new CustomEvent("cleanix_addons_updated"));
+    } catch (e) {
+      console.error("Error broadcasting addon update:", e);
     }
   };
 
@@ -229,11 +252,30 @@ export default function AdminServicesClientView({
     setServiceToDelete(null);
   };
 
-  const handleSaveDynamicConfig = (e: React.FormEvent) => {
+  const handleSaveDynamicConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPricingSavedSuccess(true);
-    toast.success("Dynamic pricing engine formula saved successfully!");
-    setTimeout(() => setPricingSavedSuccess(false), 3000);
+    const res = await updatePricingConfigAPI({
+      baseFee: Number(dynamicPricingConfig.baseFee),
+      sqftRate: Number(dynamicPricingConfig.sqftRate),
+      bedroomRate: Number(dynamicPricingConfig.bedroomRate),
+      bathroomRate: Number(dynamicPricingConfig.bathroomRate),
+    });
+
+    if (res?.success) {
+      toast.success("Dynamic pricing engine formula saved successfully!");
+      try {
+        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("cleanix_pricing_channel");
+          channel.postMessage({ type: "PRICING_UPDATED", timestamp: Date.now() });
+          channel.close();
+        }
+        window.dispatchEvent(new CustomEvent("cleanix_pricing_updated"));
+      } catch (err) {
+        console.error("Error broadcasting pricing update:", err);
+      }
+    } else {
+      toast.error(res?.message || "Failed to update dynamic pricing formula.");
+    }
   };
 
   const toggleAddonActive = async (addon: any) => {
@@ -616,13 +658,6 @@ export default function AdminServicesClientView({
             Formula: Base Service Fee + (SqFt × Rate) + (Bedrooms × Rate) + (Bathrooms × Rate) + Addons
           </p>
         </div>
-
-        {pricingSavedSuccess && (
-          <div className="bg-emerald-50 border border-emerald-300 p-3.5 rounded-2xl text-emerald-800 text-xs font-extrabold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>Dynamic pricing engine multipliers saved successfully!</span>
-          </div>
-        )}
 
         <form onSubmit={handleSaveDynamicConfig} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="space-y-1.5">

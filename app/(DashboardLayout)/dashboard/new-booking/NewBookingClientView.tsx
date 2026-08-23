@@ -39,14 +39,19 @@ import {
   HelpCircle,
   Loader2,
 } from "lucide-react";
+import { io } from "socket.io-client";
 import { createBookingAPI } from "@/services/bookingService";
+import { fetchActiveAddonsAPI } from "@/services/addonService";
+import { fetchPricingConfigAPI } from "@/services/pricingService";
 
 export default function NewBookingClientView({
   initialLocations = [],
   initialAddons = [],
+  initialPricing,
 }: {
   initialLocations?: any[];
   initialAddons?: any[];
+  initialPricing?: any;
 }) {
   const [serviceType, setServiceType] = useState<string>("RESIDENTIAL");
   const [sqft, setSqft] = useState<number>(1200);
@@ -147,7 +152,7 @@ export default function NewBookingClientView({
   };
 
   // Dynamic Add-ons List from Backend / Props Drilling
-  const activeAddonsCatalog =
+  const [activeAddonsCatalog, setActiveAddonsCatalog] = useState<any[]>(
     initialAddons && initialAddons.length > 0
       ? initialAddons
       : [
@@ -191,7 +196,129 @@ export default function NewBookingClientView({
             tag: "PET CARE",
             iconName: "pet",
           },
-        ];
+        ]
+  );
+
+  // Sync with initialAddons prop if updated from SSR
+  useEffect(() => {
+    if (initialAddons && initialAddons.length > 0) {
+      setActiveAddonsCatalog(initialAddons);
+    }
+  }, [initialAddons]);
+
+  // Real-time synchronization (Socket.io + BroadcastChannel + Window Event Listener)
+  useEffect(() => {
+    const fetchLatestActiveAddons = async () => {
+      try {
+        const res = await fetchActiveAddonsAPI();
+        if (res?.success && Array.isArray(res?.data)) {
+          setActiveAddonsCatalog(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch active addons in real-time:", err);
+      }
+    };
+
+    // 1. Socket.io Real-time Connection
+    let socket: any = null;
+    try {
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      socket = io(serverUrl, { withCredentials: true });
+      socket.on("addon_updated", () => {
+        fetchLatestActiveAddons();
+      });
+    } catch (e) {
+      console.error("Socket connection error:", e);
+    }
+
+    // 2. BroadcastChannel cross-tab listener
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("cleanix_addons_channel");
+        channel.onmessage = () => {
+          fetchLatestActiveAddons();
+        };
+      }
+    } catch (e) {
+      console.error("BroadcastChannel error:", e);
+    }
+
+    // 3. Custom window event listener
+    const handleWindowUpdate = () => {
+      fetchLatestActiveAddons();
+    };
+    window.addEventListener("cleanix_addons_updated", handleWindowUpdate);
+
+    return () => {
+      if (socket) socket.disconnect();
+      if (channel) channel.close();
+      window.removeEventListener("cleanix_addons_updated", handleWindowUpdate);
+    };
+  }, []);
+
+  // Dynamic Pricing Config State from Backend / Props Drilling
+  const [pricingConfig, setPricingConfig] = useState<any>(
+    initialPricing || { baseFee: 1500, sqftRate: 2.5, bedroomRate: 500, bathroomRate: 400 }
+  );
+
+  useEffect(() => {
+    if (initialPricing) {
+      setPricingConfig(initialPricing);
+    }
+  }, [initialPricing]);
+
+  // Real-time pricing synchronization (Socket.io + BroadcastChannel + Window Event Listener)
+  useEffect(() => {
+    const fetchLatestPricingConfig = async () => {
+      try {
+        const res = await fetchPricingConfigAPI();
+        if (res?.success && res?.data) {
+          setPricingConfig(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch pricing config in real-time:", err);
+      }
+    };
+
+    let socket: any = null;
+    try {
+      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      socket = io(serverUrl, { withCredentials: true });
+      socket.on("pricing_updated", (data: any) => {
+        if (data && typeof data === "object") {
+          setPricingConfig(data);
+        } else {
+          fetchLatestPricingConfig();
+        }
+      });
+    } catch (e) {
+      console.error("Socket error in pricing listener:", e);
+    }
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        channel = new BroadcastChannel("cleanix_pricing_channel");
+        channel.onmessage = () => {
+          fetchLatestPricingConfig();
+        };
+      }
+    } catch (e) {
+      console.error("BroadcastChannel error in pricing listener:", e);
+    }
+
+    const handlePricingWindowUpdate = () => {
+      fetchLatestPricingConfig();
+    };
+    window.addEventListener("cleanix_pricing_updated", handlePricingWindowUpdate);
+
+    return () => {
+      if (socket) socket.disconnect();
+      if (channel) channel.close();
+      window.removeEventListener("cleanix_pricing_updated", handlePricingWindowUpdate);
+    };
+  }, []);
 
   // Helper for dynamic addon icons
   const getAddonIcon = (name: string, iconName?: string) => {
@@ -211,11 +338,11 @@ export default function NewBookingClientView({
     setSelectedAddons((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Dynamic Pricing Calculation Algorithm
-  const baseFee = 1500;
-  const sqftCost = sqft * 2.5;
-  const bedroomCost = bedrooms * 500;
-  const bathroomCost = bathrooms * 400;
+  // Dynamic Pricing Calculation Algorithm using Admin configured multipliers
+  const baseFee = pricingConfig.baseFee ?? 1500;
+  const sqftCost = sqft * (pricingConfig.sqftRate ?? 2.5);
+  const bedroomCost = bedrooms * (pricingConfig.bedroomRate ?? 500);
+  const bathroomCost = bathrooms * (pricingConfig.bathroomRate ?? 400);
 
   const addonsTotal = activeAddonsCatalog.reduce((acc: number, item: any) => {
     const key = item.slug || String(item._id);
@@ -579,7 +706,7 @@ export default function NewBookingClientView({
                         ফ্ল্যাট বা স্পেসের আয়তন
                       </h4>
                       <p className="text-sm text-slate-700 font-medium mt-1">
-                        রেট: ৳২.৫ প্রতি SqFt (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
+                        রেট: ৳{pricingConfig.sqftRate ?? 2.5} প্রতি SqFt (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
                       </p>
                     </div>
                   </div>
@@ -655,7 +782,7 @@ export default function NewBookingClientView({
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-slate-900">Bedrooms (বেডরুম)</h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳500 / Bedroom</p>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳{pricingConfig.bedroomRate ?? 500} / Bedroom</p>
                     </div>
                   </div>
 
@@ -685,7 +812,7 @@ export default function NewBookingClientView({
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-slate-900">Bathrooms (বাথরুম)</h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳400 / Bathroom</p>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳{pricingConfig.bathroomRate ?? 400} / Bathroom</p>
                     </div>
                   </div>
 
@@ -1075,15 +1202,15 @@ export default function NewBookingClientView({
                   <span className="font-bold text-slate-900">৳{baseFee.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>SqFt চার্জ ({sqft} × ৳২.৫):</span>
+                  <span>SqFt চার্জ ({sqft} × ৳{pricingConfig.sqftRate ?? 2.5}):</span>
                   <span className="font-bold text-slate-900">৳{sqftCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>বেডরুম ({bedrooms} × ৳৫০০):</span>
+                  <span>বেডরুম ({bedrooms} × ৳{pricingConfig.bedroomRate ?? 500}):</span>
                   <span className="font-bold text-slate-900">৳{bedroomCost.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>বাথরুম ({bathrooms} × ৳৪০০):</span>
+                  <span>বাথরুম ({bathrooms} × ৳{pricingConfig.bathroomRate ?? 400}):</span>
                   <span className="font-bold text-slate-900">৳{bathroomCost.toLocaleString()}</span>
                 </div>
 
