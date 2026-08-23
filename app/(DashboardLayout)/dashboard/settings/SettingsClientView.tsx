@@ -265,8 +265,14 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
                   Manage your account name, email address, and primary contact phone number.
                 </p>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                {customerData?.membershipBadge || "Customer Member"}
+              <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                customerData?.membershipBadge === 'VIP Subscriber'
+                  ? 'text-amber-800 bg-amber-50 border-amber-300'
+                  : customerData?.membershipBadge?.includes('Subscriber')
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                  : 'text-slate-700 bg-slate-100 border-slate-200'
+              }`}>
+                {customerData?.membershipBadge || "Free Member"}
               </span>
             </div>
 
