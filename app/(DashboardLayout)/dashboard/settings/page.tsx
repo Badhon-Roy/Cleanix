@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
   User,
   MapPin,
@@ -23,9 +24,12 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import AddLocationModal, { NewAddressFormData } from "@/components/dashboard/AddLocationModal";
 import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
+import { fetchCustomerProfileAPI, updateCustomerProfileAPI } from "@/services/customerService";
+import { getAuthUser, setAuthUser } from "@/utils/cookie";
 
 interface ProfileFormData {
   name: string;
@@ -44,6 +48,11 @@ export default function CustomerSettingsPage() {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [deleteAddressId, setDeleteAddressId] = useState<number | null>(null);
 
+  // Loading & Customer Profile States
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
   // Password Visibility Toggle State
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -53,12 +62,13 @@ export default function CustomerSettingsPage() {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
     watch: watchProfile,
+    reset: resetProfile,
     formState: { errors: profileErrors },
   } = useForm<ProfileFormData>({
     defaultValues: {
-      name: "Tanvir Hasan",
-      email: "tanvir.hasan@gmail.com",
-      phone: "+880 1711-223344",
+      name: "",
+      email: "",
+      phone: "",
     },
   });
 
@@ -137,10 +147,53 @@ export default function CustomerSettingsPage() {
     weeklyScheduleReminder: true,
   });
 
-  const onProfileSubmit = (data: ProfileFormData) => {
-    console.log("Profile Data Submitted via React Hook Form:", data);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3500);
+  // Fetch Customer Profile on Component Mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      setIsLoadingProfile(true);
+      const res = await fetchCustomerProfileAPI();
+      if (res?.success && res?.data) {
+        setCustomerData(res.data);
+        resetProfile({
+          name: res.data.name || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+        });
+        if (res.data.avatar) {
+          setAvatarUrl(res.data.avatar);
+        }
+      }
+      setIsLoadingProfile(false);
+    };
+
+    loadProfile();
+  }, [resetProfile]);
+
+  const onProfileSubmit = async (data: ProfileFormData) => {
+    setIsUpdatingProfile(true);
+    const res = await updateCustomerProfileAPI({
+      name: data.name,
+      phone: data.phone,
+      avatar: avatarUrl || "",
+    });
+    setIsUpdatingProfile(false);
+
+    if (res?.success) {
+      const currentUser = getAuthUser();
+      if (currentUser) {
+        setAuthUser({
+          ...currentUser,
+          name: data.name,
+          avatar: avatarUrl || currentUser.avatar,
+        });
+      }
+
+      toast.success(res.message || "Personal Information updated successfully!");
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3500);
+    } else {
+      toast.error(res?.message || "Failed to update profile!");
+    }
   };
 
   const onPasswordSubmit = (data: PasswordFormData) => {
@@ -205,7 +258,7 @@ export default function CustomerSettingsPage() {
                 </p>
               </div>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                VIP Subscriber
+                {customerData?.membershipBadge || "Customer Member"}
               </span>
             </div>
 
@@ -232,7 +285,7 @@ export default function CustomerSettingsPage() {
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#007eff] via-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl border-2 border-white">
-                    {watchedName ? watchedName.slice(0, 2).toUpperCase() : "TH"}
+                    {watchedName ? watchedName.slice(0, 2).toUpperCase() : "CU"}
                   </div>
                 )}
 
@@ -248,10 +301,10 @@ export default function CustomerSettingsPage() {
 
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  {watchedName || "Tanvir Hasan"}
+                  {watchedName || customerData?.name || "Customer"}
                 </h4>
                 <p className="text-xs text-slate-600 font-semibold">
-                  Customer VIP Account • Member since January 2026
+                  Customer Account • {customerData?.memberSince || "Member since 2026"}
                 </p>
                 <div className="pt-1 flex items-center gap-2 flex-wrap">
                   <button
@@ -363,7 +416,7 @@ export default function CustomerSettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value="Subscriber VIP (Monthly Active)"
+                  value={customerData?.membershipPlan || "Standard Customer (Active Account)"}
                   disabled
                   className="mt-2 w-full bg-slate-100/90 border border-slate-200 rounded-2xl p-3.5 sm:p-4 text-slate-600 font-bold cursor-not-allowed"
                 />
@@ -374,10 +427,20 @@ export default function CustomerSettingsPage() {
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-2xl flex items-center gap-2 transition-all hover:scale-[1.01] cursor-pointer border border-blue-400"
+                disabled={isUpdatingProfile}
+                className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-2xl flex items-center gap-2 transition-all hover:scale-[1.01] cursor-pointer border border-blue-400 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4 stroke-[2.5]" />
-                <span>Save Profile Changes</span>
+                {isUpdatingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving Changes...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 stroke-[2.5]" />
+                    <span>Save Profile Changes</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
