@@ -63,6 +63,22 @@ export const createLocationAPI = async (payload: Partial<ILocationData>) => {
   }
 };
 
+export const updateLocationAPI = async (locationId: string, payload: Partial<ILocationData>) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/locations/${locationId}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating location:", error);
+    return { success: false, message: error.message || "Failed to update location" };
+  }
+};
+
 export const setDefaultLocationAPI = async (locationId: string) => {
   try {
     const baseUrl = getBaseUrl();

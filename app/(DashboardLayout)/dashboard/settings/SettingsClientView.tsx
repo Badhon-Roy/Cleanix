@@ -567,23 +567,38 @@ export default function SettingsClientView({
                           : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
                       }`}
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                            {addr.type === "home" ? (
-                              <Home className="w-4 h-4 text-[#007eff]" />
-                            ) : (
-                              <Building className="w-4 h-4 text-indigo-600" />
-                            )}
-                            {addr.tag}
-                          </span>
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <span className="font-extrabold text-slate-900 flex items-center gap-2 text-base">
+                              {addr.type === "home" ? (
+                                <Home className="w-4.5 h-4.5 text-[#007eff]" />
+                              ) : (
+                                <Building className="w-4.5 h-4.5 text-indigo-600" />
+                              )}
+                              <span>{addr.tag}</span>
+                            </span>
+
+                            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200">
+                              <span className="text-slate-500">Property Type:</span>
+                              <span className="text-slate-900 font-extrabold capitalize">
+                                {addr.type === "home"
+                                  ? "Home / Apartment"
+                                  : addr.type === "office"
+                                  ? "Commercial Office"
+                                  : addr.type || "Home"}
+                              </span>
+                            </div>
+                          </div>
+
                           {addr.isDefault && (
-                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500 text-white">
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500 text-white flex-shrink-0">
                               Primary
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600 font-medium leading-relaxed">
+
+                        <p className="text-xs text-slate-600 font-medium leading-relaxed pt-0.5">
                           {addr.street}, {addr.area}, {addr.city} - {addr.zip || "1200"}
                         </p>
                       </div>
