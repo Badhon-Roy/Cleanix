@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ShieldCheck,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -848,8 +849,8 @@ export default function RegisterPage() {
                       />
                     </div>
                     {formErrors.fullName && (
-                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                        <span>⚠️</span>
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                         <span>{formErrors.fullName.message}</span>
                       </p>
                     )}
@@ -896,8 +897,8 @@ export default function RegisterPage() {
                         />
                       </div>
                       {formErrors.email && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{formErrors.email.message}</span>
                         </p>
                       )}
@@ -926,8 +927,8 @@ export default function RegisterPage() {
                         />
                       </div>
                       {formErrors.phone && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{formErrors.phone.message}</span>
                         </p>
                       )}
@@ -974,8 +975,8 @@ export default function RegisterPage() {
                         </button>
                       </div>
                       {formErrors.password && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{formErrors.password.message}</span>
                         </p>
                       )}
@@ -1022,8 +1023,8 @@ export default function RegisterPage() {
                         </button>
                       </div>
                       {formErrors.confirmPassword && (
-                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                          <span>⚠️</span>
+                        <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>{formErrors.confirmPassword.message}</span>
                         </p>
                       )}

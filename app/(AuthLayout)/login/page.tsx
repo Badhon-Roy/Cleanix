@@ -16,6 +16,7 @@ import {
   Clock,
   MapPin,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -309,8 +310,8 @@ export default function LoginPage() {
                   />
                 </div>
                 {loginErrors.email && (
-                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                    <span>⚠️</span>
+                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{loginErrors.email.message}</span>
                   </p>
                 )}
@@ -358,8 +359,8 @@ export default function LoginPage() {
                   </button>
                 </div>
                 {loginErrors.password && (
-                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1">
-                    <span>⚠️</span>
+                  <p className="text-red-500 text-xs font-semibold mt-1.5 ml-3 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{loginErrors.password.message}</span>
                   </p>
                 )}
