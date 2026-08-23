@@ -72,7 +72,8 @@ export default function NewBookingClientView({
   // Pre-fill address from default location if available
   useEffect(() => {
     if (initialLocations && initialLocations.length > 0) {
-      const defaultLoc = initialLocations.find((l) => l.isDefault) || initialLocations[0];
+      const defaultLoc =
+        initialLocations.find((l) => l.isDefault) || initialLocations[0];
       if (defaultLoc) {
         const fullAddr = `${defaultLoc.street}, ${defaultLoc.area}, ${defaultLoc.city}${defaultLoc.zip ? ` - ${defaultLoc.zip}` : ""}`;
         setAddress(fullAddr);
@@ -100,7 +101,9 @@ export default function NewBookingClientView({
       tag: "MORNING",
       sub: "সকালের প্রথম শিফট",
       renderIcon: (active: boolean) => (
-        <Sunrise className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`} />
+        <Sunrise
+          className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`}
+        />
       ),
     },
     {
@@ -109,7 +112,9 @@ export default function NewBookingClientView({
       tag: "MID-DAY",
       sub: "দুপুরের শিফট",
       renderIcon: (active: boolean) => (
-        <Sun className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`} />
+        <Sun
+          className={`w-4 h-4 ${active ? "text-white" : "text-amber-500"}`}
+        />
       ),
     },
     {
@@ -118,7 +123,9 @@ export default function NewBookingClientView({
       tag: "AFTERNOON",
       sub: "বিকেলের শিফট",
       renderIcon: (active: boolean) => (
-        <Sun className={`w-4 h-4 ${active ? "text-white" : "text-orange-500"}`} />
+        <Sun
+          className={`w-4 h-4 ${active ? "text-white" : "text-orange-500"}`}
+        />
       ),
     },
     {
@@ -127,7 +134,9 @@ export default function NewBookingClientView({
       tag: "EVENING",
       sub: "সন্ধ্যা শিফট",
       renderIcon: (active: boolean) => (
-        <Sunset className={`w-4 h-4 ${active ? "text-white" : "text-[#007eff]"}`} />
+        <Sunset
+          className={`w-4 h-4 ${active ? "text-white" : "text-[#007eff]"}`}
+        />
       ),
     },
   ];
@@ -135,7 +144,10 @@ export default function NewBookingClientView({
   // Close custom dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node)
+      ) {
         setCalendarOpen(false);
       }
       if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
@@ -151,7 +163,10 @@ export default function NewBookingClientView({
     RESIDENTIAL: { name: "Residential Home", sub: "বাসাবাড়ি ও অ্যাপার্টমেন্ট" },
     COMMERCIAL: { name: "Commercial Office", sub: "অফিস ও কর্পোরেট স্পেস" },
     MOVE_IN_OUT: { name: "Move-In / Out", sub: "বাসা শিফটিং ডিপ ক্লিন" },
-    POST_CONSTRUCTION: { name: "Post Construction", sub: "নতুন বিল্ডিং ফিনিশিং" },
+    POST_CONSTRUCTION: {
+      name: "Post Construction",
+      sub: "নতুন বিল্ডিং ফিনিশিং",
+    },
   };
 
   // Dynamic Add-ons List from Backend / Props Drilling
@@ -199,7 +214,7 @@ export default function NewBookingClientView({
             tag: "PET CARE",
             iconName: "pet",
           },
-        ]
+        ],
   );
 
   // Sync with initialAddons prop if updated from SSR
@@ -225,7 +240,8 @@ export default function NewBookingClientView({
     // 1. Socket.io Real-time Connection
     let socket: any = null;
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      const serverUrl =
+        process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
       socket = io(serverUrl, { withCredentials: true });
       socket.on("addon_updated", () => {
         fetchLatestActiveAddons();
@@ -262,7 +278,12 @@ export default function NewBookingClientView({
 
   // Dynamic Pricing Config State from Backend / Props Drilling
   const [pricingConfig, setPricingConfig] = useState<any>(
-    initialPricing || { baseFee: 1500, sqftRate: 2.5, bedroomRate: 500, bathroomRate: 400 }
+    initialPricing || {
+      baseFee: 1500,
+      sqftRate: 2.5,
+      bedroomRate: 500,
+      bathroomRate: 400,
+    },
   );
 
   useEffect(() => {
@@ -286,7 +307,8 @@ export default function NewBookingClientView({
 
     let socket: any = null;
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      const serverUrl =
+        process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
       socket = io(serverUrl, { withCredentials: true });
       socket.on("pricing_updated", (data: any) => {
         if (data && typeof data === "object") {
@@ -314,17 +336,25 @@ export default function NewBookingClientView({
     const handlePricingWindowUpdate = () => {
       fetchLatestPricingConfig();
     };
-    window.addEventListener("cleanix_pricing_updated", handlePricingWindowUpdate);
+    window.addEventListener(
+      "cleanix_pricing_updated",
+      handlePricingWindowUpdate,
+    );
 
     return () => {
       if (socket) socket.disconnect();
       if (channel) channel.close();
-      window.removeEventListener("cleanix_pricing_updated", handlePricingWindowUpdate);
+      window.removeEventListener(
+        "cleanix_pricing_updated",
+        handlePricingWindowUpdate,
+      );
     };
   }, []);
 
   // Core Services Catalog State & Real-time Listener (Socket.io + BroadcastChannel + Window Event)
-  const [coreServicesList, setCoreServicesList] = useState<any[]>(initialCoreServices || []);
+  const [coreServicesList, setCoreServicesList] = useState<any[]>(
+    initialCoreServices || [],
+  );
 
   useEffect(() => {
     if (initialCoreServices && initialCoreServices.length > 0) {
@@ -340,14 +370,18 @@ export default function NewBookingClientView({
           setCoreServicesList(res.data);
         }
       } catch (err) {
-        console.error("Failed to fetch active core services in real-time:", err);
+        console.error(
+          "Failed to fetch active core services in real-time:",
+          err,
+        );
       }
     };
 
     // 1. Socket.io Listener
     let socket: any = null;
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+      const serverUrl =
+        process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
       socket = io(serverUrl, { withCredentials: true });
       socket.on("service_catalog_updated", () => {
         fetchLatestActiveServices();
@@ -378,32 +412,58 @@ export default function NewBookingClientView({
     return () => {
       if (socket) socket.disconnect();
       if (channel) channel.close();
-      window.removeEventListener("cleanix_services_updated", handleServicesUpdate);
+      window.removeEventListener(
+        "cleanix_services_updated",
+        handleServicesUpdate,
+      );
     };
   }, []);
 
   const getCategoryIcon = (category: string, title: string, slug: string) => {
     const text = `${category} ${title} ${slug}`.toLowerCase();
-    if (text.includes("commercial") || text.includes("office")) return <Building2 className="w-6 h-6 stroke-[2]" />;
-    if (text.includes("move") || text.includes("out") || text.includes("relocation")) return <Truck className="w-6 h-6 stroke-[2]" />;
-    if (text.includes("construction") || text.includes("build") || text.includes("renovation")) return <HardHat className="w-6 h-6 stroke-[2]" />;
-    if (text.includes("sofa") || text.includes("carpet") || text.includes("furniture")) return <Sofa className="w-6 h-6 stroke-[2]" />;
+    if (text.includes("commercial") || text.includes("office"))
+      return <Building2 className="w-6 h-6 stroke-[2]" />;
+    if (
+      text.includes("move") ||
+      text.includes("out") ||
+      text.includes("relocation")
+    )
+      return <Truck className="w-6 h-6 stroke-[2]" />;
+    if (
+      text.includes("construction") ||
+      text.includes("build") ||
+      text.includes("renovation")
+    )
+      return <HardHat className="w-6 h-6 stroke-[2]" />;
+    if (
+      text.includes("sofa") ||
+      text.includes("carpet") ||
+      text.includes("furniture")
+    )
+      return <Sofa className="w-6 h-6 stroke-[2]" />;
     return <Home className="w-6 h-6 stroke-[2]" />;
   };
 
   // Helper for dynamic addon icons
   const getAddonIcon = (name: string, iconName?: string) => {
     const key = (iconName || name).toLowerCase();
-    if (key.includes("sofa") || key.includes("carpet")) return <Sofa className="w-6 h-6 stroke-[2]" />;
-    if (key.includes("oven") || key.includes("kitchen")) return <UtensilsCrossed className="w-6 h-6 stroke-[2]" />;
-    if (key.includes("fridge") || key.includes("refrigerator")) return <Wind className="w-6 h-6 stroke-[2]" />;
-    if (key.includes("window") || key.includes("glass")) return <Sparkles className="w-6 h-6 stroke-[2]" />;
-    if (key.includes("pet")) return <ShieldAlert className="w-6 h-6 stroke-[2]" />;
+    if (key.includes("sofa") || key.includes("carpet"))
+      return <Sofa className="w-6 h-6 stroke-[2]" />;
+    if (key.includes("oven") || key.includes("kitchen"))
+      return <UtensilsCrossed className="w-6 h-6 stroke-[2]" />;
+    if (key.includes("fridge") || key.includes("refrigerator"))
+      return <Wind className="w-6 h-6 stroke-[2]" />;
+    if (key.includes("window") || key.includes("glass"))
+      return <Sparkles className="w-6 h-6 stroke-[2]" />;
+    if (key.includes("pet"))
+      return <ShieldAlert className="w-6 h-6 stroke-[2]" />;
     return <Sparkles className="w-6 h-6 stroke-[2]" />;
   };
 
   // Selected add-ons state
-  const [selectedAddons, setSelectedAddons] = useState<Record<string, boolean>>({});
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const toggleAddon = (key: string) => {
     setSelectedAddons((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -419,13 +479,13 @@ export default function NewBookingClientView({
 
   // Selected Category Object
   const selectedCategoryObj = coreServicesList.find(
-    (s) => s.slug === serviceType || s.category === serviceType
+    (s) => s.slug === serviceType || s.category === serviceType,
   );
 
   // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
   const baseFee = selectedCategoryObj?.price
     ? parsePriceNumber(selectedCategoryObj.price, pricingConfig.baseFee ?? 1500)
-    : pricingConfig.baseFee ?? 1500;
+    : (pricingConfig.baseFee ?? 1500);
 
   const sqftCost = sqft * (pricingConfig.sqftRate ?? 2.5);
   const bedroomCost = bedrooms * (pricingConfig.bedroomRate ?? 500);
@@ -439,7 +499,8 @@ export default function NewBookingClientView({
     return acc;
   }, 0);
 
-  const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
+  const totalAmount =
+    baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -451,7 +512,7 @@ export default function NewBookingClientView({
     setIsSubmitting(true);
 
     const activeAddonsList = Object.keys(selectedAddons).filter(
-      (key) => selectedAddons[key]
+      (key) => selectedAddons[key],
     );
 
     const payload = {
@@ -485,20 +546,48 @@ export default function NewBookingClientView({
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   };
 
   // Custom Calendar Calculation Helper
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-  const firstDayOfWeek = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+  const daysInMonth = new Date(
+    currentCalendarYear,
+    currentCalendarMonth + 1,
+    0,
+  ).getDate();
+  const firstDayOfWeek = new Date(
+    currentCalendarYear,
+    currentCalendarMonth,
+    1,
+  ).getDay();
 
   const handlePrevMonth = () => {
     if (currentCalendarMonth === 0) {
@@ -553,7 +642,8 @@ export default function NewBookingClientView({
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            আপনার ফ্ল্যাট বা অফিসের সাইজ অনুযায়ী কাস্টমাইজড ক্লিন সার্ভিস শিডিউল করুন এবং ইনস্ট্যান্ট কোট পান।
+            আপনার ফ্ল্যাট বা অফিসের সাইজ অনুযায়ী কাস্টমাইজড ক্লিন সার্ভিস শিডিউল
+            করুন এবং ইনস্ট্যান্ট কোট পান।
           </p>
         </div>
 
@@ -578,7 +668,8 @@ export default function NewBookingClientView({
                 কখন New Booking এবং কখন Subscription সার্ভিস নেবেন?
               </h3>
               <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                আপনার প্রয়োজন অনুযায়ী সবচেয়ে উপযোগী ও সাশ্রয়ী অপশনটি বেছে নিতে নিচের গাইডটি সাহায্য করবে:
+                আপনার প্রয়োজন অনুযায়ী সবচেয়ে উপযোগী ও সাশ্রয়ী অপশনটি বেছে নিতে
+                নিচের গাইডটি সাহায্য করবে:
               </p>
             </div>
           </div>
@@ -603,7 +694,8 @@ export default function NewBookingClientView({
                 New Booking (এককালীন / অন-ডিমান্ড)
               </h4>
               <p className="text-sm text-slate-600 font-semibold leading-relaxed mt-1">
-                হঠাৎ জরুরি প্রয়োজনে, কোনো ইভেন্টের আগে তাৎক্ষণিক ডিপ ক্লিন, বাসা শিফটিং বা অতিরিক্ত কাস্টম কাজের জন্য বুক করুন।
+                হঠাৎ জরুরি প্রয়োজনে, কোনো ইভেন্টের আগে তাৎক্ষণিক ডিপ ক্লিন, বাসা
+                শিফটিং বা অতিরিক্ত কাস্টম কাজের জন্য বুক করুন।
               </p>
             </div>
           </div>
@@ -618,7 +710,8 @@ export default function NewBookingClientView({
                 Subscription (মাসিক রুটিন প্ল্যান)
               </h4>
               <p className="text-sm text-slate-600 font-semibold leading-relaxed mt-1">
-                প্রতি সপ্তাহে বা মাসে ২-৪ বার ফিক্সড শিডিউলে বাসা বা অফিস নিয়মিত পরিষ্কার রাখতে সবচেয়ে সাশ্রয়ী মাসিক প্ল্যান বেছে নিন।
+                প্রতি সপ্তাহে বা মাসে ২-৪ বার ফিক্সড শিডিউলে বাসা বা অফিস নিয়মিত
+                পরিষ্কার রাখতে সবচেয়ে সাশ্রয়ী মাসিক প্ল্যান বেছে নিন।
               </p>
             </div>
           </div>
@@ -640,7 +733,12 @@ export default function NewBookingClientView({
               Booking Confirmed & Time Slot Locked! 🎉
             </h2>
             <p className="text-sm text-slate-600 font-medium leading-relaxed">
-              আপনার শিডিউলকৃত সার্ভিস <strong className="text-slate-900 font-bold">{scheduledDate} ({timeSlot})</strong> সময়সীমার জন্য বুক করা হয়েছে। কনফার্মেশন ইনভয়েস ইমেইলে পাঠিয়ে দেওয়া হয়েছে।
+              আপনার শিডিউলকৃত সার্ভিস{" "}
+              <strong className="text-slate-900 font-bold">
+                {scheduledDate} ({timeSlot})
+              </strong>{" "}
+              সময়সীমার জন্য বুক করা হয়েছে। কনফার্মেশন ইনভয়েস ইমেইলে পাঠিয়ে দেওয়া
+              হয়েছে।
             </p>
           </div>
 
@@ -664,7 +762,10 @@ export default function NewBookingClientView({
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <form
+          onSubmit={handleSubmitBooking}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+        >
           {/* Left Configuration Column (8 Cols) */}
           <div className="lg:col-span-8 space-y-6">
             {/* STEP 1: Service Category Selector */}
@@ -684,7 +785,8 @@ export default function NewBookingClientView({
               {/* Grid of Dynamic Category Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {coreServicesList.map((s) => {
-                  const isSelected = serviceType === s.slug || serviceType === s.category;
+                  const isSelected =
+                    serviceType === s.slug || serviceType === s.category;
                   return (
                     <button
                       key={s.slug}
@@ -708,30 +810,24 @@ export default function NewBookingClientView({
                         )
                       )}
 
-                      <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                          isSelected
-                            ? "bg-white/20 text-white backdrop-blur-md"
-                            : "bg-blue-50 text-[#007eff] border border-blue-200 group-hover:scale-105"
-                        }`}
-                      >
-                        {getCategoryIcon(s.category, s.title, s.slug)}
-                      </div>
-
-                      <div>
+                      <div className="pt-8">
                         <p
                           className={`text-base font-bold leading-snug ${
-                            isSelected ? "text-white" : "text-slate-900 group-hover:text-[#007eff]"
+                            isSelected
+                              ? "text-white"
+                              : "text-slate-900 group-hover:text-[#007eff]"
                           }`}
                         >
                           {s.title.split("(")[0].trim()}
                         </p>
                         <p
-                          className={`text-xs font-semibold mt-1 line-clamp-1 ${
+                          className={`text-xs font-semibold mt-2 line-clamp-1 ${
                             isSelected ? "text-blue-100" : "text-slate-500"
                           }`}
                         >
-                          {s.shortDesc || s.introParagraph1 || "সম্পূর্ণ সার্ভিস প্রসেস"}
+                          {s.shortDesc ||
+                            s.introParagraph1 ||
+                            "সম্পূর্ণ সার্ভিস প্রসেস"}
                         </p>
                       </div>
                     </button>
@@ -766,7 +862,8 @@ export default function NewBookingClientView({
                         ফ্ল্যাট বা স্পেসের আয়তন
                       </h4>
                       <p className="text-sm text-slate-700 font-medium mt-1">
-                        রেট: ৳{pricingConfig.sqftRate ?? 2.5} প্রতি SqFt (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
+                        রেট: ৳{pricingConfig.sqftRate ?? 2.5} প্রতি SqFt
+                        (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
                       </p>
                     </div>
                   </div>
@@ -778,7 +875,8 @@ export default function NewBookingClientView({
                       max={20000}
                       value={sqft === 0 ? "" : sqft}
                       onChange={(e) => {
-                        const val = e.target.value === "" ? 0 : Number(e.target.value);
+                        const val =
+                          e.target.value === "" ? 0 : Number(e.target.value);
                         if (!isNaN(val)) {
                           setSqft(val);
                         }
@@ -809,7 +907,9 @@ export default function NewBookingClientView({
                 </div>
 
                 <div className="pt-2 border-t border-slate-200/80 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-slate-500 mr-1">দ্রুত নির্বাচন করুন:</span>
+                  <span className="text-xs font-bold text-slate-500 mr-1">
+                    দ্রুত নির্বাচন করুন:
+                  </span>
                   {[
                     { label: "600 SqFt (1 Bed)", val: 600 },
                     { label: "1,200 SqFt (2 Bed)", val: 1200 },
@@ -841,8 +941,12 @@ export default function NewBookingClientView({
                       <BedDouble className="w-6 h-6 stroke-[2.5]" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-slate-900">Bedrooms (বেডরুম)</h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳{pricingConfig.bedroomRate ?? 500} / Bedroom</p>
+                      <h4 className="text-base font-bold text-slate-900">
+                        Bedrooms (বেডরুম)
+                      </h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                        ৳{pricingConfig.bedroomRate ?? 500} / Bedroom
+                      </p>
                     </div>
                   </div>
 
@@ -854,7 +958,9 @@ export default function NewBookingClientView({
                     >
                       <Minus className="w-4 h-4 stroke-[2.5]" />
                     </button>
-                    <span className="text-xl font-bold text-slate-900 w-8 text-center">{bedrooms}</span>
+                    <span className="text-xl font-bold text-slate-900 w-8 text-center">
+                      {bedrooms}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setBedrooms(bedrooms + 1)}
@@ -871,8 +977,12 @@ export default function NewBookingClientView({
                       <Bath className="w-6 h-6 stroke-[2.5]" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-slate-900">Bathrooms (বাথরুম)</h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">৳{pricingConfig.bathroomRate ?? 400} / Bathroom</p>
+                      <h4 className="text-base font-bold text-slate-900">
+                        Bathrooms (বাথরুম)
+                      </h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                        ৳{pricingConfig.bathroomRate ?? 400} / Bathroom
+                      </p>
                     </div>
                   </div>
 
@@ -884,7 +994,9 @@ export default function NewBookingClientView({
                     >
                       <Minus className="w-4 h-4 stroke-[2.5]" />
                     </button>
-                    <span className="text-xl font-bold text-slate-900 w-8 text-center">{bathrooms}</span>
+                    <span className="text-xl font-bold text-slate-900 w-8 text-center">
+                      {bathrooms}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setBathrooms(bathrooms + 1)}
@@ -939,7 +1051,9 @@ export default function NewBookingClientView({
                         <div>
                           <p
                             className={`text-base font-bold leading-snug ${
-                              isChecked ? "text-white" : "text-slate-900 group-hover:text-emerald-600"
+                              isChecked
+                                ? "text-white"
+                                : "text-slate-900 group-hover:text-emerald-600"
                             }`}
                           >
                             {item.name}
@@ -986,14 +1100,17 @@ export default function NewBookingClientView({
                   </span>
                   Schedule & Location (তারিখ ও ঠিকানা)
                 </h3>
-                <span className="text-xs font-bold text-slate-500">ধাপ ৪ / ৪</span>
+                <span className="text-xs font-bold text-slate-500">
+                  ধাপ ৪ / ৪
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
                 {/* COMPACT CUSTOM REACT CALENDAR CONTAINER */}
                 <div className="space-y-2 relative" ref={calendarRef}>
                   <label className="font-bold text-slate-800 flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-[#007eff]" /> তারিখ নির্বাচন করুন:
+                    <CalendarIcon className="w-4 h-4 text-[#007eff]" /> তারিখ
+                    নির্বাচন করুন:
                   </label>
 
                   <div
@@ -1026,7 +1143,8 @@ export default function NewBookingClientView({
                           <ChevronLeft className="w-3.5 h-3.5 stroke-[2.5]" />
                         </button>
                         <span className="font-bold text-slate-900 text-xs sm:text-sm">
-                          {monthNames[currentCalendarMonth]} {currentCalendarYear}
+                          {monthNames[currentCalendarMonth]}{" "}
+                          {currentCalendarYear}
                         </span>
                         <button
                           type="button"
@@ -1048,16 +1166,21 @@ export default function NewBookingClientView({
                       </div>
 
                       <div className="grid grid-cols-7 gap-1 text-center">
-                        {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
-                          <div key={`empty-${idx}`} className="h-7" />
-                        ))}
+                        {Array.from({ length: firstDayOfWeek }).map(
+                          (_, idx) => (
+                            <div key={`empty-${idx}`} className="h-7" />
+                          ),
+                        )}
 
                         {Array.from({ length: daysInMonth }).map((_, idx) => {
                           const dayNum = idx + 1;
-                          const mStr = String(currentCalendarMonth + 1).padStart(2, "0");
+                          const mStr = String(
+                            currentCalendarMonth + 1,
+                          ).padStart(2, "0");
                           const dStr = String(dayNum).padStart(2, "0");
                           const thisDateFormatted = `${currentCalendarYear}-${mStr}-${dStr}`;
-                          const isSelected = scheduledDate === thisDateFormatted;
+                          const isSelected =
+                            scheduledDate === thisDateFormatted;
                           const isToday = thisDateFormatted === "2026-08-21";
 
                           return (
@@ -1069,8 +1192,8 @@ export default function NewBookingClientView({
                                 isSelected
                                   ? "bg-[#007eff] text-white font-extrabold shadow-sm scale-105"
                                   : isToday
-                                  ? "border border-[#007eff] text-[#007eff] font-bold bg-blue-50/50"
-                                  : "text-slate-700 hover:bg-blue-50 hover:text-[#007eff]"
+                                    ? "border border-[#007eff] text-[#007eff] font-bold bg-blue-50/50"
+                                    : "text-slate-700 hover:bg-blue-50 hover:text-[#007eff]"
                               }`}
                             >
                               {dayNum}
@@ -1104,7 +1227,8 @@ export default function NewBookingClientView({
                 {/* TIME SLOT SELECTOR */}
                 <div className="space-y-2 relative" ref={timeRef}>
                   <label className="font-bold text-slate-800 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#007eff]" /> সময় নির্ধারণ করুন:
+                    <Clock className="w-4 h-4 text-[#007eff]" /> সময় নির্ধারণ
+                    করুন:
                   </label>
 
                   <div
@@ -1118,7 +1242,9 @@ export default function NewBookingClientView({
                       <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#007eff] flex items-center justify-center group-hover:scale-105 transition-transform">
                         <Clock className="w-4 h-4 stroke-[2.5]" />
                       </div>
-                      <span className="font-bold text-slate-900 text-sm">{timeSlot}</span>
+                      <span className="font-bold text-slate-900 text-sm">
+                        {timeSlot}
+                      </span>
                     </div>
 
                     <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5]" />
@@ -1159,10 +1285,14 @@ export default function NewBookingClientView({
                                   {option.renderIcon(isSelected)}
                                 </div>
                                 <div>
-                                  <p className={`text-xs font-extrabold ${isSelected ? "text-[#007eff]" : "text-slate-900"}`}>
+                                  <p
+                                    className={`text-xs font-extrabold ${isSelected ? "text-[#007eff]" : "text-slate-900"}`}
+                                  >
                                     {option.label}
                                   </p>
-                                  <p className={`text-[10px] font-medium ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
+                                  <p
+                                    className={`text-[10px] font-medium ${isSelected ? "text-blue-100" : "text-slate-500"}`}
+                                  >
                                     {option.sub}
                                   </p>
                                 </div>
@@ -1186,7 +1316,8 @@ export default function NewBookingClientView({
               <div className="space-y-2 text-xs sm:text-sm pt-2">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-slate-800 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#007eff]" /> সার্ভিস লোকেশন ঠিকানা:
+                    <MapPin className="w-4 h-4 text-[#007eff]" /> সার্ভিস লোকেশন
+                    ঠিকানা:
                   </label>
                   {initialLocations && initialLocations.length > 0 && (
                     <span className="text-[11px] font-bold text-[#007eff]">
@@ -1242,40 +1373,72 @@ export default function NewBookingClientView({
                 <span className="text-xs font-bold uppercase tracking-wider text-[#007eff] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                   LIVE CALCULATION
                 </span>
-                <h3 className="text-2xl font-bold text-slate-900 mt-2">Instant Bill Summary</h3>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">স্বয়ংক্রিয় রিয়েল-টাইম হিসাব</p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-2">
+                  Instant Bill Summary
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  স্বয়ংক্রিয় রিয়েল-টাইম হিসাব
+                </p>
               </div>
 
               {/* Itemized Calculation Breakdown Table */}
               <div className="space-y-3 text-xs sm:text-sm border-y border-slate-100 py-4 font-medium">
                 <div className="flex justify-between items-center bg-blue-50/80 p-3 rounded-2xl border border-blue-200 mb-2">
                   <span className="text-slate-700 font-bold flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-[#007eff]" /> Selected Category:
+                    <Tag className="w-4 h-4 text-[#007eff]" /> Selected
+                    Category:
                   </span>
                   <span className="font-bold text-[#007eff] text-xs uppercase bg-white px-2.5 py-1 rounded-xl border border-blue-200">
-                    {coreServicesList.find((s) => s.slug === serviceType || s.category === serviceType)
-                      ?.title.split("(")[0].trim() || serviceType}
+                    {coreServicesList
+                      .find(
+                        (s) =>
+                          s.slug === serviceType || s.category === serviceType,
+                      )
+                      ?.title.split("(")[0]
+                      .trim() || serviceType}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-slate-600">
-                  <span>বেসিক সার্ভিস ফি ({selectedCategoryObj ? selectedCategoryObj.title.split("(")[0].trim() : "ক্যাটাগরি"}):</span>
-                  <span className="font-bold text-slate-900">৳{baseFee.toLocaleString()}</span>
+                  <span>
+                    বেসিক সার্ভিস ফি (
+                    {selectedCategoryObj
+                      ? selectedCategoryObj.title.split("(")[0].trim()
+                      : "ক্যাটাগরি"}
+                    ):
+                  </span>
+                  <span className="font-bold text-slate-900">
+                    ৳{baseFee.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>SqFt চার্জ ({sqft} × ৳{pricingConfig.sqftRate ?? 2.5}):</span>
-                  <span className="font-bold text-slate-900">৳{sqftCost.toLocaleString()}</span>
+                  <span>
+                    SqFt চার্জ ({sqft} × ৳{pricingConfig.sqftRate ?? 2.5}):
+                  </span>
+                  <span className="font-bold text-slate-900">
+                    ৳{sqftCost.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>বেডরুম ({bedrooms} × ৳{pricingConfig.bedroomRate ?? 500}):</span>
-                  <span className="font-bold text-slate-900">৳{bedroomCost.toLocaleString()}</span>
+                  <span>
+                    বেডরুম ({bedrooms} × ৳{pricingConfig.bedroomRate ?? 500}):
+                  </span>
+                  <span className="font-bold text-slate-900">
+                    ৳{bedroomCost.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>বাথরুম ({bathrooms} × ৳{pricingConfig.bathroomRate ?? 400}):</span>
-                  <span className="font-bold text-slate-900">৳{bathroomCost.toLocaleString()}</span>
+                  <span>
+                    বাথরুম ({bathrooms} × ৳{pricingConfig.bathroomRate ?? 400}):
+                  </span>
+                  <span className="font-bold text-slate-900">
+                    ৳{bathroomCost.toLocaleString()}
+                  </span>
                 </div>
 
-                {activeAddonsCatalog.some((item: any) => selectedAddons[item.slug || String(item._id)]) && (
+                {activeAddonsCatalog.some(
+                  (item: any) => selectedAddons[item.slug || String(item._id)],
+                ) && (
                   <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
                     {activeAddonsCatalog.map((item: any) => {
                       const key = item.slug || String(item._id);
@@ -1286,7 +1449,9 @@ export default function NewBookingClientView({
                           className="flex justify-between text-emerald-800 font-semibold"
                         >
                           <span>+ {item.name}:</span>
-                          <span className="font-bold text-emerald-700">+৳{(item.price || 0).toLocaleString()}</span>
+                          <span className="font-bold text-emerald-700">
+                            +৳{(item.price || 0).toLocaleString()}
+                          </span>
                         </div>
                       );
                     })}
@@ -1295,7 +1460,9 @@ export default function NewBookingClientView({
 
                 <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-base sm:text-lg font-bold text-slate-900">
                   <span>মোট প্রদেয় বিল:</span>
-                  <span className="text-[#007eff] text-2xl font-bold">৳{totalAmount.toLocaleString()}</span>
+                  <span className="text-[#007eff] text-2xl font-bold">
+                    ৳{totalAmount.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
@@ -1303,14 +1470,16 @@ export default function NewBookingClientView({
               <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl text-xs text-blue-900 flex items-start gap-2.5">
                 <Lock className="w-4 h-4 text-[#007eff]" />
                 <span className="font-semibold leading-relaxed">
-                  <strong>১০-মিনিট Time Slot Lock:</strong> বুকিং কনফার্ম করলে উক্ত সময়সূচীতে আপনার টিমের ক্লিন টিম রিজার্ভ রাখা হবে।
+                  <strong>১০-মিনিট Time Slot Lock:</strong> বুকিং কনফার্ম করলে
+                  উক্ত সময়সূচীতে আপনার টিমের ক্লিন টিম রিজার্ভ রাখা হবে।
                 </span>
               </div>
 
               {/* Payment Method Selector */}
               <div className="space-y-2.5 text-xs sm:text-sm">
                 <label className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <CreditCard className="w-4 h-4 text-[#007eff]" /> পেমেন্ট মেথড নির্বাচন করুন:
+                  <CreditCard className="w-4 h-4 text-[#007eff]" /> পেমেন্ট মেথড
+                  নির্বাচন করুন:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
