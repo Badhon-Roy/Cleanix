@@ -59,7 +59,11 @@ export default function NewBookingClientView({
   initialPricing?: any;
   initialCoreServices?: any[];
 }) {
-  const [serviceType, setServiceType] = useState<string>("RESIDENTIAL");
+  const [serviceType, setServiceType] = useState<string>(
+    initialCoreServices && initialCoreServices.length > 0
+      ? initialCoreServices[0].slug || initialCoreServices[0].category || ""
+      : ""
+  );
   const [sqft, setSqft] = useState<number>(1200);
   const [bedrooms, setBedrooms] = useState<number>(3);
   const [bathrooms, setBathrooms] = useState<number>(2);
@@ -71,6 +75,7 @@ export default function NewBookingClientView({
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<any>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
   // Pre-fill address from default location if available
   useEffect(() => {
@@ -365,6 +370,19 @@ export default function NewBookingClientView({
     }
   }, [initialCoreServices]);
 
+  // Auto-select first service category if serviceType is empty or invalid
+  useEffect(() => {
+    if (coreServicesList && coreServicesList.length > 0) {
+      const exists = coreServicesList.some(
+        (s) => s.slug === serviceType || s._id === serviceType || s.category === serviceType
+      );
+      if (!serviceType || !exists) {
+        const first = coreServicesList[0];
+        setServiceType(first.slug || first._id || first.category || "");
+      }
+    }
+  }, [coreServicesList, serviceType]);
+
   useEffect(() => {
     const fetchLatestActiveServices = async () => {
       try {
@@ -421,31 +439,6 @@ export default function NewBookingClientView({
       );
     };
   }, []);
-
-  const getCategoryIcon = (category: string, title: string, slug: string) => {
-    const text = `${category} ${title} ${slug}`.toLowerCase();
-    if (text.includes("commercial") || text.includes("office"))
-      return <Building2 className="w-6 h-6 stroke-[2]" />;
-    if (
-      text.includes("move") ||
-      text.includes("out") ||
-      text.includes("relocation")
-    )
-      return <Truck className="w-6 h-6 stroke-[2]" />;
-    if (
-      text.includes("construction") ||
-      text.includes("build") ||
-      text.includes("renovation")
-    )
-      return <HardHat className="w-6 h-6 stroke-[2]" />;
-    if (
-      text.includes("sofa") ||
-      text.includes("carpet") ||
-      text.includes("furniture")
-    )
-      return <Sofa className="w-6 h-6 stroke-[2]" />;
-    return <Home className="w-6 h-6 stroke-[2]" />;
-  };
 
   // Helper for dynamic addon icons
   const getAddonIcon = (name: string, iconName?: string) => {
@@ -515,6 +508,59 @@ export default function NewBookingClientView({
     };
   }, []);
 
+  // Synchronize customFieldValues when serviceType or selectedServiceObj changes
+  const selectedServiceObj = coreServicesList.find(
+    (s) => s.slug === serviceType || s.category === serviceType || s._id === serviceType,
+  );
+
+  useEffect(() => {
+    if (!selectedServiceObj) return;
+    const fields = selectedServiceObj.fields || [];
+    setCustomFieldValues((prev) => {
+      const next: Record<string, any> = { ...prev };
+      fields.forEach((f: any) => {
+        if (next[f.id] === undefined || next[f.id] === null) {
+          if (f.fieldType === "NUMBER") {
+            next[f.id] = f.id === "sqft" ? (sqft || 1200) : (f.defaultValue ?? 100);
+          } else if (f.fieldType === "COUNTER") {
+            if (f.id === "bedrooms") next[f.id] = bedrooms || 3;
+            else if (f.id === "bathrooms") next[f.id] = bathrooms || 2;
+            else next[f.id] = f.defaultValue ?? 1;
+          } else if (f.fieldType === "SELECT" || f.fieldType === "RADIO") {
+            next[f.id] = f.options?.[0]?.value || "";
+          } else {
+            next[f.id] = f.defaultValue ?? "";
+          }
+        }
+      });
+      return next;
+    });
+  }, [serviceType, selectedServiceObj]);
+
+  const handleCustomFieldValueChange = (fieldId: string, val: any) => {
+    setCustomFieldValues((prev) => ({ ...prev, [fieldId]: val }));
+    if (fieldId === "sqft") setSqft(Number(val) || 0);
+    if (fieldId === "bedrooms") setBedrooms(Number(val) || 0);
+    if (fieldId === "bathrooms") setBathrooms(Number(val) || 0);
+  };
+
+  const getFieldIcon = (fieldId: string, label: string) => {
+    const key = `${fieldId} ${label}`.toLowerCase();
+    if (key.includes("sqft") || key.includes("size") || key.includes("area"))
+      return <Maximize2 className="w-6 h-6 stroke-[2.5]" />;
+    if (key.includes("bed") || key.includes("room"))
+      return <BedDouble className="w-6 h-6 stroke-[2.5]" />;
+    if (key.includes("bath") || key.includes("restroom"))
+      return <Bath className="w-6 h-6 stroke-[2.5]" />;
+    if (key.includes("desk") || key.includes("workstation") || key.includes("office"))
+      return <Building2 className="w-6 h-6 stroke-[2.5]" />;
+    if (key.includes("floor"))
+      return <Layers className="w-6 h-6 stroke-[2.5]" />;
+    if (key.includes("window") || key.includes("glass"))
+      return <Sparkles className="w-6 h-6 stroke-[2.5]" />;
+    return <Zap className="w-6 h-6 stroke-[2.5]" />;
+  };
+
   // Emit whenever inputs change
   useEffect(() => {
     if (!priceSocketRef.current) return;
@@ -523,12 +569,13 @@ export default function NewBookingClientView({
     );
     priceSocketRef.current.emit("calculate_booking_price", {
       serviceSlug: serviceType,
-      sqft,
-      bedrooms,
-      bathrooms,
+      sqft: customFieldValues["sqft"] ?? sqft,
+      bedrooms: customFieldValues["bedrooms"] ?? bedrooms,
+      bathrooms: customFieldValues["bathrooms"] ?? bathrooms,
+      customFieldValues: customFieldValues,
       selectedAddons: activeAddonSlugs,
     });
-  }, [serviceType, sqft, bedrooms, bathrooms, selectedAddons]);
+  }, [serviceType, sqft, bedrooms, bathrooms, customFieldValues, selectedAddons]);
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -543,11 +590,6 @@ export default function NewBookingClientView({
       (key) => selectedAddons[key],
     );
 
-    // Find selected service category object to get its _id
-    const selectedServiceObj = coreServicesList.find(
-      (s) => s.slug === serviceType || s.category === serviceType || s._id === serviceType,
-    );
-
     if (!selectedServiceObj?._id) {
       toast.error("অনুগ্রহ করে একটি সার্ভিস ক্যাটাগরি নির্বাচন করুন।");
       setIsSubmitting(false);
@@ -556,9 +598,10 @@ export default function NewBookingClientView({
 
     const payload = {
       serviceType: selectedServiceObj._id, // ObjectId
-      sqft,
-      bedrooms,
-      bathrooms,
+      sqft: customFieldValues["sqft"] ?? sqft,
+      bedrooms: customFieldValues["bedrooms"] ?? bedrooms,
+      bathrooms: customFieldValues["bathrooms"] ?? bathrooms,
+      customFieldValues: customFieldValues,
       selectedAddons: activeAddonsList,
       scheduledDate,
       timeSlot,
@@ -875,8 +918,6 @@ export default function NewBookingClientView({
                 })}
               </div>
             </div>
-
-            {/* STEP 2: Property Specs */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-3">
@@ -890,163 +931,286 @@ export default function NewBookingClientView({
                 </span>
               </div>
 
-              {/* High-End SqFt Interactive Control Container */}
-              <div className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
-                      <Maximize2 className="w-6 h-6 stroke-[2.5]" />
+              {/* DYNAMIC FIELD RENDERING */}
+              {(() => {
+                const activeFields = Array.isArray(selectedServiceObj?.fields) && selectedServiceObj.fields.length > 0
+                  ? selectedServiceObj.fields.filter((f: any) => f.enabled !== false)
+                  : [];
+
+                if (activeFields.length > 0) {
+                  const numberFields = activeFields.filter((f: any) => f.fieldType === "NUMBER");
+                  const counterFields = activeFields.filter((f: any) => f.fieldType === "COUNTER");
+                  const selectFields = activeFields.filter((f: any) => f.fieldType === "SELECT" || f.fieldType === "RADIO");
+                  const textFields = activeFields.filter((f: any) => f.fieldType === "TEXT");
+
+                  return (
+                    <div className="space-y-6">
+                      {/* NUMBER FIELDS (e.g. SqFt / Size with interactive slider) */}
+                      {numberFields.map((field: any) => {
+                        const currentVal = Number(customFieldValues[field.id] ?? (field.id === "sqft" ? sqft : 100)) || 0;
+                        const isSqft = field.id === "sqft" || field.unit?.toLowerCase().includes("sqft");
+
+                        return (
+                          <div key={field.id} className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                                  {getFieldIcon(field.id, field.label)}
+                                </div>
+                                <div>
+                                  <h4 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                                    {field.label}
+                                  </h4>
+                                  <p className="text-sm text-slate-700 font-medium mt-1">
+                                    রেট: ৳{field.unitPrice ?? 2.5} {field.unit ? `প্রতি ${field.unit}` : "প্রতি ইউনিট"} (ইনপুট বা স্লাইডার ব্যবহার করুন)
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="bg-white border-2 border-[#007eff] px-4 py-2 rounded-2xl text-center flex items-center gap-2 self-start sm:self-auto focus-within:ring-2 focus-within:ring-blue-400">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={50000}
+                                  value={currentVal === 0 ? "" : currentVal}
+                                  onChange={(e) => {
+                                    const val = e.target.value === "" ? 0 : Number(e.target.value);
+                                    if (!isNaN(val)) {
+                                      handleCustomFieldValueChange(field.id, val);
+                                    }
+                                  }}
+                                  className="w-28 text-2xl sm:text-3xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
+                                />
+                                <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                                  {field.unit || "SqFt"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {isSqft && (
+                              <div className="space-y-2 pt-2">
+                                <input
+                                  type="range"
+                                  min={300}
+                                  max={8000}
+                                  step={50}
+                                  value={Math.min(8000, Math.max(300, currentVal))}
+                                  onChange={(e) => handleCustomFieldValueChange(field.id, Number(e.target.value))}
+                                  className="w-full h-3.5 bg-slate-200 rounded-xl appearance-none cursor-pointer accent-[#007eff]"
+                                />
+                                <div className="flex justify-between text-xs font-extrabold text-slate-500">
+                                  <span>300 {field.unit || "SqFt"} (ছোট স্পেস)</span>
+                                  <span>4,000 {field.unit || "SqFt"} (মাঝারি অফিস)</span>
+                                  <span>8,000 {field.unit || "SqFt"} (বড় স্পেস)</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {isSqft && (
+                              <div className="pt-2 border-t border-slate-200/80 flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold text-slate-500 mr-1">
+                                  দ্রুত নির্বাচন করুন:
+                                </span>
+                                {[
+                                  { label: `600 ${field.unit || "SqFt"}`, val: 600 },
+                                  { label: `1,200 ${field.unit || "SqFt"}`, val: 1200 },
+                                  { label: `2,000 ${field.unit || "SqFt"}`, val: 2000 },
+                                  { label: `3,500 ${field.unit || "SqFt"}`, val: 3500 },
+                                  { label: `5,000 ${field.unit || "SqFt"}`, val: 5000 },
+                                ].map((preset) => (
+                                  <button
+                                    key={preset.val}
+                                    type="button"
+                                    onClick={() => handleCustomFieldValueChange(field.id, preset.val)}
+                                    className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                      currentVal === preset.val
+                                        ? "bg-[#007eff] text-white border-[#007eff]"
+                                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                    }`}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* COUNTER FIELDS (e.g. Bedrooms, Bathrooms, Workstations, Glass Windows, Floors) */}
+                      {counterFields.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          {counterFields.map((field: any) => {
+                            const countVal = Number(customFieldValues[field.id] ?? (field.id === "bedrooms" ? bedrooms : (field.id === "bathrooms" ? bathrooms : 1))) || 0;
+                            return (
+                              <div
+                                key={field.id}
+                                className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300"
+                              >
+                                <div className="flex items-center gap-3.5">
+                                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                                    {getFieldIcon(field.id, field.label)}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-bold text-slate-900">{field.label}</h4>
+                                    <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                      ৳{field.unitPrice ?? 0} / {field.unit || "Unit"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCustomFieldValueChange(field.id, Math.max(0, countVal - 1))}
+                                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
+                                  >
+                                    <Minus className="w-4 h-4 stroke-[2.5]" />
+                                  </button>
+                                  <span className="text-xl font-bold text-slate-900 w-8 text-center font-mono">
+                                    {countVal}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCustomFieldValueChange(field.id, countVal + 1)}
+                                    className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
+                                  >
+                                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* SELECT / RADIO FIELDS (e.g. Cleaning Level, Property Status, Debris Level, Construction Stage) */}
+                      {selectFields.map((field: any) => {
+                        const selectedOptVal = String(customFieldValues[field.id] ?? field.options?.[0]?.value ?? "");
+                        return (
+                          <div key={field.id} className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                                <Tag className="w-5 h-5 stroke-[2.5]" />
+                              </div>
+                              <div>
+                                <h4 className="text-base font-bold text-slate-900">{field.label}</h4>
+                                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                  অপশন নির্বাচন করুন:
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {(field.options || []).map((opt: any) => {
+                                const isOptSelected = selectedOptVal === String(opt.value);
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => handleCustomFieldValueChange(field.id, opt.value)}
+                                    className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                                      isOptSelected
+                                        ? "bg-blue-50/90 border-2 border-[#007eff] text-[#007eff] font-bold shadow-sm"
+                                        : "bg-white border-slate-200 text-slate-700 font-semibold hover:border-slate-300"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-xs sm:text-sm font-bold truncate">{opt.label}</span>
+                                      {isOptSelected && <Check className="w-4 h-4 text-[#007eff] stroke-[3]" />}
+                                    </div>
+                                    <span className={`text-xs font-mono font-bold ${isOptSelected ? "text-[#007eff]" : "text-slate-500"}`}>
+                                      {opt.price > 0 ? `+৳${opt.price.toLocaleString()}` : "৳0 (Standard)"}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* TEXT FIELDS */}
+                      {textFields.map((field: any) => (
+                        <div key={field.id} className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl space-y-2">
+                          <label className="text-xs font-bold text-slate-700 block">{field.label}:</label>
+                          <input
+                            type="text"
+                            value={customFieldValues[field.id] || ""}
+                            onChange={(e) => handleCustomFieldValueChange(field.id, e.target.value)}
+                            placeholder="এখানে লিখুন..."
+                            className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
-                        ফ্ল্যাট বা স্পেসের আয়তন
-                      </h4>
-                      <p className="text-sm text-slate-700 font-medium mt-1">
-                        রেট: ৳{pricingConfig.sqftRate ?? 2.5} প্রতি SqFt
-                        (ম্যানুয়ালি ইনপুট বা স্লাইডার ব্যবহার করুন)
-                      </p>
+                  );
+                }
+
+                {/* FALLBACK FOR LEGACY / UNCONFIGURED SERVICES */}
+                return (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
+                            <Maximize2 className="w-6 h-6 stroke-[2.5]" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                              ফ্ল্যাট বা স্পেসের আয়তন
+                            </h4>
+                            <p className="text-sm text-slate-700 font-medium mt-1">
+                              রেট: ৳{pricingConfig.sqftRate ?? 2.5} প্রতি SqFt
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white border-2 border-[#007eff] px-4 py-2 rounded-2xl text-center flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={sqft === 0 ? "" : sqft}
+                            onChange={(e) => setSqft(Number(e.target.value) || 0)}
+                            className="w-28 text-2xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
+                          />
+                          <span className="text-xs font-bold text-slate-500">SqFt</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-2">
+                        <input
+                          type="range"
+                          min={300}
+                          max={8000}
+                          step={50}
+                          value={Math.min(8000, Math.max(300, sqft))}
+                          onChange={(e) => setSqft(Number(e.target.value))}
+                          className="w-full h-3.5 bg-slate-200 rounded-xl appearance-none cursor-pointer accent-[#007eff]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl flex items-center justify-between">
+                        <span className="font-bold text-slate-900">Bedrooms (বেডরুম)</span>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setBedrooms(Math.max(1, bedrooms - 1))} className="w-8 h-8 bg-slate-200 rounded-xl font-bold">-</button>
+                          <span className="font-bold w-6 text-center">{bedrooms}</span>
+                          <button type="button" onClick={() => setBedrooms(bedrooms + 1)} className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold">+</button>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl flex items-center justify-between">
+                        <span className="font-bold text-slate-900">Bathrooms (বাথরুম)</span>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setBathrooms(Math.max(1, bathrooms - 1))} className="w-8 h-8 bg-slate-200 rounded-xl font-bold">-</button>
+                          <span className="font-bold w-6 text-center">{bathrooms}</span>
+                          <button type="button" onClick={() => setBathrooms(bathrooms + 1)} className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold">+</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="bg-white border-2 border-[#007eff] px-4 py-2 rounded-2xl text-center flex items-center gap-2 self-start sm:self-auto focus-within:ring-2 focus-within:ring-blue-400">
-                    <input
-                      type="number"
-                      min={100}
-                      max={20000}
-                      value={sqft === 0 ? "" : sqft}
-                      onChange={(e) => {
-                        const val =
-                          e.target.value === "" ? 0 : Number(e.target.value);
-                        if (!isNaN(val)) {
-                          setSqft(val);
-                        }
-                      }}
-                      className="w-28 text-2xl sm:text-3xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
-                    />
-                    <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                      SqFt
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <input
-                    type="range"
-                    min={300}
-                    max={8000}
-                    step={50}
-                    value={Math.min(8000, Math.max(300, sqft))}
-                    onChange={(e) => setSqft(Number(e.target.value))}
-                    className="w-full h-3.5 bg-slate-200 rounded-xl appearance-none cursor-pointer accent-[#007eff]"
-                  />
-                  <div className="flex justify-between text-xs font-extrabold text-slate-500">
-                    <span>300 SqFt (ছোট ফ্ল্যাট)</span>
-                    <span>4,000 SqFt (মাঝারি অফিস)</span>
-                    <span>8,000 SqFt (বড় ডুপ্লেক্স)</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200/80 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-slate-500 mr-1">
-                    দ্রুত নির্বাচন করুন:
-                  </span>
-                  {[
-                    { label: "600 SqFt (1 Bed)", val: 600 },
-                    { label: "1,200 SqFt (2 Bed)", val: 1200 },
-                    { label: "2,000 SqFt (3 Bed)", val: 2000 },
-                    { label: "3,500 SqFt (4 Bed)", val: 3500 },
-                    { label: "5,000 SqFt (Office)", val: 5000 },
-                  ].map((preset) => (
-                    <button
-                      key={preset.val}
-                      type="button"
-                      onClick={() => setSqft(preset.val)}
-                      className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                        sqft === preset.val
-                          ? "bg-[#007eff] text-white border-[#007eff]"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bedrooms & Bathrooms Steppers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
-                      <BedDouble className="w-6 h-6 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900">
-                        Bedrooms (বেডরুম)
-                      </h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                        ৳{pricingConfig.bedroomRate ?? 500} / Bedroom
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setBedrooms(Math.max(1, bedrooms - 1))}
-                      className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
-                    >
-                      <Minus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                    <span className="text-xl font-bold text-slate-900 w-8 text-center">
-                      {bedrooms}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setBedrooms(bedrooms + 1)}
-                      className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl flex items-center justify-between transition-all hover:border-slate-300">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
-                      <Bath className="w-6 h-6 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900">
-                        Bathrooms (বাথরুম)
-                      </h4>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                        ৳{pricingConfig.bathroomRate ?? 400} / Bathroom
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setBathrooms(Math.max(1, bathrooms - 1))}
-                      className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
-                    >
-                      <Minus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                    <span className="text-xl font-bold text-slate-900 w-8 text-center">
-                      {bathrooms}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setBathrooms(bathrooms + 1)}
-                      className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* STEP 3: Service Add-Ons */}

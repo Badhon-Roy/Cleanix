@@ -533,10 +533,8 @@ export default function AdminServicesClientView({
     setFormWhyChoosePoints(Array.isArray(activeItem.whyChoosePoints) ? activeItem.whyChoosePoints : []);
     setFormFaqs(Array.isArray(activeItem.faqs) ? activeItem.faqs : []);
 
-    const savedFields = Array.isArray(activeItem.fields) && activeItem.fields.length > 0
+    const savedFields = Array.isArray(activeItem.fields)
       ? activeItem.fields
-      : Array.isArray(activeItem.customFields)
-      ? activeItem.customFields
       : [];
 
     setFormFields(savedFields);
@@ -577,7 +575,6 @@ export default function AdminServicesClientView({
         faqs: formFaqs,
         status: data.status,
         fields: formFields,
-        customFields: formFields,
       };
 
       if (editingSlug) {
