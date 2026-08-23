@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
-import { getAuthUser, setAuthUser, removeAuthUser, removeAuthRole, removeAuthToken } from "@/utils/cookie";
-import { fetchUserProfileAPI } from "@/services/authService";
+import { getAuthUser, setAuthUser } from "@/utils/cookie";
+import { fetchUserProfileAPI, logoutUser } from "@/services/authService";
 
 export default function WaitingApprovalPage() {
   const router = useRouter();
@@ -88,12 +88,8 @@ export default function WaitingApprovalPage() {
   };
 
   const handleSignOut = () => {
-    removeAuthUser();
-    removeAuthToken();
-    removeAuthRole();
     sessionStorage.clear();
-    toast.info("Signed out successfully");
-    router.push("/login");
+    logoutUser("/login");
   };
 
   return (

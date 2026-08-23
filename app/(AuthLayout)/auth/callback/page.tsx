@@ -29,9 +29,15 @@ function CallbackContent() {
 
       const isApproved = isApprovedStr === "true" || isApprovedStr === null;
 
+      const name = searchParams.get("name") || "Google Verified User";
+      const avatar = searchParams.get("avatar") || undefined;
+      const email = searchParams.get("email") || "";
+
       // 2. Store User Data in Cookies
       const googleUser = {
-        name: "Google Verified User",
+        name,
+        email,
+        avatar,
         role,
         status,
         isApproved,

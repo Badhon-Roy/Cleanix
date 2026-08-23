@@ -1,7 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { IGoogleLoginPayload, ILoginPayload, IRegisterPayload } from "@/types";
-import { setAuthToken, removeAuthToken, getAuthToken } from "@/utils/cookie";
+import { setAuthToken, removeAuthToken, getAuthToken, setAuthUser, getAuthUser, setAuthRole, removeAuthUser, removeAuthRole } from "@/utils/cookie";
 
 const getBaseUrl = () => {
   return (
@@ -130,6 +131,58 @@ export const fetchUserProfileAPI = async () => {
   } catch (error: any) {
     console.error("Error in fetchUserProfileAPI:", error);
     return { success: false, data: null };
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get("cleanix_token")?.value ||
+      cookieStore.get("accessToken")?.value;
+
+    if (!token) {
+      return null;
+    }
+
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error in server-side getCurrentUser:", error);
+    return null;
+  }
+};
+
+export const logoutUser = async (redirectUrl: string = "/login") => {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("cleanix_token");
+    cookieStore.delete("accessToken");
+    cookieStore.delete("cleanix_user");
+    cookieStore.delete("cleanix_role");
+  } catch {
+    // Ignore error if invoked client-side
+  }
+
+  removeAuthToken();
+  removeAuthUser();
+  removeAuthRole();
+
+  if (typeof window !== "undefined") {
+    window.location.href = redirectUrl;
   }
 };
 
