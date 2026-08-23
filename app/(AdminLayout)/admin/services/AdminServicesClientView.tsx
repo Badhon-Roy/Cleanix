@@ -457,6 +457,7 @@ export default function AdminServicesClientView({
         if (res?.success) {
           toast.success(`Service "${data.title}" updated successfully!`);
           refreshServices();
+          setIsModalOpen(false);
         } else {
           toast.error(res?.message || "Failed to update service.");
         }
@@ -465,12 +466,11 @@ export default function AdminServicesClientView({
         if (res?.success) {
           toast.success(`New Service "${data.title}" created successfully!`);
           refreshServices();
+          setIsModalOpen(false);
         } else {
           toast.error(res?.message || "Failed to create service.");
         }
       }
-
-      setIsModalOpen(false);
     } catch (err: any) {
       toast.error("An unexpected error occurred while saving service offering.");
       console.error("Error submitting service offering:", err);
