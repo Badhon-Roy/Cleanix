@@ -32,6 +32,12 @@ import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import { fetchCustomerProfileAPI, updateCustomerProfileAPI } from "@/services/customerService";
 import { changePasswordAPI } from "@/services/authService";
+import {
+  fetchMyLocationsAPI,
+  createLocationAPI,
+  setDefaultLocationAPI,
+  deleteLocationAPI,
+} from "@/services/locationService";
 import { getAuthUser, setAuthUser } from "@/utils/cookie";
 
 interface ProfileFormData {
@@ -45,11 +51,17 @@ interface PasswordFormData {
   newPassword: string;
 }
 
-export default function SettingsClientView({ initialData }: { initialData?: any }) {
+export default function SettingsClientView({
+  initialData,
+  initialLocations = [],
+}: {
+  initialData?: any;
+  initialLocations?: any[];
+}) {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [passwordSavedSuccess, setPasswordSavedSuccess] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [deleteAddressId, setDeleteAddressId] = useState<number | null>(null);
+  const [deleteAddressId, setDeleteAddressId] = useState<string | number | null>(null);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
 
   // Loading & Customer Profile States initialized from SSR initialData
@@ -120,29 +132,67 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
     }
   };
 
-  // Address Book State
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      tag: "Home (Primary)",
-      street: "House 42, Road 11, Block D",
-      area: "Gulshan-2",
-      city: "Dhaka",
-      zip: "1212",
-      isDefault: true,
-      type: "home",
-    },
-    {
-      id: 2,
-      tag: "Corporate Office",
-      street: "Level 4, City Tower, Commercial Avenue",
-      area: "Motijheel C/A",
-      city: "Dhaka",
-      zip: "1000",
+  // Address Book State initialized from initialLocations
+  const [addresses, setAddresses] = useState<any[]>(initialLocations || []);
+
+  // Sync locations from SSR props
+  useEffect(() => {
+    setAddresses(initialLocations || []);
+  }, [initialLocations]);
+
+  const handleSetDefaultLocation = async (addr: any) => {
+    const targetId = String(addr._id || addr.id);
+    const res = await setDefaultLocationAPI(targetId);
+    if (res?.success) {
+      toast.success(res?.message || "Default location updated!");
+      const fresh = await fetchMyLocationsAPI();
+      if (fresh?.success && Array.isArray(fresh?.data)) {
+        setAddresses(fresh.data);
+      }
+    } else {
+      toast.error(res?.message || "Failed to set default location");
+    }
+  };
+
+  const handleAddLocationSubmit = async (newLoc: NewAddressFormData) => {
+    const payload = {
+      tag: newLoc.tag,
+      type: newLoc.type,
+      street: newLoc.street,
+      area: newLoc.area,
+      city: newLoc.city,
+      zip: newLoc.zip || "1200",
       isDefault: false,
-      type: "office",
-    },
-  ]);
+    };
+    const res = await createLocationAPI(payload);
+    if (res?.success) {
+      toast.success(res?.message || "Service location added successfully!");
+      setIsAddressModalOpen(false);
+      const fresh = await fetchMyLocationsAPI();
+      if (fresh?.success && Array.isArray(fresh?.data)) {
+        setAddresses(fresh.data);
+      }
+    } else {
+      toast.error(res?.message || "Failed to add service location");
+    }
+  };
+
+  const handleDeleteLocationConfirm = async () => {
+    if (deleteAddressId !== null) {
+      const targetId = String(deleteAddressId);
+      const res = await deleteLocationAPI(targetId);
+      if (res?.success) {
+        toast.success(res?.message || "Service location deleted!");
+        const fresh = await fetchMyLocationsAPI();
+        if (fresh?.success && Array.isArray(fresh?.data)) {
+          setAddresses(fresh.data);
+        }
+      } else {
+        toast.error(res?.message || "Failed to delete location");
+      }
+      setDeleteAddressId(null);
+    }
+  };
 
   // Notifications State
   const [notifications, setNotifications] = useState({
@@ -152,7 +202,7 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
     weeklyScheduleReminder: true,
   });
 
-  // Fallback client fetch if initialData was missing
+  // Sync profile data from SSR props
   useEffect(() => {
     if (initialData) {
       setCustomerData(initialData);
@@ -164,28 +214,7 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
       if (initialData.avatar) {
         setAvatarUrl(initialData.avatar);
       }
-      setIsLoadingProfile(false);
-      return;
     }
-
-    const loadProfile = async () => {
-      setIsLoadingProfile(true);
-      const res = await fetchCustomerProfileAPI();
-      if (res?.success && res?.data) {
-        setCustomerData(res.data);
-        resetProfile({
-          name: res.data.name || "",
-          email: res.data.email || "",
-          phone: res.data.phone || "",
-        });
-        if (res.data.avatar) {
-          setAvatarUrl(res.data.avatar);
-        }
-      }
-      setIsLoadingProfile(false);
-    };
-
-    loadProfile();
   }, [initialData, resetProfile]);
 
   const onProfileSubmit = async (data: ProfileFormData) => {
@@ -492,7 +521,7 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
                   <MapPin className="w-5 h-5 text-[#007eff]" /> Saved Service Locations
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                  Add and manage your primary home or office addresses for fast cleaning bookings.
+                  দ্রুত ও সহজে সার্ভিস বুকিং করতে আপনার বাসা বা অফিসের ঠিকানা যোগ ও পরিচালনা করুন।
                 </p>
               </div>
               <button
@@ -505,70 +534,87 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
             </div>
 
             {/* Address Cards List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {addresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  className={`p-5 rounded-3xl border transition-all flex flex-col justify-between space-y-4 ${
-                    addr.isDefault
-                      ? "border-[#007eff]/50 bg-blue-50/30 shadow-sm"
-                      : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                        {addr.type === "home" ? (
-                          <Home className="w-4 h-4 text-[#007eff]" />
-                        ) : (
-                          <Building className="w-4 h-4 text-indigo-600" />
-                        )}
-                        {addr.tag}
-                      </span>
-                      {addr.isDefault && (
-                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500 text-white">
-                          Primary
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                      {addr.street}, {addr.area}, {addr.city} - {addr.zip}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200/60 text-xs">
-                    {!addr.isDefault ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAddresses((prev) =>
-                            prev.map((a) => ({
-                              ...a,
-                              isDefault: a.id === addr.id,
-                            }))
-                          );
-                          toast.success(`Set ${addr.tag} as default address!`);
-                        }}
-                        className="text-[#007eff] hover:underline font-bold"
-                      >
-                        Set Default
-                      </button>
-                    ) : (
-                      <span className="text-[#007eff] font-bold">Default Selected</span>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => setDeleteAddressId(addr.id)}
-                      className="text-red-500 hover:text-red-700 font-bold p-1 rounded hover:bg-red-50 transition-colors"
-                      title="Delete Address"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+            {addresses.length === 0 ? (
+              <div className="p-10 rounded-3xl border-2 border-dashed border-blue-200/80 bg-gradient-to-b from-blue-50/40 to-slate-50/60 text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-blue-100/70 text-[#007eff] flex items-center justify-center mx-auto border border-blue-200 shadow-sm">
+                  <MapPin className="w-8 h-8 stroke-[2.2]" />
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1.5">
+                  <h4 className="font-black text-slate-900 text-lg sm:text-xl tracking-tight">কোনো সংরক্ষিত ঠিকানা নেই</h4>
+                  <p className="text-sm sm:text-base text-slate-600 font-medium max-w-md mx-auto leading-relaxed">
+                    আপনি এখনও কোনো সার্ভিস ঠিকানা যুক্ত করেননি। আপনার বাসা বা অফিসের প্রাথমিক ঠিকানা যোগ করতে <strong>&quot;+ Add New Location&quot;</strong> এ ক্লিক করুন।
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddressModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm sm:text-base px-6 py-3 rounded-2xl transition-all shadow-lg shadow-blue-500/25 hover:scale-[1.02] cursor-pointer mt-2"
+                >
+                  <Plus className="w-5 h-5 stroke-[3]" />
+                  <span>Add First Location</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {addresses.map((addr) => {
+                  const addrId = addr._id || addr.id;
+                  return (
+                    <div
+                      key={addrId}
+                      className={`p-5 rounded-3xl border transition-all flex flex-col justify-between space-y-4 ${
+                        addr.isDefault
+                          ? "border-[#007eff]/50 bg-blue-50/30 shadow-sm"
+                          : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                            {addr.type === "home" ? (
+                              <Home className="w-4 h-4 text-[#007eff]" />
+                            ) : (
+                              <Building className="w-4 h-4 text-indigo-600" />
+                            )}
+                            {addr.tag}
+                          </span>
+                          {addr.isDefault && (
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500 text-white">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                          {addr.street}, {addr.area}, {addr.city} - {addr.zip || "1200"}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200/60 text-xs">
+                        {!addr.isDefault ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDefaultLocation(addr)}
+                            className="text-[#007eff] hover:underline font-bold cursor-pointer"
+                          >
+                            Set Default
+                          </button>
+                        ) : (
+                          <span className="text-[#007eff] font-bold">Default Selected</span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteAddressId(addrId)}
+                          className="text-red-500 hover:text-red-700 font-bold p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
+                          title="Delete Address"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -802,39 +848,21 @@ export default function SettingsClientView({ initialData }: { initialData?: any 
       <AddLocationModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
-        onAddLocation={(newLoc: NewAddressFormData) => {
-          const newAddrObj = {
-            id: Date.now(),
-            tag: newLoc.tag,
-            street: newLoc.street,
-            area: newLoc.area,
-            city: newLoc.city,
-            zip: newLoc.zip || "1200",
-            isDefault: false,
-            type: newLoc.type,
-          };
-          setAddresses((prev) => [...prev, newAddrObj]);
-          setIsAddressModalOpen(false);
-        }}
+        onAddLocation={handleAddLocationSubmit}
       />
 
       {/* Delete Address Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={deleteAddressId !== null}
         itemTitle={
-          addresses.find((a) => a.id === deleteAddressId)
-            ? `${addresses.find((a) => a.id === deleteAddressId)?.tag} - ${
-                addresses.find((a) => a.id === deleteAddressId)?.street
+          addresses.find((a) => (a._id || a.id) === deleteAddressId)
+            ? `${addresses.find((a) => (a._id || a.id) === deleteAddressId)?.tag} - ${
+                addresses.find((a) => (a._id || a.id) === deleteAddressId)?.street
               }`
             : ""
         }
         onClose={() => setDeleteAddressId(null)}
-        onConfirm={() => {
-          if (deleteAddressId !== null) {
-            setAddresses((prev) => prev.filter((a) => a.id !== deleteAddressId));
-            setDeleteAddressId(null);
-          }
-        }}
+        onConfirm={handleDeleteLocationConfirm}
       />
 
       {/* Delete Account Confirmation Modal */}
