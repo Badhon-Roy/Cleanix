@@ -1,29 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Truck,
   Search,
-  UserCheck,
   Calendar,
-  Clock,
   MapPin,
-  CheckCircle2,
-  AlertCircle,
   Eye,
-  Sliders,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import AssignCleanerModal from "@/components/admin/AssignCleanerModal";
 import BookingDetailsModal, {
   BookingDetailRecord,
+  IBookingServiceItem,
 } from "@/components/admin/BookingDetailsModal";
+import { fetchAdminBookingsAPI, updateAdminBookingStatusAPI } from "@/services/bookingService";
 
 export default function AdminBookingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [isLoading, setIsLoading] = useState(true);
 
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<{
+    dbId: string;
     ref: string;
     customer: string;
     service: string;
@@ -32,122 +33,147 @@ export default function AdminBookingsPage() {
   const [selectedBookingForDetails, setSelectedBookingForDetails] =
     useState<BookingDetailRecord | null>(null);
 
-  const [bookingList, setBookingList] = useState<BookingDetailRecord[]>([
-    {
-      id: "CLN-2026-8891",
-      customer: "Tanvir Hasan",
-      phone: "+880 1711-223344",
-      email: "tanvir.hasan@gmail.com",
-      service: "Basic Plan Monthly Clean #1",
-      area: "Gulshan-2",
-      address: "House 42, Road 11, Block D",
-      sqft: 2200,
-      specs: "3 Beds • 3 Baths",
-      addons: ["Oven Deep Wash", "Sofa Shampoo"],
-      amount: "৳6,000 (Basic Subscription)",
-      paymentStatus: "PAID (bKash)",
-      date: "Today, Aug 21, 2026",
-      time: "10:00 AM - 12:30 PM",
-      status: "ASSIGNED",
-      cleanerTeam: "Team Delta (Supervisor Rahat)",
-    },
-    {
-      id: "CLN-2026-8892",
-      customer: "Sabrina Rahman",
-      phone: "+880 1819-998877",
-      email: "sabrina.r@gmail.com",
-      service: "Standard Plan Weekly Clean #2",
-      area: "Motijheel C/A",
-      address: "Level 4, City Tower, Commercial Avenue",
-      sqft: 4500,
-      specs: "Corporate Office Floor",
-      addons: ["Hospital-Grade Sanitization"],
-      amount: "৳14,000 (Standard Subscription)",
-      paymentStatus: "PAID (Stripe Credit Card)",
-      date: "Today, Aug 21, 2026",
-      time: "02:00 PM - 04:30 PM",
-      status: "PENDING",
-      cleanerTeam: "Unassigned",
-    },
-    {
-      id: "CLN-2026-8894",
-      customer: "Mahmudul Haq",
-      phone: "+880 1722-445566",
-      email: "mahmudul.haq@yahoo.com",
-      service: "Residential Bi-Weekly Clean",
-      area: "Dhanmondi 27",
-      address: "Flat 4A, Concord Heights",
-      sqft: 1800,
-      specs: "2 Beds • 2 Baths",
-      addons: ["Fridge Cleaning"],
-      amount: "৳6,000",
-      paymentStatus: "PAID (SSLCommerz)",
-      date: "Tomorrow, Aug 22, 2026",
-      time: "09:00 AM - 11:30 AM",
-      status: "IN_PROGRESS",
-      cleanerTeam: "Team Alpha (Selim Reza)",
-    },
-    {
-      id: "CLN-2026-8895",
-      customer: "Nusrat Jahan",
-      phone: "+880 1988-112233",
-      email: "nusrat.j@gmail.com",
-      service: "Premium Plan Master Steam Clean #1",
-      area: "Baridhara DOHS",
-      address: "House 18, Road 4",
-      sqft: 3600,
-      specs: "Duplex Villa",
-      addons: ["Floor Polish", "Window Shine"],
-      amount: "৳30,000 (Premium Subscription)",
-      paymentStatus: "PAID (bKash)",
-      date: "Aug 20, 2026",
-      time: "11:00 AM - 02:00 PM",
-      status: "COMPLETED",
-      cleanerTeam: "Team Delta (Supervisor Rahat)",
-    },
-  ]);
+  const [bookingList, setBookingList] = useState<BookingDetailRecord[]>([]);
 
-  const handleAssignTeamFromModal = (teamName: string) => {
+  const loadBookings = async () => {
+    setIsLoading(true);
+    const res = await fetchAdminBookingsAPI();
+    setIsLoading(false);
+
+    if (res?.success && Array.isArray(res?.data)) {
+      const mapped: BookingDetailRecord[] = res.data.map((item: any) => {
+        const area =
+          item.locationId?.name ||
+          item.locationId?.area ||
+          item.locationId?.city ||
+          "Dhaka Central";
+
+        const customVals = item.customFieldValues || {};
+        const specParts: string[] = [];
+        if (customVals.bedrooms !== undefined) specParts.push(`${customVals.bedrooms} Beds`);
+        else if (item.bedrooms) specParts.push(`${item.bedrooms} Beds`);
+
+        if (customVals.bathrooms !== undefined) specParts.push(`${customVals.bathrooms} Baths`);
+        else if (item.bathrooms) specParts.push(`${item.bathrooms} Baths`);
+
+        if (specParts.length === 0 && item.serviceType?.category) {
+          specParts.push(item.serviceType.category);
+        }
+
+        const sqftVal = Number(customVals.sqft || item.sqft || 0);
+
+        const servicesItems: IBookingServiceItem[] = Array.isArray(item.services)
+          ? item.services
+          : [];
+
+        const addonsList: string[] = Array.isArray(item.selectedAddons)
+          ? item.selectedAddons
+          : [];
+
+        return {
+          _dbId: item._id,
+          id: item.bookingRef || `#CLN-${String(item._id).slice(-4)}`,
+          customer: item.user?.name || "Customer",
+          phone: item.user?.phone || item.phone || "N/A",
+          email: item.user?.email || "N/A",
+          service: item.serviceType?.title || "Cleaning Service",
+          area,
+          address: item.address || "Dhaka",
+          sqft: sqftVal,
+          specs: specParts.join(" • ") || "Residential Cleaning",
+          addons: addonsList,
+          services: servicesItems,
+          amount: `৳${Number(item.totalAmount || 0).toLocaleString()}`,
+          paymentStatus: `${item.paymentStatus || "PAID"} (${item.paymentMethod || "bKash"})`,
+          date: item.scheduledDate || "N/A",
+          time: item.timeSlot || "N/A",
+          status: item.status === "CONFIRMED" ? "PENDING" : item.status || "PENDING",
+          cleanerTeam: item.cleanerTeam || "Unassigned",
+        };
+      });
+
+      setBookingList(mapped);
+    } else if (res?.message) {
+      toast.error(res.message);
+    }
+  };
+
+  useEffect(() => {
+    loadBookings();
+  }, []);
+
+  const handleAssignTeamFromModal = async (teamName: string) => {
     if (selectedBookingForAssign) {
+      const targetDbId = selectedBookingForAssign.dbId;
+
+      const res = await updateAdminBookingStatusAPI(targetDbId, {
+        status: "ASSIGNED",
+        cleanerTeam: teamName,
+      });
+
+      if (res?.success) {
+        setBookingList((prev) =>
+          prev.map((b) =>
+            b._dbId === targetDbId || b.id === selectedBookingForAssign.ref
+              ? { ...b, status: "ASSIGNED", cleanerTeam: teamName }
+              : b,
+          ),
+        );
+
+        if (
+          selectedBookingForDetails &&
+          (selectedBookingForDetails._dbId === targetDbId ||
+            selectedBookingForDetails.id === selectedBookingForAssign.ref)
+        ) {
+          setSelectedBookingForDetails((prev) =>
+            prev ? { ...prev, status: "ASSIGNED", cleanerTeam: teamName } : null,
+          );
+        }
+
+        toast.success(
+          `Assigned "${teamName}" to Booking #${selectedBookingForAssign.ref}`,
+        );
+      } else {
+        toast.error(res?.message || "Failed to assign team");
+      }
+      setSelectedBookingForAssign(null);
+    }
+  };
+
+  const handleUpdateBookingStatus = async (
+    id: string,
+    newStatus: string,
+  ) => {
+    const booking = bookingList.find((b) => b.id === id || b._dbId === id);
+    const targetDbId = booking?._dbId || id;
+
+    const res = await updateAdminBookingStatusAPI(targetDbId, {
+      status: newStatus,
+    });
+
+    if (res?.success) {
       setBookingList((prev) =>
         prev.map((b) =>
-          b.id === selectedBookingForAssign.ref
-            ? { ...b, status: "ASSIGNED", cleanerTeam: teamName }
+          b.id === id || b._dbId === targetDbId
+            ? { ...b, status: newStatus as any }
             : b,
         ),
       );
 
       if (
         selectedBookingForDetails &&
-        selectedBookingForDetails.id === selectedBookingForAssign.ref
+        (selectedBookingForDetails.id === id ||
+          selectedBookingForDetails._dbId === targetDbId)
       ) {
         setSelectedBookingForDetails((prev) =>
-          prev ? { ...prev, status: "ASSIGNED", cleanerTeam: teamName } : null,
+          prev ? { ...prev, status: newStatus as any } : null,
         );
       }
 
-      toast.success(
-        `Assigned "${teamName}" to Booking #${selectedBookingForAssign.ref}`,
-      );
-      setSelectedBookingForAssign(null);
+      toast.success(`Booking #${booking?.id || id} stage updated to ${newStatus}`);
+    } else {
+      toast.error(res?.message || "Failed to update booking status");
     }
-  };
-
-  const handleUpdateBookingStatus = (
-    id: string,
-    newStatus: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED",
-  ) => {
-    setBookingList((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
-    );
-
-    if (selectedBookingForDetails && selectedBookingForDetails.id === id) {
-      setSelectedBookingForDetails((prev) =>
-        prev ? { ...prev, status: newStatus } : null,
-      );
-    }
-
-    toast.success(`Booking #${id} stage updated to ${newStatus}`);
   };
 
   const filteredBookings = bookingList.filter((b) => {
@@ -184,6 +210,16 @@ export default function AdminBookingsPage() {
             and assign pro cleaner teams to field dispatches.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={loadBookings}
+          disabled={isLoading}
+          className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-2 self-start sm:self-auto disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 text-[#007eff] ${isLoading ? "animate-spin" : ""}`} />
+          <span>Refresh Bookings</span>
+        </button>
       </div>
 
       {/* Main Container */}
@@ -225,10 +261,15 @@ export default function AdminBookingsPage() {
 
         {/* Bookings List */}
         <div className="space-y-4">
-          {filteredBookings.length > 0 ? (
+          {isLoading ? (
+            <div className="p-12 text-center bg-slate-50 border border-slate-200 rounded-3xl space-y-3">
+              <Loader2 className="w-8 h-8 text-[#007eff] animate-spin mx-auto" />
+              <p className="font-extrabold text-slate-900 text-sm">Loading Live Booking Database...</p>
+            </div>
+          ) : filteredBookings.length > 0 ? (
             filteredBookings.map((b) => (
               <div
-                key={b.id}
+                key={b._dbId || b.id}
                 className="p-6 rounded-3xl border border-slate-200 hover:border-slate-300 bg-white transition-all space-y-4 shadow-xs"
               >
                 {/* Header */}
@@ -251,7 +292,7 @@ export default function AdminBookingsPage() {
                       <select
                         value={b.status}
                         onChange={(e) =>
-                          handleUpdateBookingStatus(b.id, e.target.value as any)
+                          handleUpdateBookingStatus(b.id, e.target.value)
                         }
                         className="bg-transparent font-extrabold text-slate-900 focus:outline-none cursor-pointer"
                       >
@@ -303,7 +344,7 @@ export default function AdminBookingsPage() {
                       {b.address}
                     </p>
                     <p className="text-[11px] text-[#007eff] font-bold">
-                      {b.specs} ({b.sqft} sqft)
+                      {b.specs} {b.sqft > 0 ? `(${b.sqft} sqft)` : ""}
                     </p>
                   </div>
 
@@ -340,6 +381,7 @@ export default function AdminBookingsPage() {
                       type="button"
                       onClick={() =>
                         setSelectedBookingForAssign({
+                          dbId: b._dbId || "",
                           ref: b.id,
                           customer: b.customer,
                           service: b.service,
@@ -394,6 +436,7 @@ export default function AdminBookingsPage() {
           }
           onOpenAssignModal={() => {
             setSelectedBookingForAssign({
+              dbId: selectedBookingForDetails._dbId || "",
               ref: selectedBookingForDetails.id,
               customer: selectedBookingForDetails.customer,
               service: selectedBookingForDetails.service,

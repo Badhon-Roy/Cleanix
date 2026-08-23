@@ -57,6 +57,41 @@ export const fetchMyBookingsAPI = async () => {
   }
 };
 
+export const fetchAdminBookingsAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching admin bookings:", error);
+    return { success: false, message: error.message || "Failed to fetch admin bookings" };
+  }
+};
+
+export const updateAdminBookingStatusAPI = async (
+  bookingId: string,
+  payload: { status?: string; cleanerTeam?: string }
+) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/status`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating booking status:", error);
+    return { success: false, message: error.message || "Failed to update booking status" };
+  }
+};
+
 export const cancelBookingAPI = async (bookingId: string) => {
   try {
     const baseUrl = getBaseUrl();
