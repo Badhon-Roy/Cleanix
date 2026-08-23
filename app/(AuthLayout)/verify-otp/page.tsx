@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
 import { verifyRegisterOtpAPI, sendRegisterOtpAPI, verifyOtpAPI, forgotPasswordAPI } from "@/services/authService";
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -297,5 +297,22 @@ export default function VerifyOtpPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="flex flex-col items-center justify-center space-y-3">
+            <div className="w-8 h-8 border-3 border-[#007eff] border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-slate-500 font-medium">Loading verification...</p>
+          </div>
+        </div>
+      }
+    >
+      <VerifyOtpContent />
+    </Suspense>
   );
 }
