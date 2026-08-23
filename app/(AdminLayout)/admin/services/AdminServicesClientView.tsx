@@ -93,6 +93,7 @@ export default function AdminServicesClientView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [isSubmittingService, setIsSubmittingService] = useState(false);
+  const [isDeletingService, setIsDeletingService] = useState(false);
 
   // React Hook Form for Service Category Modal
   const {
@@ -626,14 +627,30 @@ export default function AdminServicesClientView({
     if (!serviceToDelete) return;
     const targetService = services.find((s) => s.slug === serviceToDelete.slug || s._id === serviceToDelete.slug);
     const targetId = targetService?._id || serviceToDelete.slug;
-    const res = await deleteServiceAPI(targetId);
-    if (res?.success) {
-      toast.error(`Service "${serviceToDelete.title}" deleted.`);
-      refreshServices();
-    } else {
-      toast.error(res?.message || "Failed to delete service.");
+    const titleToDelete = serviceToDelete.title;
+
+    try {
+      setIsDeletingService(true);
+      const res = await deleteServiceAPI(targetId);
+      
+      // Close modal INSTANTLY upon response
+      setIsDeletingService(false);
+      setServiceToDelete(null);
+
+      if (res?.success) {
+        toast.error(`Service "${titleToDelete}" deleted.`);
+        // Optimistic UI update: remove item from local list instantly (0ms latency)
+        setServices((prev) => prev.filter((s) => s.slug !== serviceToDelete.slug && s._id !== targetId));
+        // Refresh catalog overview & sync in background
+        refreshServices();
+      } else {
+        toast.error(res?.message || "Failed to delete service.");
+      }
+    } catch (err) {
+      setIsDeletingService(false);
+      setServiceToDelete(null);
+      toast.error("Failed to delete service.");
     }
-    setServiceToDelete(null);
   };
 
   const handleSaveDynamicConfig = async (e: React.FormEvent) => {
@@ -680,16 +697,29 @@ export default function AdminServicesClientView({
 
   const confirmExecuteDeleteAddon = async () => {
     if (!addonToDelete) return;
-    setIsDeletingAddon(true);
     const addonId = addonToDelete._id || addonToDelete.id;
-    const res = await deleteAddonAPI(addonId);
-    setIsDeletingAddon(false);
-    if (res?.success) {
-      toast.success(`Add-on service "${addonToDelete.name}" deleted successfully.`);
+    const nameToDelete = addonToDelete.name;
+
+    try {
+      setIsDeletingAddon(true);
+      const res = await deleteAddonAPI(addonId);
+
+      // Close modal INSTANTLY upon response
+      setIsDeletingAddon(false);
       setAddonToDelete(null);
-      refreshAddons();
-    } else {
-      toast.error(res?.message || "Failed to delete add-on.");
+
+      if (res?.success) {
+        toast.success(`Add-on service "${nameToDelete}" deleted successfully.`);
+        // Optimistic UI update: remove item from local list instantly
+        setAddonsList((prev) => prev.filter((a) => (a._id || a.id) !== addonId));
+        refreshAddons();
+      } else {
+        toast.error(res?.message || "Failed to delete add-on.");
+      }
+    } catch (err) {
+      setIsDeletingAddon(false);
+      setAddonToDelete(null);
+      toast.error("Failed to delete add-on.");
     }
   };
 
@@ -2237,17 +2267,26 @@ export default function AdminServicesClientView({
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 type="button"
+                disabled={isDeletingService}
                 onClick={() => setServiceToDelete(null)}
-                className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer w-1/2"
+                className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer w-1/2 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isDeletingService}
                 onClick={confirmExecuteDeleteService}
-                className="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 w-1/2 shadow-lg shadow-red-500/20"
+                className="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 w-1/2 disabled:opacity-50 shadow-lg shadow-red-500/20"
               >
-                Yes, Delete
+                {isDeletingService ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Yes, Delete"
+                )}
               </button>
             </div>
           </div>
