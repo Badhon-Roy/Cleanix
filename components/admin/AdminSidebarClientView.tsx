@@ -46,6 +46,8 @@ export default function AdminSidebarClientView({
 
   // Real-time Socket.IO Live Data Synchronization for Sidebar Badge
   useEffect(() => {
+    loadPendingCount();
+
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
       "http://localhost:5000";
@@ -59,8 +61,18 @@ export default function AdminSidebarClientView({
       loadPendingCount();
     });
 
+    socket.on("team_updated", () => {
+      loadPendingCount();
+    });
+
+    socket.on("leader_request_updated", () => {
+      loadPendingCount();
+    });
+
     return () => {
       socket.off("cleaner_updated");
+      socket.off("team_updated");
+      socket.off("leader_request_updated");
       socket.disconnect();
     };
   }, []);
