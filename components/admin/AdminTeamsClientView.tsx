@@ -316,12 +316,23 @@ export default function AdminTeamsClientView({
   const openEditModal = (team: TeamSquad) => {
     setEditingTeamId(team.id);
     const leaderId = team.leader.id || team.leader.userId;
-    // Exclude leader from members list
-    const validMembers = team.members
-      .filter((m) => m.id !== leaderId)
-      .map((m) => m.id);
 
-    setSelectedCleanerIds(validMembers);
+    // Cross-reference registered cleaners to collect ALL possible IDs (cleaner profile ID + user ID)
+    // so checkbox isChecked works regardless of which ID variant registeredCleaners uses.
+    const memberIds = new Set<string>();
+    team.members
+      .filter((m) => m.id !== leaderId && m.id !== team.leader.id && m.id !== team.leader.userId)
+      .forEach((m) => {
+        if (m.id) memberIds.add(m.id);
+        // Also find the registered cleaner profile to add their cleaner profile ID
+        const matchedCleaner = registeredCleaners.find(
+          (rc) => rc.userId === m.id || rc.id === m.id
+        );
+        if (matchedCleaner?.id) memberIds.add(matchedCleaner.id);
+        if (matchedCleaner?.userId) memberIds.add(matchedCleaner.userId);
+      });
+
+    setSelectedCleanerIds(Array.from(memberIds));
     reset({
       teamCode: team.teamCode,
       teamName: team.teamName,
@@ -337,18 +348,33 @@ export default function AdminTeamsClientView({
     setIsModalOpen(true);
   };
 
-  const toggleCleanerSelection = (id: string) => {
-    if (id === formLeaderId || id === selectedLeader?.id || id === selectedLeader?.userId) {
+  const toggleCleanerSelection = (cleanerId: string) => {
+    // Find the full cleaner object to get all ID variants
+    const cleanerObj = registeredCleaners.find(
+      (rc) => rc.id === cleanerId || rc.userId === cleanerId
+    );
+    const allCleanerIds = [
+      cleanerId,
+      cleanerObj?.id,
+      cleanerObj?.userId,
+    ].filter(Boolean) as string[];
+
+    // Block if trying to select the team leader
+    const isLeader = allCleanerIds.some(
+      (cid) => cid === formLeaderId || cid === selectedLeader?.id || cid === selectedLeader?.userId
+    );
+    if (isLeader) {
       toast.error("The Team Leader cannot be selected as a squad cleaner!");
       return;
     }
 
+    // Block if this cleaner is already in another team (not the one being edited)
     const assignedTeam = teams.find(
       (t) =>
         t.id !== editingTeamId &&
-        (t.members.some((m) => m.id === id) ||
-          t.leader.id === id ||
-          t.leader.userId === id)
+        (t.members.some((m) => allCleanerIds.includes(m.id)) ||
+          allCleanerIds.includes(t.leader.id) ||
+          allCleanerIds.includes(t.leader.userId))
     );
 
     if (assignedTeam) {
@@ -358,9 +384,13 @@ export default function AdminTeamsClientView({
       return;
     }
 
-    setSelectedCleanerIds((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
-    );
+    // Toggle: if any variant is already selected → deselect all variants; else add all variants
+    const isCurrentlySelected = allCleanerIds.some((cid) => selectedCleanerIds.includes(cid));
+    if (isCurrentlySelected) {
+      setSelectedCleanerIds((prev) => prev.filter((c) => !allCleanerIds.includes(c)));
+    } else {
+      setSelectedCleanerIds((prev) => [...prev, ...allCleanerIds.filter((cid) => !prev.includes(cid))]);
+    }
   };
 
   const onSubmit = async (data: TeamFormValues) => {
@@ -427,18 +457,17 @@ export default function AdminTeamsClientView({
         )
     );
 
-    const memberObjs: TeamMember[] = registeredCleaners
-      .filter(
-        (c) =>
-          memberCleaners.includes(c.id) ||
-          memberCleaners.includes(c.userId),
-      )
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone,
-        role: "CLEANER",
-      }));
+    // Resolve unique registered cleaners from selectedCleanerIds (which may contain both profile IDs and user IDs)
+    const seenCleanerIds = new Set<string>();
+    const memberObjs: TeamMember[] = [];
+    registeredCleaners.forEach((c) => {
+      if (seenCleanerIds.has(c.id) || seenCleanerIds.has(c.userId)) return;
+      const isSelected = memberCleaners.includes(c.id) || memberCleaners.includes(c.userId);
+      if (!isSelected) return;
+      seenCleanerIds.add(c.id);
+      seenCleanerIds.add(c.userId);
+      memberObjs.push({ id: c.userId || c.id, name: c.name, phone: c.phone, role: "CLEANER" });
+    });
 
     const payload = {
       teamCode: data.teamCode,
@@ -447,6 +476,7 @@ export default function AdminTeamsClientView({
         data.teamImage ||
         "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600",
       leader: leaderIdStr,
+      // Send User IDs — backend Team model has members: [{ type: ObjectId, ref: 'User' }]
       members: memberObjs.map((m) => m.id),
       zone: data.zone,
       commissionRate: Number(data.commissionRate),
@@ -1319,6 +1349,8 @@ export default function AdminTeamsClientView({
                   className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200"
                 >
                   {registeredCleaners.map((cleaner) => {
+                    const cleanerAllIds = [cleaner.id, cleaner.userId].filter(Boolean);
+
                     const isLeader =
                       cleaner.id === formLeaderId ||
                       cleaner.userId === formLeaderId ||
@@ -1329,17 +1361,15 @@ export default function AdminTeamsClientView({
                       (t) =>
                         t.id !== editingTeamId &&
                         (t.members.some(
-                          (m) => m.id === cleaner.id || m.id === cleaner.userId
+                          (m) => cleanerAllIds.includes(m.id)
                         ) ||
-                          t.leader.id === cleaner.id ||
-                          t.leader.userId === cleaner.id ||
-                          t.leader.id === cleaner.userId ||
-                          t.leader.userId === cleaner.userId)
+                          cleanerAllIds.includes(t.leader.id) ||
+                          cleanerAllIds.includes(t.leader.userId))
                     );
 
-                    const isChecked =
-                      selectedCleanerIds.includes(cleaner.id) ||
-                      selectedCleanerIds.includes(cleaner.userId);
+                    const isChecked = cleanerAllIds.some((cid) =>
+                      selectedCleanerIds.includes(cid)
+                    );
 
                     if (isLeader) {
                       return (
