@@ -35,6 +35,7 @@ export interface TeamSquad {
     id: string;
     userId: string;
     name: string;
+    email: string;
     phone: string;
     rating: number;
   };
@@ -71,17 +72,20 @@ export const mapTeamSquad = (t: any): TeamSquad => {
   const zoneId = zoneObj?._id || zoneObj?.id || (typeof t.zone === "string" ? t.zone : "");
   const zoneName = zoneObj?.zoneName || (typeof t.zone === "string" ? t.zone : "Coverage Zone");
 
+  const leaderObj = typeof t.leader === "object" && t.leader !== null ? t.leader : null;
+
   return {
     id: t._id || t.id || "",
     teamCode: t.teamCode || "",
     teamName: t.teamName || "",
     teamImage: t.teamImage || "",
     leader: {
-      id: t.leader?._id || t.leader?.id || "",
-      userId: t.leader?._id || t.leader?.id || "",
-      name: t.leader?.name || "",
-      phone: t.leader?.phone || "",
-      rating: t.leader?.rating ?? 5.0,
+      id: leaderObj?._id || leaderObj?.id || (typeof t.leader === "string" ? t.leader : ""),
+      userId: leaderObj?.user?._id || leaderObj?.user?.id || leaderObj?._id || leaderObj?.id || (typeof t.leader === "string" ? t.leader : ""),
+      name: leaderObj?.name || leaderObj?.user?.name || "",
+      email: leaderObj?.email || leaderObj?.user?.email || "",
+      phone: leaderObj?.phone || leaderObj?.user?.phone || "",
+      rating: leaderObj?.rating ?? 5.0,
     },
     members: Array.isArray(t.members)
       ? t.members.map((m: any) => ({

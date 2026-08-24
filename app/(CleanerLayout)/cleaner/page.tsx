@@ -53,6 +53,7 @@ export default function CleanerDashboardPage() {
   // Pending Team Leader Appointment Invitation State
   const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(null);
   const [isResponding, setIsResponding] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Daily Assigned Jobs State
   const [jobs, setJobs] = useState<JobItem[]>([
@@ -114,6 +115,7 @@ export default function CleanerDashboardPage() {
   const checkPendingLeaderRequest = async () => {
     try {
       const user = getAuthUser();
+      setUserProfile(user);
       if (!user) return;
 
       const userEmail = user.email?.toLowerCase().trim();
@@ -321,7 +323,7 @@ export default function CleanerDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            স্বাগতম ক্লিনার রাহাত করিম! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
+            স্বাগতম ক্লিনার {userProfile?.name || "স্টাফ"}! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
           </p>
         </div>
 
