@@ -503,14 +503,14 @@ export default function AdminCoverageClientView({
             data-lenis-prevent="true"
             data-lenis-prevent-wheel="true"
             data-lenis-prevent-touch="true"
-            className="bg-white w-full max-w-xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
+            className="bg-white w-full max-w-xl sm:max-w-2xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                   {editingId ? "কভারেজ জোন সম্পাদনা করুন" : "নতুন কভারেজ জোন যোগ করুন"}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                   জোন নাম, জেলা এবং অন্তর্ভুক্ত সকল সাব-এরিয়া যুক্ত করুন।
                 </p>
               </div>
@@ -523,46 +523,46 @@ export default function AdminCoverageClientView({
               </button>
             </div>
 
-            <form onSubmit={handleSaveCoverage} className="space-y-4 text-xs sm:text-sm">
+            <form onSubmit={handleSaveCoverage} className="space-y-5 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">Zone Name</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">Zone Name</label>
                   <input
                     type="text"
                     value={formZoneName}
                     onChange={(e) => setFormZoneName(e.target.value)}
                     required
                     placeholder="e.g. Gulshan & Banani Zone"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">District</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">District</label>
                   <input
                     type="text"
                     value={formDistrict}
                     onChange={(e) => setFormDistrict(e.target.value)}
                     required
                     placeholder="e.g. Dhaka"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Description (Optional)</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">Description (Optional)</label>
                 <textarea
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                   rows={2}
                   placeholder="e.g. গুলশান ও বনানী এলাকার বিশেষ হাউস ক্লিনিং সার্ভিস।"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                 />
               </div>
 
               {/* Interactive Tag Adder for Sub-Areas Included */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-700 block">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
                   Included Sub-Areas (Add area & press enter or click Add)
                 </label>
 
@@ -578,23 +578,23 @@ export default function AdminCoverageClientView({
                         handleAddAreaTag();
                       }
                     }}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                   <button
                     type="button"
                     onClick={handleAddAreaTag}
-                    className="px-4 py-2 rounded-xl bg-blue-50 text-[#007eff] font-bold border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-blue-50 text-[#007eff] font-bold text-xs sm:text-sm border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
                   >
                     + Add Area
                   </button>
                 </div>
 
                 {/* Sub-Areas Pill Cloud */}
-                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200 min-h-[50px]">
+                <div className="flex flex-wrap gap-1.5 p-2.5 bg-slate-50 rounded-2xl border border-slate-200 min-h-[50px]">
                   {formAreasIncluded.map((area, idx) => (
                     <span
                       key={idx}
-                      className="text-xs font-bold px-2.5 py-1 rounded-xl bg-white text-blue-900 border border-blue-200 flex items-center gap-1.5 shadow-2xs"
+                      className="text-xs sm:text-sm font-bold px-3 py-1 rounded-xl bg-white text-blue-900 border border-blue-200 flex items-center gap-1.5 shadow-2xs"
                     >
                       {area}
                       <button
@@ -602,7 +602,7 @@ export default function AdminCoverageClientView({
                         onClick={() => handleRemoveAreaTag(area)}
                         className="text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
@@ -611,7 +611,7 @@ export default function AdminCoverageClientView({
 
               {/* Interactive Tag Adder for Zip Codes */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-700 block">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
                   Zip Codes (Optional)
                 </label>
 
@@ -627,12 +627,12 @@ export default function AdminCoverageClientView({
                         handleAddZipTag();
                       }
                     }}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                   <button
                     type="button"
                     onClick={handleAddZipTag}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
                     + Add Zip
                   </button>
@@ -642,7 +642,7 @@ export default function AdminCoverageClientView({
                   {formZipCodes.map((zip, idx) => (
                     <span
                       key={idx}
-                      className="text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 flex items-center gap-1.5"
+                      className="text-xs sm:text-sm font-bold px-3 py-1 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 flex items-center gap-1.5"
                     >
                       {zip}
                       <button
@@ -650,14 +650,14 @@ export default function AdminCoverageClientView({
                         onClick={() => handleRemoveZipTag(zip)}
                         className="text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2.5 pt-1">
                 <input
                   type="checkbox"
                   id="isActiveToggle"
@@ -665,26 +665,26 @@ export default function AdminCoverageClientView({
                   onChange={(e) => setFormIsActive(e.target.checked)}
                   className="w-4 h-4 rounded text-[#007eff] focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="isActiveToggle" className="font-bold text-slate-800 cursor-pointer">
+                <label htmlFor="isActiveToggle" className="font-bold text-slate-800 text-xs sm:text-sm cursor-pointer">
                   Is Operational Active Zone
                 </label>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-colors cursor-pointer disabled:opacity-50"
                 >
                   বাতিল করুন
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{editingId ? "আপডেট সংরক্ষণ করুন" : "জোন সংরক্ষণ করুন"}</span>
                 </button>
               </div>

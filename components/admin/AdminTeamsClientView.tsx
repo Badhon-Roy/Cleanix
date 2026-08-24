@@ -32,14 +32,21 @@ import {
   deleteTeamAPI,
 } from "@/services/teamService";
 
+import {
+  ICoverageArea,
+  fetchAllCoveragesAPI,
+} from "@/services/coverageService";
+
 interface AdminTeamsClientViewProps {
   initialTeams: TeamSquad[];
   initialCleaners: RegisteredCleaner[];
+  initialCoverages?: ICoverageArea[];
 }
 
 export default function AdminTeamsClientView({
   initialTeams = [],
   initialCleaners = [],
+  initialCoverages = [],
 }: AdminTeamsClientViewProps) {
   // Registered Cleaners State (Dynamic API state via Props Drilling)
   const [registeredCleaners, setRegisteredCleaners] = useState<RegisteredCleaner[]>(initialCleaners);
@@ -110,13 +117,22 @@ export default function AdminTeamsClientView({
       (c) => c.id === formLeaderId || c.userId === formLeaderId
     ) || registeredCleaners[0];
 
+  // Coverage Areas Collection State
+  const [coverageAreas, setCoverageAreas] = useState<ICoverageArea[]>(initialCoverages || []);
+
+  useEffect(() => {
+    fetchAllCoveragesAPI().then((covs) => {
+      if (covs && covs.length > 0) setCoverageAreas(covs);
+    });
+  }, []);
+
   const openCreateModal = () => {
     setEditingTeamId(null);
     setFormTeamCode(`TEAM-SQUAD-${Math.floor(100 + Math.random() * 900)}`);
     setFormTeamName("");
     setFormTeamImage("");
     setFormLeaderId(registeredCleaners[0]?.id || registeredCleaners[0]?.userId || "");
-    setFormZone("Gulshan & Banani Zone");
+    setFormZone(coverageAreas[0]?.id || "");
     setSelectedCleanerIds(registeredCleaners.slice(0, 2).map((c) => c.id));
     setFormCommissionRate(10);
     setFormCleanerPoolShare(40);
@@ -130,7 +146,7 @@ export default function AdminTeamsClientView({
     setFormTeamName(team.teamName);
     setFormTeamImage(team.teamImage);
     setFormLeaderId(team.leader.id || team.leader.userId);
-    setFormZone(team.zone);
+    setFormZone(team.zoneId || (typeof team.zone === "string" ? team.zone : team.zone?.id || ""));
     setSelectedCleanerIds(team.members.map((m) => m.id));
     setFormCommissionRate(team.commissionRate || 10);
     setFormCleanerPoolShare(team.cleanerPoolShare || 40);
@@ -233,11 +249,12 @@ export default function AdminTeamsClientView({
   const filteredTeams = teams.filter((t) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
+    const zoneText = typeof t.zone === "object" ? t.zone?.zoneName || "" : t.zone || "";
     return (
       t.teamCode.toLowerCase().includes(q) ||
       t.teamName.toLowerCase().includes(q) ||
       t.leader.name.toLowerCase().includes(q) ||
-      t.zone.toLowerCase().includes(q)
+      zoneText.toLowerCase().includes(q)
     );
   });
 
@@ -447,7 +464,12 @@ export default function AdminTeamsClientView({
                   {/* Coverage Zone Tag */}
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
                     <MapPin className="w-3.5 h-3.5 text-red-500" />
-                    <span>Coverage Zone: {team.zone || "Dhaka Zone"}</span>
+                    <span>
+                      Coverage Zone:{" "}
+                      {typeof team.zone === "object" && team.zone !== null
+                        ? team.zone.zoneName
+                        : team.zone || "Dhaka Zone"}
+                    </span>
                   </div>
 
                   {/* Team Leader Box */}
@@ -530,10 +552,10 @@ export default function AdminTeamsClientView({
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                   {editingTeamId ? "টিম স্কোয়াড সম্পাদনা করুন" : "নতুন টিম স্কোয়াড তৈরি করুন"}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                   রেজিস্টার্ড ক্লিনারদের থেকে টিম লিডার সিলেক্ট করুন, সিলেক্ট করলে রোল `TEAM_LEADER`-এ প্রোমোট হবে।
                 </p>
               </div>
@@ -546,17 +568,17 @@ export default function AdminTeamsClientView({
               </button>
             </div>
 
-            <form onSubmit={handleSaveTeam} className="space-y-4 text-xs sm:text-sm">
+            <form onSubmit={handleSaveTeam} className="space-y-5 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">Team Code</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">Team Code</label>
                   <input
                     type="text"
                     value={formTeamCode}
                     onChange={(e) => setFormTeamCode(e.target.value)}
                     required
                     placeholder="e.g. TEAM-DELTA"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -775,16 +797,23 @@ export default function AdminTeamsClientView({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Coverage Zone</label>
-                <input
-                  type="text"
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                  Coverage Area Zone (CoverageArea Collection ID)
+                </label>
+                <select
                   value={formZone}
                   onChange={(e) => setFormZone(e.target.value)}
                   required
-                  placeholder="e.g. Dhanmondi & Lalmatia Zone"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
-                />
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                >
+                  <option value="">Select Operational Coverage Area</option>
+                  {coverageAreas.map((cov) => (
+                    <option key={cov.id} value={cov.id}>
+                      {cov.zoneName} ({cov.district})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Cleaners Checkbox Selector */}

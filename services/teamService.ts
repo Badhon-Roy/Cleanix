@@ -39,7 +39,12 @@ export interface TeamSquad {
     rating: number;
   };
   members: TeamMember[];
-  zone: string;
+  zone: {
+    id: string;
+    zoneName: string;
+    district?: string;
+  };
+  zoneId: string; // Required CoverageArea ObjectId
   commissionRate: number; // 10%
   cleanerPoolShare: number; // 40%
   adminShare: number; // 50%
@@ -53,41 +58,51 @@ export interface CreateTeamPayload {
   teamImage: string;
   leader: string;
   members: string[];
-  zone: string;
+  zone: string; // Required CoverageArea ObjectId reference
   commissionRate: number;
   cleanerPoolShare: number;
   adminShare: number;
   status?: "ACTIVE" | "INACTIVE";
 }
 
-export const mapTeamSquad = (t: any): TeamSquad => ({
-  id: t._id || t.id || "",
-  teamCode: t.teamCode || "",
-  teamName: t.teamName || "",
-  teamImage: t.teamImage || "",
-  leader: {
-    id: t.leader?._id || t.leader?.id || "",
-    userId: t.leader?._id || t.leader?.id || "",
-    name: t.leader?.name || "",
-    phone: t.leader?.phone || "",
-    rating: t.leader?.rating ?? 5.0,
-  },
-  members: Array.isArray(t.members)
-    ? t.members.map((m: any) => ({
-        id: m._id || m.id || "",
-        name: m.name || "",
-        phone: m.phone || "",
-        role: (m.role || "CLEANER") as "CLEANER" | "TEAM_LEADER",
-      }))
-    : [],
-  zone: t.zone || "",
-  commissionRate: t.commissionRate ?? 10,
-  cleanerPoolShare: t.cleanerPoolShare ?? 40,
-  adminShare: t.adminShare ?? 50,
-  status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
-  completedJobsCount: t.completedJobsCount ?? 0,
-});
+export const mapTeamSquad = (t: any): TeamSquad => {
+  const zoneObj = typeof t.zone === "object" && t.zone !== null ? t.zone : null;
+  const zoneId = zoneObj?._id || zoneObj?.id || (typeof t.zone === "string" ? t.zone : "");
+  const zoneName = zoneObj?.zoneName || (typeof t.zone === "string" ? t.zone : "Coverage Zone");
 
+  return {
+    id: t._id || t.id || "",
+    teamCode: t.teamCode || "",
+    teamName: t.teamName || "",
+    teamImage: t.teamImage || "",
+    leader: {
+      id: t.leader?._id || t.leader?.id || "",
+      userId: t.leader?._id || t.leader?.id || "",
+      name: t.leader?.name || "",
+      phone: t.leader?.phone || "",
+      rating: t.leader?.rating ?? 5.0,
+    },
+    members: Array.isArray(t.members)
+      ? t.members.map((m: any) => ({
+          id: m._id || m.id || "",
+          name: m.name || "",
+          phone: m.phone || "",
+          role: (m.role || "CLEANER") as "CLEANER" | "TEAM_LEADER",
+        }))
+      : [],
+    zone: {
+      id: zoneId,
+      zoneName: zoneName,
+      district: zoneObj?.district || "Dhaka",
+    },
+    zoneId: zoneId,
+    commissionRate: t.commissionRate ?? 10,
+    cleanerPoolShare: t.cleanerPoolShare ?? 40,
+    adminShare: t.adminShare ?? 50,
+    status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
+    completedJobsCount: t.completedJobsCount ?? 0,
+  };
+};
 export const mapRegisteredCleaner = (c: any): RegisteredCleaner => ({
   id: c._id || c.id || "",
   userId: c.user?._id || c.user?.id || c._id || c.id || "",
