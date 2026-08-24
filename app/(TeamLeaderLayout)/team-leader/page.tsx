@@ -620,7 +620,12 @@ export default function TeamLeaderOverviewPage() {
       {/* Interactive Cleaner Dispatch Modal */}
       {dispatchModalBooking && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-6">
+          <div
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+            className="bg-white w-full max-w-xl sm:max-w-2xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <span className="text-xs font-black text-[#007eff] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
@@ -648,7 +653,12 @@ export default function TeamLeaderOverviewPage() {
                 Select Team Cleaners for Dispatch (40% Pool Shared):
               </p>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div
+                data-lenis-prevent="true"
+                data-lenis-prevent-wheel="true"
+                data-lenis-prevent-touch="true"
+                className="space-y-2 max-h-60 overflow-y-auto pr-1"
+              >
                 {teamMembers.map((cleaner) => {
                   const isChecked = selectedCleanerNames.includes(cleaner.name);
                   return (

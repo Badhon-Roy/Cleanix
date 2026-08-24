@@ -1,0 +1,166 @@
+import { getAuthToken } from "@/utils/cookie";
+
+const getBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
+
+const getHeaders = () => {
+  const token = getAuthToken();
+  return {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+};
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  phone: string;
+  role: "TEAM_LEADER" | "CLEANER";
+}
+
+export interface RegisteredCleaner {
+  id: string;
+  userId: string;
+  name: string;
+  phone: string;
+  role: "TEAM_LEADER" | "CLEANER";
+  rating: number;
+}
+
+export interface TeamSquad {
+  id: string;
+  teamCode: string;
+  teamName: string;
+  teamImage: string;
+  leader: {
+    id: string;
+    userId: string;
+    name: string;
+    phone: string;
+    rating: number;
+  };
+  members: TeamMember[];
+  zone: string;
+  commissionRate: number; // 10%
+  cleanerPoolShare: number; // 40%
+  adminShare: number; // 50%
+  status: "ACTIVE" | "INACTIVE";
+  completedJobsCount: number;
+}
+
+export interface CreateTeamPayload {
+  teamCode: string;
+  teamName: string;
+  teamImage: string;
+  leader: string;
+  members: string[];
+  zone: string;
+  commissionRate: number;
+  cleanerPoolShare: number;
+  adminShare: number;
+  status?: "ACTIVE" | "INACTIVE";
+}
+
+export const mapTeamSquad = (t: any): TeamSquad => ({
+  id: t._id || t.id || "",
+  teamCode: t.teamCode || "",
+  teamName: t.teamName || "",
+  teamImage: t.teamImage || "",
+  leader: {
+    id: t.leader?._id || t.leader?.id || "",
+    userId: t.leader?._id || t.leader?.id || "",
+    name: t.leader?.name || "",
+    phone: t.leader?.phone || "",
+    rating: t.leader?.rating ?? 5.0,
+  },
+  members: Array.isArray(t.members)
+    ? t.members.map((m: any) => ({
+        id: m._id || m.id || "",
+        name: m.name || "",
+        phone: m.phone || "",
+        role: (m.role || "CLEANER") as "CLEANER" | "TEAM_LEADER",
+      }))
+    : [],
+  zone: t.zone || "",
+  commissionRate: t.commissionRate ?? 10,
+  cleanerPoolShare: t.cleanerPoolShare ?? 40,
+  adminShare: t.adminShare ?? 50,
+  status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
+  completedJobsCount: t.completedJobsCount ?? 0,
+});
+
+export const mapRegisteredCleaner = (c: any): RegisteredCleaner => ({
+  id: c._id || c.id || "",
+  userId: c.user?._id || c.user?.id || c._id || c.id || "",
+  name: c.user?.name || c.name || "",
+  phone: c.user?.phone || c.phone || "",
+  role: (c.user?.role || "CLEANER") as "CLEANER" | "TEAM_LEADER",
+  rating: c.rating ?? 5.0,
+});
+
+// Client-side API Calls
+export const fetchAllTeamsAPI = async (): Promise<TeamSquad[]> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/teams`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && Array.isArray(data?.data)) {
+      return data.data.map(mapTeamSquad);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in fetchAllTeamsAPI:", error);
+    return [];
+  }
+};
+
+export const fetchAllCleanersAPI = async (): Promise<RegisteredCleaner[]> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cleaners`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && Array.isArray(data?.data)) {
+      return data.data.map(mapRegisteredCleaner);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in fetchAllCleanersAPI:", error);
+    return [];
+  }
+};
+
+export const createTeamAPI = async (payload: CreateTeamPayload) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/teams`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+};
+
+export const updateTeamAPI = async (id: string, payload: Partial<CreateTeamPayload>) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/teams/${id}`, {
+    method: "PATCH",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+};
+
+export const deleteTeamAPI = async (id: string) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/teams/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+  return res.json();
+};
