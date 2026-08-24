@@ -97,8 +97,10 @@ export default function LoginPage() {
 
       // Store user auth in cookies
       const userData = {
+        id: res.data?.user?._id || res.data?.user?.id || "",
         email: res.data?.user?.email || data.email,
         name: res.data?.user?.name || data.email.split("@")[0],
+        phone: res.data?.user?.phone || "",
         role,
         status,
         isApproved,

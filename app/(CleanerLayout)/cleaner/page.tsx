@@ -116,13 +116,33 @@ export default function CleanerDashboardPage() {
       const user = getAuthUser();
       if (!user) return;
 
+      const userEmail = user.email?.toLowerCase().trim();
+
       const teams = await fetchAllTeamsAPI();
       const invitation = teams.find((t) => {
-        const isLeaderMatch =
-          t.leader?.userId === user.id ||
-          t.leader?.id === user.id ||
-          t.leader?.phone === user.phone ||
-          (user.name && t.leader?.name?.toLowerCase() === user.name?.toLowerCase());
+        const leaderEmail =
+          (t.leader as any)?.email?.toLowerCase().trim() ||
+          (t.leader as any)?.user?.email?.toLowerCase().trim() ||
+          "";
+
+        const leaderName =
+          (t.leader as any)?.name?.toLowerCase().trim() ||
+          (t.leader as any)?.user?.name?.toLowerCase().trim() ||
+          "";
+
+        const isEmailMatch = Boolean(userEmail && leaderEmail && userEmail === leaderEmail);
+        const isIdMatch = Boolean(
+          user.id &&
+          (t.leader?.userId === user.id || t.leader?.id === user.id)
+        );
+        const isPhoneMatch = Boolean(
+          user.phone && t.leader?.phone && user.phone === t.leader?.phone
+        );
+        const isNameMatch = Boolean(
+          user.name && leaderName && user.name.toLowerCase().trim() === leaderName
+        );
+
+        const isLeaderMatch = isEmailMatch || isIdMatch || isPhoneMatch || isNameMatch;
 
         return isLeaderMatch && t.leaderRequestStatus === "PENDING";
       });
