@@ -22,6 +22,7 @@ import {
   LeaderAppointmentItem,
 } from "@/services/appointmentService";
 import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
+import { slugifyTeamName } from "@/utils/slug";
 
 export default function CleanerAppointmentsPage() {
   const [appointments, setAppointments] = useState<LeaderAppointmentItem[]>([]);
@@ -103,13 +104,10 @@ export default function CleanerAppointmentsPage() {
             setAuthUser(currentUser);
           }
           setAuthRole("TEAM_LEADER");
-          const teamNameSlug = (appointments.find((a) => a.id === appointmentId)?.team?.teamName || "team-squad")
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
+          const targetTeamName = appointments.find((a) => a.id === appointmentId)?.team?.teamName;
+          const teamNameSlug = slugifyTeamName(targetTeamName);
           setTimeout(() => {
-            window.location.href = `/team/${teamNameSlug}`;
+            window.location.href = teamNameSlug ? `/team/${teamNameSlug}` : "/team";
           }, 800);
         } else {
           toast.info("Appointment request declined");

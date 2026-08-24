@@ -35,7 +35,7 @@ export default function TeamLeaderViewShell() {
   // Derive teamSlug from URL: /team/[teamSlug]/...
   const teamSlug = useMemo(() => {
     const match = pathname.match(/^\/team\/([^/]+)/);
-    return match ? match[1] : "team-alpha";
+    return match ? match[1] : "";
   }, [pathname]);
 
   const displayTeamName = unslugifyTeamName(teamSlug);

@@ -8,7 +8,7 @@ export default function MyTeamPage({
   params: Promise<{ teamName: string }>;
 }) {
   const resolvedParams = use(params);
-  const rawSlug = resolvedParams?.teamName || "team-squad";
+  const rawSlug = resolvedParams?.teamName || "";
   const initialTeam = use(fetchTeamByIdOrSlugServer(rawSlug));
 
   return <MyTeamView teamSlug={rawSlug} initialTeam={initialTeam} />;

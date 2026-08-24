@@ -121,8 +121,9 @@ export default function LoginPage() {
           router.push("/admin");
         }, 800);
       } else if (role === "TEAM_LEADER") {
-        const teamSlug = userData?.leadTeam?.teamSlug;
-        const targetPath = teamSlug ? `/team/${teamSlug}` : "/team/team-squad";
+        const teamSlug =
+          userData?.leadTeam?.teamSlug || res.data?.user?.leadTeam?.teamSlug;
+        const targetPath = teamSlug ? `/team/${teamSlug}` : "/team";
         setTimeout(() => {
           router.push(targetPath);
         }, 800);

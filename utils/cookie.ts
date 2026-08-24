@@ -113,3 +113,12 @@ export const getAuthRole = () => {
 export const removeAuthRole = () => {
   removeCookie("cleanix_role");
 };
+
+export const logoutUser = (redirectUrl = "/login") => {
+  removeAuthToken();
+  removeAuthUser();
+  removeAuthRole();
+  if (typeof window !== "undefined") {
+    window.location.href = redirectUrl;
+  }
+};

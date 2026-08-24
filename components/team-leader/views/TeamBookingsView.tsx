@@ -35,21 +35,31 @@ export default function TeamBookingsView({ teamSlug }: Props) {
   const [selectedCleanerIds, setSelectedCleanerIds] = useState<string[]>([]);
   const [isUpdatingDispatch, setIsUpdatingDispatch] = useState(false);
 
-  const loadMyTeamAssignments = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await fetchMyTeamAssignmentsAPI(teamSlug);
-      setAssignments(data);
-    } catch (err) {
-      console.error("Failed to load team assignments:", err);
-      toast.error("Failed to load assigned jobs");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [teamSlug]);
+  const loadMyTeamAssignments = useCallback(
+    async (showLoadingSpinner = false) => {
+      try {
+        if (showLoadingSpinner) {
+          setIsLoading(true);
+        }
+        const data = await fetchMyTeamAssignmentsAPI(teamSlug);
+        if (Array.isArray(data)) {
+          setAssignments(data);
+        }
+      } catch (err) {
+        console.error("Failed to load team assignments:", err);
+        if (showLoadingSpinner) {
+          toast.error("Failed to load assigned jobs");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [teamSlug]
+  );
 
   useEffect(() => {
-    loadMyTeamAssignments();
+    // Only show full loading spinner on initial cold load if assignments is empty
+    loadMyTeamAssignments(assignments.length === 0);
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -64,14 +74,22 @@ export default function TeamBookingsView({ teamSlug }: Props) {
       console.log("⚡ TeamBookings Socket connected:", socket.id);
     });
 
-    socket.on("booking_updated", () => loadMyTeamAssignments());
-    socket.on("booking_created", () => loadMyTeamAssignments());
-    socket.on("team_updated", () => loadMyTeamAssignments());
+    const handleSilentRefresh = () => {
+      loadMyTeamAssignments(false);
+    };
+
+    socket.on("booking_updated", handleSilentRefresh);
+    socket.on("booking_created", handleSilentRefresh);
+    socket.on("team_updated", handleSilentRefresh);
+    socket.on("cleaner_updated", handleSilentRefresh);
+    socket.on("leader_request_updated", handleSilentRefresh);
 
     return () => {
-      socket.off("booking_updated");
-      socket.off("booking_created");
-      socket.off("team_updated");
+      socket.off("booking_updated", handleSilentRefresh);
+      socket.off("booking_created", handleSilentRefresh);
+      socket.off("team_updated", handleSilentRefresh);
+      socket.off("cleaner_updated", handleSilentRefresh);
+      socket.off("leader_request_updated", handleSilentRefresh);
       socket.disconnect();
     };
   }, [loadMyTeamAssignments]);
@@ -108,7 +126,7 @@ export default function TeamBookingsView({ teamSlug }: Props) {
       if (res?.success) {
         toast.success("Squad cleaners allocated & job status updated successfully!");
         setSelectedAssignmentForDispatch(null);
-        await loadMyTeamAssignments();
+        await loadMyTeamAssignments(false);
       } else {
         toast.error(res?.message || "Failed to update cleaner allocation");
       }
@@ -212,7 +230,7 @@ export default function TeamBookingsView({ teamSlug }: Props) {
       </div>
 
       {/* Loading State */}
-      {isLoading ? (
+      {isLoading && assignments.length === 0 ? (
         <div className="py-16 text-center space-y-3 bg-white border border-slate-200 rounded-3xl">
           <Loader2 className="w-8 h-8 animate-spin text-[#007eff] mx-auto" />
           <p className="text-xs font-bold text-slate-500">

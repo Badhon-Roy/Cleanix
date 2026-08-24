@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Truck, CheckCircle2, Loader2, Users, MapPin, Crown } from "lucide-react";
+import { X, Truck, CheckCircle2, Loader2, Users, MapPin, Crown, Sparkles } from "lucide-react";
 import { fetchAllTeamsAPI, TeamSquad } from "@/services/teamService";
 
 interface AssignCleanerModalProps {
@@ -11,6 +11,7 @@ interface AssignCleanerModalProps {
   bookingRef: string;
   customerName: string;
   serviceTitle: string;
+  teamRequests?: any[];
   onAssign: (teamId: string, teamName: string, notes?: string) => Promise<boolean | void> | boolean | void;
 }
 
@@ -20,6 +21,7 @@ export default function AssignCleanerModal({
   bookingRef,
   customerName,
   serviceTitle,
+  teamRequests = [],
   onAssign,
 }: AssignCleanerModalProps) {
   const [mounted, setMounted] = useState(false);
@@ -30,6 +32,10 @@ export default function AssignCleanerModal({
   const [selectedTeamName, setSelectedTeamName] = useState<string>("");
   const [dispatchNote, setDispatchNote] = useState("");
 
+  const pendingRequests = Array.isArray(teamRequests)
+    ? teamRequests.filter((r) => r && (r.status === "PENDING" || !r.status))
+    : [];
+
   useEffect(() => {
     setMounted(true);
     const loadTeams = async () => {
@@ -38,8 +44,22 @@ export default function AssignCleanerModal({
         const data = await fetchAllTeamsAPI(true);
         if (Array.isArray(data) && data.length > 0) {
           setTeams(data);
-          setSelectedTeamId(data[0].id);
-          setSelectedTeamName(`${data[0].teamName} (${data[0].teamCode})`);
+
+          // Auto select team that requested this booking if available
+          let preSelectedTeam = data[0];
+          if (pendingRequests.length > 0) {
+            const requestedTeamId =
+              pendingRequests[0]?.team?._id || pendingRequests[0]?.team;
+            const foundReqTeam = data.find(
+              (t) => String(t.id) === String(requestedTeamId) || String(t.teamCode) === String(pendingRequests[0]?.team?.teamCode)
+            );
+            if (foundReqTeam) {
+              preSelectedTeam = foundReqTeam;
+            }
+          }
+
+          setSelectedTeamId(preSelectedTeam.id);
+          setSelectedTeamName(`${preSelectedTeam.teamName} (${preSelectedTeam.teamCode})`);
         }
       } catch (err) {
         console.error("Error fetching teams for modal:", err);
@@ -58,7 +78,8 @@ export default function AssignCleanerModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetId = selectedTeamId || (teams.length > 0 ? teams[0].id : "");
-    const targetName = selectedTeamName || (teams.length > 0 ? `${teams[0].teamName} (${teams[0].teamCode})` : "");
+    const targetName =
+      selectedTeamName || (teams.length > 0 ? `${teams[0].teamName} (${teams[0].teamCode})` : "");
 
     if (!targetId && teams.length === 0) return;
 
@@ -104,10 +125,44 @@ export default function AssignCleanerModal({
           </button>
         </div>
 
+        {/* Pending Requests Alert Banner */}
+        {pendingRequests.length > 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+            <div className="flex items-center gap-2 font-extrabold text-xs text-amber-800 uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-amber-600 animate-spin" />
+              <span>Pending Team Leader Approval Request</span>
+            </div>
+            <p className="text-xs font-semibold">
+              The following team(s) requested to work on this job:
+            </p>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {pendingRequests.map((req, idx) => {
+                const reqTeamName = req.team?.teamName || "Field Squad";
+                const reqLeaderName =
+                  req.team?.leader?.name ||
+                  req.requestedBy?.name ||
+                  (req.team?.teamCode ? `${req.team.teamCode}` : "Team Leader");
+
+                return (
+                  <span
+                    key={idx}
+                    className="text-xs font-extrabold px-3 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    {reqTeamName} ({reqLeaderName})
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Booking Summary Box */}
         <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 space-y-1">
           <p className="text-xs font-extrabold text-blue-900">Service: {serviceTitle}</p>
-          <p className="text-xs text-slate-700 font-medium">Customer: <span className="font-bold">{customerName}</span></p>
+          <p className="text-xs text-slate-700 font-medium">
+            Customer: <span className="font-bold">{customerName}</span>
+          </p>
         </div>
 
         {/* Form */}
@@ -131,6 +186,11 @@ export default function AssignCleanerModal({
                   const displayName = `${t.teamName} (${t.teamCode})`;
                   const isSelected = selectedTeamId === t.id;
                   const memberCount = (t.members?.length || 0) + (t.leader ? 1 : 0);
+                  const isRequestedByThisTeam = pendingRequests.some(
+                    (req) =>
+                      String(req.team?._id || req.team) === String(t.id) ||
+                      String(req.team?.teamCode) === String(t.teamCode)
+                  );
 
                   return (
                     <label
@@ -144,15 +204,23 @@ export default function AssignCleanerModal({
                       className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
                         isSelected
                           ? "bg-blue-50 border-blue-400 ring-2 ring-blue-500/20"
+                          : isRequestedByThisTeam
+                          ? "bg-amber-50/60 border-amber-300 hover:border-amber-400"
                           : "bg-slate-50 border-slate-200 hover:border-slate-300"
                       } ${isSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
                     >
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-extrabold text-slate-900">{t.teamName}</p>
                           <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md">
                             {t.teamCode}
                           </span>
+                          {isRequestedByThisTeam && (
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-emerald-600 animate-spin" />
+                              Requested Job (Pending Approval)
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-slate-600 font-medium flex items-center gap-2 flex-wrap">
                           <span className="flex items-center gap-1 text-slate-700 font-semibold">
@@ -187,13 +255,17 @@ export default function AssignCleanerModal({
             ) : (
               <div className="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
                 <p className="text-xs font-bold text-slate-700">No active field teams found</p>
-                <p className="text-[11px] text-slate-500">Please register a team in Admin &gt; Teams panel first.</p>
+                <p className="text-[11px] text-slate-500">
+                  Please register a team in Admin &gt; Teams panel first.
+                </p>
               </div>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="font-extrabold text-slate-800">Dispatch Notes for Cleaner (Optional):</label>
+            <label className="font-extrabold text-slate-800">
+              Dispatch Notes for Cleaner (Optional):
+            </label>
             <textarea
               rows={2}
               value={dispatchNote}
@@ -226,7 +298,11 @@ export default function AssignCleanerModal({
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Confirm &amp; Dispatch Team</span>
+                  <span>
+                    {pendingRequests.length > 0
+                      ? "Approve & Dispatch Team"
+                      : "Confirm & Dispatch Team"}
+                  </span>
                 </>
               )}
             </button>

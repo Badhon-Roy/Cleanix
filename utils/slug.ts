@@ -1,5 +1,5 @@
-export const slugifyTeamName = (name: string): string => {
-  if (!name) return "team-squad";
+export const slugifyTeamName = (name?: string): string => {
+  if (!name) return "";
   return name
     .toLowerCase()
     .trim()
@@ -7,8 +7,8 @@ export const slugifyTeamName = (name: string): string => {
     .replace(/^-+|-+$/g, "");
 };
 
-export const unslugifyTeamName = (slug: string): string => {
-  if (!slug) return "Team Squad";
+export const unslugifyTeamName = (slug?: string): string => {
+  if (!slug) return "";
   return slug
     .split("-")
     .map((word) => word.toUpperCase())

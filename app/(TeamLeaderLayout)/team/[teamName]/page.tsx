@@ -10,7 +10,7 @@ export default function DynamicTeamLeaderDashboardPage({
   params: Promise<{ teamName: string }>;
 }) {
   const resolvedParams = use(params);
-  const rawSlug = resolvedParams?.teamName || "team-squad";
+  const rawSlug = resolvedParams?.teamName || "";
   const displayTeamName = unslugifyTeamName(rawSlug);
 
   return <TeamLeaderDashboardView teamSlug={rawSlug} displayTeamName={displayTeamName} />;

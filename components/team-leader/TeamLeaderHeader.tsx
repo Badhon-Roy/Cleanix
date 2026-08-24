@@ -16,6 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import { getAuthUser, logoutUser } from "@/utils/cookie";
+import { slugifyTeamName } from "@/utils/slug";
 
 interface TeamLeaderHeaderProps {
   onToggleMobileMenu: () => void;
@@ -27,9 +29,26 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
+  const authUser = getAuthUser();
   const teamMatch = pathname?.match(/^\/team\/([^/]+)/);
-  const teamSlug = teamMatch ? teamMatch[1] : "team-squad";
-  const leaderProfileHref = `/team/${teamSlug}`;
+  const teamSlugFromUrl = teamMatch ? teamMatch[1] : null;
+
+  const authTeamSlug =
+    authUser?.leadTeam?.teamSlug ||
+    (authUser?.leadTeam?.teamName ? slugifyTeamName(authUser.leadTeam.teamName) : null);
+
+  const effectiveSlug = teamSlugFromUrl || authTeamSlug || "";
+  const leaderProfileHref = effectiveSlug ? `/team/${effectiveSlug}` : "/team";
+
+  const userName = authUser?.name || "Team Leader";
+  const teamName = authUser?.leadTeam?.teamName || "Field Operations";
+
+  const userInitials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -54,7 +73,7 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
     {
       id: 1,
       title: "New Booking Assigned by Admin",
-      desc: "VIP Commercial Deep Cleaning assigned to Team Alpha at Gulshan-2.",
+      desc: `Cleaning job assigned to ${teamName}.`,
       time: "10 mins ago",
       type: "info",
       unread: true,
@@ -62,18 +81,10 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
     {
       id: 2,
       title: "Cleaner Job Request",
-      desc: "Cleaner Asif Khan requested to work on job #CLN-2026-8891.",
+      desc: "Cleaner requested to work on job #CLN-2026-9553.",
       time: "25 mins ago",
       type: "request",
       unread: true,
-    },
-    {
-      id: 3,
-      title: "10% Commission Credited (৳১,৫০০)",
-      desc: "Job #CLN-2026-8890 verified. Commission added to team wallet.",
-      time: "2 hours ago",
-      type: "success",
-      unread: false,
     },
   ];
 
@@ -100,7 +111,7 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
         </div>
       </div>
 
-      {/* Right Area: Dispatch Hotline, Notifications, User */}
+      {/* Right Area: Support Hotline, Notifications, User */}
       <div className="flex items-center gap-2.5 sm:gap-4">
         {/* Support Hotline */}
         <a
@@ -126,7 +137,7 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 border border-slate-200 shadow-xl">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -190,10 +201,10 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
             className="flex items-center gap-2.5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors focus:outline-none cursor-pointer"
           >
             <div className="w-8 h-8 rounded-full bg-[#0d274c] flex items-center justify-center font-extrabold text-xs text-white">
-              TL
+              {userInitials || "TL"}
             </div>
             <span className="hidden md:inline text-xs font-bold text-slate-800">
-              Rahat Karim (Team Alpha)
+              {userName} ({teamName})
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
           </button>
@@ -201,8 +212,8 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
           {userMenuOpen && (
             <div className="absolute right-0 mt-3 w-60 bg-white border border-slate-200 rounded-2xl py-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl">
               <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-                <p className="font-bold text-slate-900 text-sm">Rahat Karim</p>
-                <p className="text-slate-500 text-[11px] truncate">Team Leader • Team Alpha</p>
+                <p className="font-bold text-slate-900 text-sm">{userName}</p>
+                <p className="text-slate-500 text-[11px] truncate">Team Leader • {teamName}</p>
               </div>
 
               <Link
@@ -236,7 +247,7 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={() => {
-          window.location.href = "/";
+          logoutUser("/");
         }}
       />
     </header>

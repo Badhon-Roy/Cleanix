@@ -254,3 +254,35 @@ export const updateTeamAssignmentAPI = async (
   });
   return res.json();
 };
+
+export const fetchAvailableBookingsAPI = async (): Promise<any[]> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/available`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && Array.isArray(data?.data)) {
+      return data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in fetchAvailableBookingsAPI:", error);
+    return [];
+  }
+};
+
+export const requestBookingForTeamAPI = async (
+  bookingId: string,
+  teamSlug?: string
+) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/bookings/${bookingId}/request`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ teamSlug }),
+  });
+  return res.json();
+};

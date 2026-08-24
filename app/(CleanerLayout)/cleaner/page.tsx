@@ -34,6 +34,7 @@ import {
   LeaderAppointmentItem,
 } from "@/services/appointmentService";
 import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
+import { slugifyTeamName } from "@/utils/slug";
 
 interface JobItem {
   id: string;
@@ -295,13 +296,9 @@ export default function CleanerDashboardPage() {
           setAuthRole("TEAM_LEADER");
 
           // Automatically redirect to Team Leader Dashboard with dynamic team slug
-          const teamNameSlug = (pendingLeaderTeam?.teamName || "team-squad")
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
+          const teamNameSlug = slugifyTeamName(pendingLeaderTeam?.teamName);
           setTimeout(() => {
-            window.location.href = `/team/${teamNameSlug}`;
+            window.location.href = teamNameSlug ? `/team/${teamNameSlug}` : "/team";
           }, 800);
         } else {
           toast.info("You have declined the Team Leader appointment request.");

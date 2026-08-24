@@ -45,6 +45,7 @@ export interface BookingDetailRecord {
   time: string;
   status: "PENDING" | "CONFIRMED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   cleanerTeam: string;
+  teamRequests?: any[];
 }
 
 interface BookingDetailsModalProps {
@@ -240,6 +241,26 @@ export default function BookingDetailsModal({
                 Assigned Cleaner Team:
               </h4>
               <p className="font-extrabold text-slate-900 text-sm mt-2">{booking.cleanerTeam}</p>
+
+              {Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status)) && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold space-y-1">
+                    <span className="font-black text-amber-950 block">⚡ Team Leader Request Pending:</span>
+                    <span className="block text-[11px] text-amber-800">
+                      {booking.teamRequests
+                        .filter((r: any) => r && (r.status === "PENDING" || !r.status))
+                        .map((r: any) => {
+                          const tName = r.team?.teamName || "Field Squad";
+                          const lName =
+                            r.team?.leader?.name ||
+                            r.requestedBy?.name ||
+                            (r.team?.teamCode ? `${r.team.teamCode}` : "Team Leader");
+                          return `${tName} (${lName})`;
+                        })
+                        .join(", ")}
+                    </span>
+                  </div>
+                )}
             </div>
 
             <button
@@ -248,10 +269,24 @@ export default function BookingDetailsModal({
                 onClose();
                 onOpenAssignModal();
               }}
-              className="w-full py-2.5 px-4 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+              className={`w-full py-2.5 px-4 rounded-2xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 ${
+                Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status))
+                  ? "bg-[#42990E] hover:bg-[#37800c] text-white"
+                  : booking.cleanerTeam !== "Unassigned"
+                  ? "bg-[#F2D701] hover:bg-[#e2ca01] text-slate-950 border border-yellow-500/30"
+                  : "bg-[#007eff] hover:bg-blue-600 text-white"
+              }`}
             >
               <Truck className="w-4 h-4" />
-              <span>{booking.cleanerTeam === "Unassigned" ? "Assign Cleaner Team" : "Reassign Team"}</span>
+              <span>
+                {Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status))
+                  ? "Approve Team Leader Request"
+                  : booking.cleanerTeam === "Unassigned"
+                  ? "Assign Cleaner Team"
+                  : "Change Cleaner Team"}
+              </span>
             </button>
           </div>
         </div>

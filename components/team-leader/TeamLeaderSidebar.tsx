@@ -19,6 +19,8 @@ import {
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import { fetchMyTeamAssignmentsAPI } from "@/services/teamService";
+import { getAuthUser } from "@/utils/cookie";
+import { slugifyTeamName } from "@/utils/slug";
 
 interface TeamLeaderSidebarProps {
   mobileOpen?: boolean;
@@ -35,8 +37,14 @@ export default function TeamLeaderSidebar({
   const [assignedCount, setAssignedCount] = useState<number | null>(null);
 
   const teamMatch = pathname.match(/^\/team\/([^/]+)/);
-  const teamSlug = teamMatch ? teamMatch[1] : null;
-  const effectiveSlug = teamSlug || "team-squad";
+  const teamSlugFromUrl = teamMatch ? teamMatch[1] : null;
+
+  const authUser = getAuthUser();
+  const authTeamSlug =
+    authUser?.leadTeam?.teamSlug ||
+    (authUser?.leadTeam?.teamName ? slugifyTeamName(authUser.leadTeam.teamName) : null);
+
+  const effectiveSlug = teamSlugFromUrl || authTeamSlug || "";
 
   useEffect(() => {
     const loadAssignmentsCount = async () => {
