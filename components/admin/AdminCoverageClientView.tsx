@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 
 import { io } from "socket.io-client";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   ICoverageArea,
@@ -35,6 +37,12 @@ import {
 
 interface AdminCoverageClientViewProps {
   initialCoverages: ICoverageArea[];
+}
+
+interface CoverageFormValues {
+  zoneName: string;
+  district: string;
+  desc: string;
 }
 
 export default function AdminCoverageClientView({
@@ -51,10 +59,20 @@ export default function AdminCoverageClientView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form State
-  const [formZoneName, setFormZoneName] = useState("");
-  const [formDesc, setFormDesc] = useState("");
-  const [formDistrict, setFormDistrict] = useState("Dhaka");
+  // React Hook Form Integration
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CoverageFormValues>({
+    defaultValues: {
+      zoneName: "",
+      district: "Dhaka",
+      desc: "",
+    },
+  });
+
   const [formAreasIncluded, setFormAreasIncluded] = useState<string[]>([]);
   const [formAreaInput, setFormAreaInput] = useState("");
   const [formZipCodes, setFormZipCodes] = useState<string[]>([]);
@@ -80,7 +98,8 @@ export default function AdminCoverageClientView({
   // Real-time Socket.IO Live Data Synchronization (No page reload)
   useEffect(() => {
     const socketUrl =
-      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") || "http://localhost:5000";
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
     const socket = io(socketUrl, {
       transports: ["websocket", "polling"],
       withCredentials: true,
@@ -107,9 +126,11 @@ export default function AdminCoverageClientView({
 
   const openCreateModal = () => {
     setEditingId(null);
-    setFormZoneName("");
-    setFormDesc("");
-    setFormDistrict("Dhaka");
+    reset({
+      zoneName: "",
+      district: "Dhaka",
+      desc: "",
+    });
     setFormAreasIncluded(["Gulshan 1", "Gulshan 2", "Banani"]);
     setFormAreaInput("");
     setFormZipCodes(["1212", "1213"]);
@@ -120,9 +141,11 @@ export default function AdminCoverageClientView({
 
   const openEditModal = (coverage: ICoverageArea) => {
     setEditingId(coverage.id);
-    setFormZoneName(coverage.zoneName);
-    setFormDesc(coverage.desc || "");
-    setFormDistrict(coverage.district || "Dhaka");
+    reset({
+      zoneName: coverage.zoneName,
+      district: coverage.district || "Dhaka",
+      desc: coverage.desc || "",
+    });
     setFormAreasIncluded(coverage.areasIncluded || []);
     setFormAreaInput("");
     setFormZipCodes(coverage.zipCodes || []);
@@ -161,22 +184,16 @@ export default function AdminCoverageClientView({
     setFormZipCodes(formZipCodes.filter((z) => z !== zipToRemove));
   };
 
-  const handleSaveCoverage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formZoneName.trim() || !formDistrict.trim()) {
-      alert("Please provide Zone Name and District!");
-      return;
-    }
-
+  const onSubmit = async (data: CoverageFormValues) => {
     if (formAreasIncluded.length === 0) {
-      alert("Please add at least one sub-area included in this zone!");
+      toast.error("Please add at least one sub-area included in this zone!");
       return;
     }
 
     const payload: CreateCoveragePayload = {
-      zoneName: formZoneName.trim(),
-      desc: formDesc.trim(),
-      district: formDistrict.trim(),
+      zoneName: data.zoneName.trim(),
+      desc: data.desc.trim(),
+      district: data.district.trim(),
       areasIncluded: formAreasIncluded,
       zipCodes: formZipCodes,
       isActive: formIsActive,
@@ -203,7 +220,9 @@ export default function AdminCoverageClientView({
   const toggleCoverageStatus = async (coverage: ICoverageArea) => {
     const newStatus = !coverage.isActive;
     setCoverages((prev) =>
-      prev.map((c) => (c.id === coverage.id ? { ...c, isActive: newStatus } : c))
+      prev.map((c) =>
+        c.id === coverage.id ? { ...c, isActive: newStatus } : c,
+      ),
     );
 
     try {
@@ -214,7 +233,8 @@ export default function AdminCoverageClientView({
   };
 
   const handleDeleteCoverage = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this coverage area zone?")) return;
+    if (!confirm("Are you sure you want to delete this coverage area zone?"))
+      return;
 
     setCoverages((prev) => prev.filter((c) => c.id !== id));
 
@@ -238,7 +258,7 @@ export default function AdminCoverageClientView({
   const totalDistricts = new Set(coverages.map((c) => c.district)).size;
   const totalSubAreas = coverages.reduce(
     (acc, c) => acc + (c.areasIncluded?.length || 0),
-    0
+    0,
   );
   const activeCount = coverages.filter((c) => c.isActive).length;
 
@@ -251,7 +271,8 @@ export default function AdminCoverageClientView({
             Service Coverage Area Control Center
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-xl">
-            ক্লিনিক্স সার্ভিসের কভারেজ জোন, জেলা ও সকল অন্তর্ভুক্ত সাব-এরিয়া সমূহের রিয়েল-টাইম তথ্য পরিচালনা করুন।
+            ক্লিনিক্স সার্ভিসের কভারেজ জোন, জেলা ও সকল অন্তর্ভুক্ত সাব-এরিয়া
+            সমূহের রিয়েল-টাইম তথ্য পরিচালনা করুন।
           </p>
         </div>
 
@@ -282,42 +303,58 @@ export default function AdminCoverageClientView({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-gradient-to-br from-blue-50/70 via-white to-slate-50/40 border border-blue-200 rounded-3xl p-6 sm:p-7 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-extrabold text-slate-800">মোট কভারেজ জোন</span>
+            <span className="text-sm font-extrabold text-slate-800">
+              মোট কভারেজ জোন
+            </span>
             <div className="w-12 h-12 rounded-2xl bg-blue-100 text-[#007eff] border border-blue-200 flex items-center justify-center">
               <MapPin className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900">{coverages.length} টি জোন</p>
+          <p className="text-3xl font-black text-slate-900">
+            {coverages.length} টি জোন
+          </p>
         </div>
 
         <div className="bg-gradient-to-br from-emerald-50/70 via-white to-slate-50/40 border border-emerald-200 rounded-3xl p-6 sm:p-7 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-extrabold text-slate-800">সক্রিয় কভারেজ এলাকা</span>
+            <span className="text-sm font-extrabold text-slate-800">
+              সক্রিয় কভারেজ এলাকা
+            </span>
             <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center">
               <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900">{activeCount} টি সক্রিয়</p>
+          <p className="text-3xl font-black text-slate-900">
+            {activeCount} টি সক্রিয়
+          </p>
         </div>
 
         <div className="bg-gradient-to-br from-purple-50/70 via-white to-slate-50/40 border border-purple-200 rounded-3xl p-6 sm:p-7 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-extrabold text-slate-800">মোট সাব-এরিয়া অন্তর্ভুক্ত</span>
+            <span className="text-sm font-extrabold text-slate-800">
+              মোট সাব-এরিয়া অন্তর্ভুক্ত
+            </span>
             <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center">
               <Navigation className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900">{totalSubAreas} টি এলাকা</p>
+          <p className="text-3xl font-black text-slate-900">
+            {totalSubAreas} টি এলাকা
+          </p>
         </div>
 
         <div className="bg-gradient-to-br from-amber-50/70 via-white to-slate-50/40 border border-amber-200 rounded-3xl p-6 sm:p-7 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-extrabold text-slate-800">অন্তর্ভুক্ত জেলা</span>
+            <span className="text-sm font-extrabold text-slate-800">
+              অন্তর্ভুক্ত জেলা
+            </span>
             <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center">
               <Globe className="w-6 h-6 stroke-[2.5]" />
             </div>
           </div>
-          <p className="text-3xl font-black text-slate-900">{totalDistricts} টি জেলা</p>
+          <p className="text-3xl font-black text-slate-900">
+            {totalDistricts} টি জেলা
+          </p>
         </div>
       </div>
 
@@ -350,7 +387,9 @@ export default function AdminCoverageClientView({
         {isLoading ? (
           <div className="py-16 text-center space-y-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#007eff] mx-auto" />
-            <p className="text-xs font-bold text-slate-500">কভারেজ ডাটাবেস থেকে তথ্য লোড হচ্ছে...</p>
+            <p className="text-xs font-bold text-slate-500">
+              কভারেজ ডাটাবেস থেকে তথ্য লোড হচ্ছে...
+            </p>
           </div>
         ) : filteredCoverages.length === 0 ? (
           /* Empty State */
@@ -359,9 +398,12 @@ export default function AdminCoverageClientView({
               <FolderOpen className="w-7 h-7 stroke-[2]" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-extrabold text-slate-800">কোন কভারেজ জোন পাওয়া যায়নি</h3>
+              <h3 className="text-base font-extrabold text-slate-800">
+                কোন কভারেজ জোন পাওয়া যায়নি
+              </h3>
               <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">
-                ডাটাবেসে এখনো কোনো কভারেজ এরিয়া যুক্ত করা হয়নি। নতুন কভারেজ জোন তৈরি করতে উপরের বাটনে ক্লিক করুন।
+                ডাটাবেসে এখনো কোনো কভারেজ এরিয়া যুক্ত করা হয়নি। নতুন কভারেজ জোন
+                তৈরি করতে উপরের বাটনে ক্লিক করুন।
               </p>
             </div>
             <button
@@ -416,11 +458,15 @@ export default function AdminCoverageClientView({
                       >
                         <span
                           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                            coverage.isActive ? "translate-x-5" : "translate-x-0"
+                            coverage.isActive
+                              ? "translate-x-5"
+                              : "translate-x-0"
                           }`}
                         />
                       </button>
-                      <span className={`text-[10px] font-black uppercase tracking-wider ${coverage.isActive ? "text-emerald-600" : "text-slate-400"}`}>
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-wider ${coverage.isActive ? "text-emerald-600" : "text-slate-400"}`}
+                      >
                         {coverage.isActive ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </div>
@@ -508,7 +554,9 @@ export default function AdminCoverageClientView({
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-                  {editingId ? "কভারেজ জোন সম্পাদনা করুন" : "নতুন কভারেজ জোন যোগ করুন"}
+                  {editingId
+                    ? "কভারেজ জোন সম্পাদনা করুন"
+                    : "নতুন কভারেজ জোন যোগ করুন"}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                   জোন নাম, জেলা এবং অন্তর্ভুক্ত সকল সাব-এরিয়া যুক্ত করুন।
@@ -523,39 +571,59 @@ export default function AdminCoverageClientView({
               </button>
             </div>
 
-            <form onSubmit={handleSaveCoverage} className="space-y-5 text-sm">
+            <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">Zone Name</label>
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                    Zone Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    value={formZoneName}
-                    onChange={(e) => setFormZoneName(e.target.value)}
-                    required
+                    {...register("zoneName", { required: "Zone Name is required" })}
                     placeholder="e.g. Gulshan & Banani Zone"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                    className={`w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none ${
+                      errors.zoneName
+                        ? "border-red-500 focus:border-red-600 bg-red-50/20"
+                        : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.zoneName && (
+                    <span className="text-red-500 text-xs font-bold mt-1 block">
+                      {errors.zoneName.message}
+                    </span>
+                  )}
                 </div>
+
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">District</label>
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                    District <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    value={formDistrict}
-                    onChange={(e) => setFormDistrict(e.target.value)}
-                    required
+                    {...register("district", { required: "District is required" })}
                     placeholder="e.g. Dhaka"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                    className={`w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none ${
+                      errors.district
+                        ? "border-red-500 focus:border-red-600 bg-red-50/20"
+                        : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.district && (
+                    <span className="text-red-500 text-xs font-bold mt-1 block">
+                      {errors.district.message}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-800 text-xs sm:text-sm block">Description (Optional)</label>
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                  Description (Optional)
+                </label>
                 <textarea
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
+                  {...register("desc")}
                   rows={2}
-                  placeholder="e.g. গুলশান ও বনানী এলাকার বিশেষ হাউস ক্লিনিং সার্ভিস।"
+                  placeholder="e.g. Premium house cleaning service zone covering Gulshan and Banani."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                 />
               </div>
@@ -665,7 +733,10 @@ export default function AdminCoverageClientView({
                   onChange={(e) => setFormIsActive(e.target.checked)}
                   className="w-4 h-4 rounded text-[#007eff] focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="isActiveToggle" className="font-bold text-slate-800 text-xs sm:text-sm cursor-pointer">
+                <label
+                  htmlFor="isActiveToggle"
+                  className="font-bold text-slate-800 text-xs sm:text-sm cursor-pointer"
+                >
                   Is Operational Active Zone
                 </label>
               </div>
@@ -685,7 +756,9 @@ export default function AdminCoverageClientView({
                   className="px-6 py-2.5 rounded-xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>{editingId ? "আপডেট সংরক্ষণ করুন" : "জোন সংরক্ষণ করুন"}</span>
+                  <span>
+                    {editingId ? "আপডেট সংরক্ষণ করুন" : "জোন সংরক্ষণ করুন"}
+                  </span>
                 </button>
               </div>
             </form>
