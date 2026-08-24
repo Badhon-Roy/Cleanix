@@ -45,16 +45,31 @@ export default function TeamLeaderSidebar({
     { name: "Admin Control HQ", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
-  const checkIsActive = (href: string) => {
-    if (href === "/team-leader") return pathname === "/team-leader";
-    return pathname.startsWith(href);
+  const teamMatch = pathname.match(/^\/team\/([^/]+)/);
+  const teamSlug = teamMatch ? teamMatch[1] : null;
+
+  const getNavHref = (basePath: string) => {
+    if (basePath === "/admin") return "/admin";
+    if (teamSlug) {
+      if (basePath === "/team-leader") return `/team/${teamSlug}`;
+      return basePath.replace("/team-leader", `/team/${teamSlug}`);
+    }
+    return basePath;
+  };
+
+  const checkIsActive = (basePath: string) => {
+    const targetHref = getNavHref(basePath);
+    if (basePath === "/team-leader") {
+      return pathname === targetHref || pathname === "/team-leader";
+    }
+    return pathname.startsWith(targetHref) || pathname.startsWith(basePath);
   };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
       {/* Brand Header */}
       <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-        <Link href="/team-leader" className="flex items-center gap-3 group">
+        <Link href={getNavHref("/team-leader")} className="flex items-center gap-3 group">
           <SwirlLogo />
           <div>
             <div className="flex items-center gap-1.5">
@@ -107,7 +122,7 @@ export default function TeamLeaderSidebar({
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={getNavHref(item.href)}
               onClick={() => setMobileOpen && setMobileOpen(false)}
               className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
                 isActive

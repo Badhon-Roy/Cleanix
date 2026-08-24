@@ -16,6 +16,7 @@ import {
   Sliders,
   ShieldAlert,
   ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
@@ -35,6 +36,7 @@ export default function CleanerSidebar({
 
   const navItems = [
     { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
+    { name: "Appointment Notice", href: "/cleaner/appointments", icon: Crown, badge: "NOTICE" },
     { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },

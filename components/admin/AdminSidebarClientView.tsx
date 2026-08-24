@@ -69,10 +69,15 @@ export default function AdminSidebarClientView({
       loadPendingCount();
     });
 
+    socket.on("leader_appointment_updated", () => {
+      loadPendingCount();
+    });
+
     return () => {
       socket.off("cleaner_updated");
       socket.off("team_updated");
       socket.off("leader_request_updated");
+      socket.off("leader_appointment_updated");
       socket.disconnect();
     };
   }, []);

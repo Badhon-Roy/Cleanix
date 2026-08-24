@@ -104,6 +104,7 @@ export const mapTeamSquad = (t: any): TeamSquad => {
     commissionRate: t.commissionRate ?? 10,
     cleanerPoolShare: t.cleanerPoolShare ?? 40,
     adminShare: t.adminShare ?? 50,
+    leaderRequestStatus: (t.leaderRequestStatus || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED",
     status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
     completedJobsCount: t.completedJobsCount ?? 0,
   };

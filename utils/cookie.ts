@@ -93,6 +93,13 @@ export const getAuthUser = () => {
 
 export const removeAuthUser = () => {
   removeCookie("cleanix_user");
+  removeCookie("user");
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("cleanix_user");
+      localStorage.removeItem("user");
+    } catch {}
+  }
 };
 
 export const setAuthRole = (role: string, days = 7) => {

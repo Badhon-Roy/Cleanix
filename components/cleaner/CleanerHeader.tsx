@@ -15,6 +15,7 @@ import {
   Truck,
   MapPin,
 } from "lucide-react";
+import { getAuthUser } from "@/utils/cookie";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 
 interface CleanerHeaderProps {
@@ -25,9 +26,24 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setUserProfile(getAuthUser());
+  }, []);
+
+  const getInitials = (name?: string) => {
+    if (!name) return "CL";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
 
   // Close dropdowns automatically when clicking outside
   useEffect(() => {
@@ -185,11 +201,11 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
             }}
             className="flex items-center gap-2.5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors focus:outline-none cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-xs text-white">
-              RK
+            <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center font-bold text-xs text-white uppercase">
+              {getInitials(userProfile?.name)}
             </div>
             <span className="hidden md:inline text-xs font-bold text-slate-800">
-              Rahat Karim (Supervisor)
+              {userProfile?.name || "Cleaner Staff"} ({userProfile?.role === "TEAM_LEADER" ? "Team Leader" : "Cleaner"})
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
           </button>
@@ -197,8 +213,8 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
           {userMenuOpen && (
             <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-2xl py-2 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-                <p className="font-bold text-slate-900 text-sm">Rahat Karim</p>
-                <p className="text-slate-500 text-[11px] truncate">Team Delta Lead • Cleanix ID #880</p>
+                <p className="font-bold text-slate-900 text-sm">{userProfile?.name || "Cleaner Staff"}</p>
+                <p className="text-slate-500 text-[11px] truncate">{userProfile?.email || "N/A"}</p>
               </div>
 
               <Link

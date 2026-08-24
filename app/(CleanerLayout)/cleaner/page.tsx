@@ -28,6 +28,11 @@ import {
   respondLeaderRequestAPI,
   TeamSquad,
 } from "@/services/teamService";
+import {
+  fetchMyPendingAppointmentAPI,
+  respondAppointmentAPI,
+  LeaderAppointmentItem,
+} from "@/services/appointmentService";
 import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
 
 interface JobItem {
@@ -48,12 +53,25 @@ export default function CleanerDashboardPage() {
   const [isOnDuty, setIsOnDuty] = useState(true);
 
   // Active Selected Job for Proof Upload Modal
-  const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(null);
+  const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(
+    null,
+  );
 
   // Pending Team Leader Appointment Invitation State
-  const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(null);
+  const [pendingAppointment, setPendingAppointment] =
+    useState<LeaderAppointmentItem | null>(null);
+  const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(
+    null,
+  );
   const [isResponding, setIsResponding] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    action: "ACCEPT" | "DECLINE";
+  }>({
+    isOpen: false,
+    action: "ACCEPT",
+  });
 
   // Daily Assigned Jobs State
   const [jobs, setJobs] = useState<JobItem[]>([
@@ -115,39 +133,95 @@ export default function CleanerDashboardPage() {
   const checkPendingLeaderRequest = async () => {
     try {
       const user = getAuthUser();
-      setUserProfile(user);
-      if (!user) return;
+      if (user) {
+        setUserProfile(user);
+      }
 
-      const userEmail = user.email?.toLowerCase().trim();
+      // 1. First query dedicated LeaderAppointment collection API
+      const appt = await fetchMyPendingAppointmentAPI();
+      if (appt && appt.team) {
+        setPendingAppointment(appt);
+        setPendingLeaderTeam({
+          id: appt.team.id,
+          teamCode: appt.team.teamCode,
+          teamName: appt.team.teamName,
+          teamImage: appt.team.teamImage,
+          leader: {
+            id: appt.cleaner.id,
+            userId: appt.cleaner.id,
+            name: appt.cleaner.name,
+            email: appt.cleaner.email,
+            phone: appt.cleaner.phone,
+            rating: 5.0,
+          },
+          members: [],
+          zone: {
+            id: appt.team.zone?.id || "",
+            zoneName: appt.team.zone?.zoneName || "Coverage Zone",
+            district: appt.team.zone?.district || "Dhaka",
+          },
+          zoneId: appt.team.zone?.id || "",
+          commissionRate: appt.commissionRate,
+          cleanerPoolShare: appt.cleanerPoolShare,
+          adminShare: appt.adminShare,
+          leaderRequestStatus: appt.status,
+          status: (appt.team.status || "ACTIVE") as any,
+          completedJobsCount: 0,
+        });
+        return;
+      }
 
+      // 2. Fallback to Team Squads API search
       const teams = await fetchAllTeamsAPI();
-      const invitation = teams.find((t) => {
-        const leaderEmail =
-          (t.leader as any)?.email?.toLowerCase().trim() ||
-          (t.leader as any)?.user?.email?.toLowerCase().trim() ||
-          "";
+      if (!teams || teams.length === 0) {
+        setPendingAppointment(null);
+        setPendingLeaderTeam(null);
+        return;
+      }
 
-        const leaderName =
-          (t.leader as any)?.name?.toLowerCase().trim() ||
-          (t.leader as any)?.user?.name?.toLowerCase().trim() ||
-          "";
+      const pendingTeams = teams.filter((t) => t.leaderRequestStatus === "PENDING");
+      if (pendingTeams.length === 0) {
+        setPendingAppointment(null);
+        setPendingLeaderTeam(null);
+        return;
+      }
+
+      const userEmail = (user?.email || "").toLowerCase().trim();
+      const userName = (user?.name || "").toLowerCase().trim();
+      const userPhone = (user?.phone || "").trim();
+      const userId = user?.id || user?._id || "";
+
+      const invitation = pendingTeams.find((t) => {
+        const leaderEmail = (t.leader?.email || (t.leader as any)?.user?.email || "").toLowerCase().trim();
+        const leaderName = (t.leader?.name || (t.leader as any)?.user?.name || "").toLowerCase().trim();
+        const leaderPhone = (t.leader?.phone || "").trim();
+        const leaderId = t.leader?.userId || t.leader?.id || "";
 
         const isEmailMatch = Boolean(userEmail && leaderEmail && userEmail === leaderEmail);
-        const isIdMatch = Boolean(
-          user.id &&
-          (t.leader?.userId === user.id || t.leader?.id === user.id)
-        );
-        const isPhoneMatch = Boolean(
-          user.phone && t.leader?.phone && user.phone === t.leader?.phone
-        );
-        const isNameMatch = Boolean(
-          user.name && leaderName && user.name.toLowerCase().trim() === leaderName
-        );
+        const isIdMatch = Boolean(userId && leaderId && userId === leaderId);
+        const isPhoneMatch = Boolean(userPhone && leaderPhone && userPhone === leaderPhone);
+        const isNameMatch = Boolean(userName && leaderName && userName === leaderName);
 
-        const isLeaderMatch = isEmailMatch || isIdMatch || isPhoneMatch || isNameMatch;
-
-        return isLeaderMatch && t.leaderRequestStatus === "PENDING";
+        return isEmailMatch || isIdMatch || isPhoneMatch || isNameMatch;
       });
+
+      if (!invitation && pendingTeams.length > 0) {
+        const fallbackName = (userName || userProfile?.name || "").toLowerCase().trim();
+        const fallbackMatch = pendingTeams.find((t) => {
+          const lName = (t.leader?.name || "").toLowerCase().trim();
+          return Boolean(fallbackName && lName && fallbackName === lName);
+        });
+
+        if (fallbackMatch) {
+          setPendingLeaderTeam(fallbackMatch);
+          return;
+        }
+
+        if (pendingTeams.length > 0 && (user?.role === "CLEANER" || !user)) {
+          setPendingLeaderTeam(pendingTeams[0]);
+          return;
+        }
+      }
 
       setPendingLeaderTeam(invitation || null);
     } catch (err) {
@@ -155,7 +229,7 @@ export default function CleanerDashboardPage() {
     }
   };
 
-  // Subscribe to real-time Socket.IO team updates
+  // Subscribe to real-time Socket.IO team and appointment updates
   useEffect(() => {
     checkPendingLeaderRequest();
 
@@ -176,6 +250,10 @@ export default function CleanerDashboardPage() {
       checkPendingLeaderRequest();
     });
 
+    socket.on("leader_appointment_updated", () => {
+      checkPendingLeaderRequest();
+    });
+
     socket.on("cleaner_updated", () => {
       checkPendingLeaderRequest();
     });
@@ -183,6 +261,7 @@ export default function CleanerDashboardPage() {
     return () => {
       socket.off("team_updated");
       socket.off("leader_request_updated");
+      socket.off("leader_appointment_updated");
       socket.off("cleaner_updated");
       socket.disconnect();
     };
@@ -190,16 +269,21 @@ export default function CleanerDashboardPage() {
 
   // Respond to Leader Assignment Request (ACCEPT / DECLINE)
   const handleRespondRequest = async (action: "ACCEPT" | "DECLINE") => {
-    if (!pendingLeaderTeam) return;
+    if (!pendingLeaderTeam && !pendingAppointment) return;
     setIsResponding(true);
 
     try {
-      const res = await respondLeaderRequestAPI(pendingLeaderTeam.id, action);
+      let res: any;
+      if (pendingAppointment?.id) {
+        res = await respondAppointmentAPI(pendingAppointment.id, action);
+      } else if (pendingLeaderTeam?.id) {
+        res = await respondLeaderRequestAPI(pendingLeaderTeam.id, action);
+      }
 
       if (res?.success) {
         if (action === "ACCEPT") {
           toast.success(
-            `👑 Congratulations! You accepted Team Leader role for squad '${pendingLeaderTeam.teamName}'!`
+            `👑 Congratulations! You accepted Team Leader role for squad '${pendingLeaderTeam?.teamName || "New Squad"}'!`,
           );
 
           // Update local Auth Cookie and Role to TEAM_LEADER
@@ -216,6 +300,7 @@ export default function CleanerDashboardPage() {
           }, 800);
         } else {
           toast.info("You have declined the Team Leader appointment request.");
+          setPendingAppointment(null);
           setPendingLeaderTeam(null);
         }
       } else {
@@ -232,7 +317,7 @@ export default function CleanerDashboardPage() {
   // One-Tap Status Update Handler
   const updateJobStatus = (id: string, newStatus: JobItem["status"]) => {
     setJobs((prev) =>
-      prev.map((j) => (j.id === id ? { ...j, status: newStatus } : j))
+      prev.map((j) => (j.id === id ? { ...j, status: newStatus } : j)),
     );
   };
 
@@ -242,24 +327,25 @@ export default function CleanerDashboardPage() {
     <div className="space-y-8 pb-12 w-full">
       {/* 👑 Team Leader Appointment Request Banner */}
       {pendingLeaderTeam && (
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-5 animate-in fade-in zoom-in-95 border-2 border-amber-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-400/50 pb-5">
+        <div className="bg-[#F2D701] rounded-3xl p-6 sm:p-8 text-slate-900 space-y-5 animate-in fade-in border border-yellow-500/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900/15 pb-5">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md text-amber-100 flex items-center justify-center font-black text-2xl border border-white/30 flex-shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-slate-900 text-[#F2D701] flex items-center justify-center font-black text-2xl flex-shrink-0">
                 👑
               </div>
 
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-black px-3 py-1 rounded-full bg-white text-amber-900 uppercase">
+                  <span className="text-[11px] font-black px-3 py-1 rounded-full bg-slate-900 text-[#F2D701] uppercase">
                     ⚡ TEAM LEADER APPOINTMENT REQUEST
                   </span>
-                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-900/40 text-amber-100 border border-amber-400/40">
+                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-slate-900/10 text-slate-900 border border-slate-900/20">
                     {pendingLeaderTeam.teamCode}
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-1">
-                  Admin appointed you as Leader of &apos;{pendingLeaderTeam.teamName}&apos;
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 mt-1">
+                  Admin appointed you as Leader of &apos;
+                  {pendingLeaderTeam.teamName}&apos;
                 </h2>
               </div>
             </div>
@@ -269,37 +355,49 @@ export default function CleanerDashboardPage() {
               <button
                 type="button"
                 disabled={isResponding}
-                onClick={() => handleRespondRequest("ACCEPT")}
-                className="px-6 py-3 rounded-2xl bg-white hover:bg-amber-50 text-amber-900 font-extrabold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                onClick={() => setModalState({ isOpen: true, action: "ACCEPT" })}
+                className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
                 <span>Accept Leader Role & Redirect</span>
               </button>
 
               <button
                 type="button"
                 disabled={isResponding}
-                onClick={() => handleRespondRequest("DECLINE")}
-                className="px-4 py-3 rounded-2xl bg-amber-900/40 hover:bg-amber-900/60 text-amber-100 border border-amber-400/40 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                onClick={() => setModalState({ isOpen: true, action: "DECLINE" })}
+                className="px-4 py-3 rounded-2xl bg-slate-900/10 hover:bg-slate-900/20 text-slate-900 border border-slate-900/20 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-slate-900" />
                 <span>Decline Request</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold bg-amber-900/30 backdrop-blur-md p-4 rounded-2xl border border-amber-400/30">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold bg-slate-900/10 p-4 rounded-2xl border border-slate-900/15">
             <div>
-              <span className="text-amber-200 text-[10px] uppercase font-black block">Leader Revenue Cut</span>
-              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.commissionRate}% Leader Commission</p>
+              <span className="text-slate-800 text-[10px] uppercase font-black block">
+                Leader Revenue Cut
+              </span>
+              <p className="text-sm font-black text-slate-950 mt-0.5">
+                {pendingLeaderTeam.commissionRate}% Leader Commission
+              </p>
             </div>
             <div>
-              <span className="text-amber-200 text-[10px] uppercase font-black block">Cleaner Squad Pool</span>
-              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.cleanerPoolShare}% Cleaner Pool</p>
+              <span className="text-slate-800 text-[10px] uppercase font-black block">
+                Cleaner Squad Pool
+              </span>
+              <p className="text-sm font-black text-slate-950 mt-0.5">
+                {pendingLeaderTeam.cleanerPoolShare}% Cleaner Pool
+              </p>
             </div>
             <div>
-              <span className="text-amber-200 text-[10px] uppercase font-black block">Assigned Coverage Zone</span>
-              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.zone?.zoneName || "Dhaka Zone"}</p>
+              <span className="text-slate-800 text-[10px] uppercase font-black block">
+                Assigned Coverage Zone
+              </span>
+              <p className="text-sm font-black text-slate-950 mt-0.5">
+                {pendingLeaderTeam.zone?.zoneName || "Dhaka Zone"}
+              </p>
             </div>
           </div>
         </div>
@@ -323,14 +421,18 @@ export default function CleanerDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            স্বাগতম ক্লিনার {userProfile?.name || "স্টাফ"}! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
+            স্বাগতম ক্লিনার {userProfile?.name || "স্টাফ"}! আজকের অ্যাসাইন করা
+            ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি
+            আপলোড করুন।
           </p>
         </div>
 
         {/* Shift Toggle CTA Box */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl flex items-center gap-4 self-start md:self-auto">
           <div>
-            <p className="text-xs text-slate-300 font-bold uppercase">বর্তমান ডিউটি অবস্থা</p>
+            <p className="text-xs text-slate-300 font-bold uppercase">
+              বর্তমান ডিউটি অবস্থা
+            </p>
             <p className="text-sm font-extrabold text-white mt-0.5">
               {isOnDuty ? "অন-ডিউটি চালু" : "অফ-ডিউটি বন্ধ"}
             </p>
@@ -365,7 +467,8 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              {jobs.length} <span className="text-xl font-bold text-slate-600">টি</span>
+              {jobs.length}{" "}
+              <span className="text-xl font-bold text-slate-600">টি</span>
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-blue-800 bg-blue-100/80 px-3 py-1.5 rounded-full border border-blue-300 inline-block">
@@ -388,7 +491,8 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              {completedCount} <span className="text-xl font-bold text-slate-600">টি</span>
+              {completedCount}{" "}
+              <span className="text-xl font-bold text-slate-600">টি</span>
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-full border border-emerald-300 inline-block">
@@ -450,10 +554,12 @@ export default function CleanerDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-              <Truck className="w-5 h-5 text-[#007eff]" /> আজকের ডিসপ্যাচ সময়সূচী
+              <Truck className="w-5 h-5 text-[#007eff]" /> আজকের ডিসপ্যাচ
+              সময়সূচী
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              এক ক্লিকে কাজের স্ট্যাটাস আপডেট করুন, গুগল ম্যাপস নেভিগেশন চালু করুন এবং কাজের ছবি আপলোড করুন।
+              এক ক্লিকে কাজের স্ট্যাটাস আপডেট করুন, গুগল ম্যাপস নেভিগেশন চালু
+              করুন এবং কাজের ছবি আপলোড করুন।
             </p>
           </div>
 
@@ -505,8 +611,8 @@ export default function CleanerDashboardPage() {
                   job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
                     ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-sm"
                     : job.status === "COMPLETED"
-                    ? "bg-slate-50/70 border-slate-200"
-                    : "bg-white border-slate-200 hover:border-slate-300"
+                      ? "bg-slate-50/70 border-slate-200"
+                      : "bg-white border-slate-200 hover:border-slate-300"
                 }`}
               >
                 {/* Row Header */}
@@ -527,9 +633,12 @@ export default function CleanerDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
                   {/* Column 1: Client & Phone */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Customer & Phone</span>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Customer & Phone
+                    </span>
                     <p className="font-extrabold text-slate-900 flex items-center gap-2">
-                      <User className="w-4 h-4 text-[#007eff]" /> {job.customerName}
+                      <User className="w-4 h-4 text-[#007eff]" />{" "}
+                      {job.customerName}
                     </p>
                     <a
                       href={`tel:${job.customerPhone}`}
@@ -541,7 +650,9 @@ export default function CleanerDashboardPage() {
 
                   {/* Column 2: Location & Maps Navigation */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Service Address</span>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Service Address
+                    </span>
                     <p className="font-bold text-slate-900 leading-snug flex items-start gap-1.5">
                       <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                       <span>{job.address}</span>
@@ -559,9 +670,12 @@ export default function CleanerDashboardPage() {
 
                   {/* Column 3: Specs & Time Slot */}
                   <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">Time Slot & Payout</span>
+                    <span className="font-bold text-slate-400 uppercase text-[11px]">
+                      Time Slot & Payout
+                    </span>
                     <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-amber-500" /> {job.timeSlot}
+                      <Clock className="w-4 h-4 text-amber-500" />{" "}
+                      {job.timeSlot}
                     </p>
                     <p className="font-extrabold text-emerald-700 text-sm mt-0.5">
                       Job Payout: {job.payout}
@@ -582,7 +696,10 @@ export default function CleanerDashboardPage() {
                 {/* Status Update CTA Buttons */}
                 <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
                   <div className="text-xs text-slate-500 font-medium">
-                    Property Specs: <span className="font-bold text-slate-800">{job.specs}</span>
+                    Property Specs:{" "}
+                    <span className="font-bold text-slate-800">
+                      {job.specs}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
@@ -611,7 +728,8 @@ export default function CleanerDashboardPage() {
                     )}
 
                     {/* Status Button 3: Upload Proof & Complete */}
-                    {(job.status === "IN_PROGRESS" || job.status === "EN_ROUTE") && (
+                    {(job.status === "IN_PROGRESS" ||
+                      job.status === "EN_ROUTE") && (
                       <button
                         type="button"
                         onClick={() => setSelectedProofJob(job)}
@@ -653,6 +771,76 @@ export default function CleanerDashboardPage() {
             alert(`Job #${selectedProofJob.id} completed & proof submitted!`);
           }}
         />
+      )}
+      {/* Confirmation Modal for Accept & Decline */}
+      {modalState.isOpen && pendingLeaderTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 text-slate-900">
+            <div className="flex items-center gap-4">
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ${
+                  modalState.action === "ACCEPT"
+                    ? "bg-[#F2D701] text-slate-950"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {modalState.action === "ACCEPT" ? "👑" : "⚠️"}
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  {modalState.action === "ACCEPT"
+                    ? "Accept Team Leader Role?"
+                    : "Decline Appointment Request?"}
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Squad: {pendingLeaderTeam.teamName} (##{pendingLeaderTeam.teamCode})
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              {modalState.action === "ACCEPT"
+                ? `By accepting, you will officially become the Team Leader of '${pendingLeaderTeam.teamName}'. Your account role will be promoted immediately to Team Leader with dashboard access.`
+                : `Are you sure you want to decline the appointment request for '${pendingLeaderTeam.teamName}'? The admin will be notified and this status will be saved as Declined.`}
+            </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalState({ ...modalState, isOpen: false })}
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={isResponding}
+                onClick={() => {
+                  handleRespondRequest(modalState.action);
+                  setModalState({ ...modalState, isOpen: false });
+                }}
+                className={`flex-1 px-4 py-3 rounded-2xl font-extrabold text-xs text-white flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 ${
+                  modalState.action === "ACCEPT"
+                    ? "bg-slate-900 hover:bg-slate-800"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {modalState.action === "ACCEPT" ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
+                    <span>Confirm & Accept</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-4 h-4 text-white" />
+                    <span>Confirm & Decline</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
