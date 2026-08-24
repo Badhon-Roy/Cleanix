@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { io } from "socket.io-client";
 
 import {
   TeamSquad,
@@ -117,7 +118,35 @@ export default function AdminTeamsClientView({
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
-          setValue("teamImage", reader.result);
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round((width * MAX_HEIGHT) / height);
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+            setValue("teamImage", compressedBase64);
+          };
+          img.src = reader.result;
         }
       };
       reader.readAsDataURL(file);
@@ -145,6 +174,56 @@ export default function AdminTeamsClientView({
     }
   };
 
+  // Silent Live Refresh (No Loading Spinner, No Page Reload)
+  const silentRefreshData = async () => {
+    try {
+      const [fetchedTeams, fetchedCleaners] = await Promise.all([
+        fetchAllTeamsAPI(),
+        fetchAllCleanersAPI(),
+      ]);
+
+      setTeams(fetchedTeams);
+      setRegisteredCleaners(fetchedCleaners);
+    } catch (err) {
+      console.error("Silent socket sync failed:", err);
+    }
+  };
+
+  // Real-time Socket.IO Live Data Synchronization
+  useEffect(() => {
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("⚡ Teams Socket connected:", socket.id);
+    });
+
+    socket.on("team_updated", () => {
+      silentRefreshData();
+    });
+
+    socket.on("cleaner_updated", () => {
+      silentRefreshData();
+    });
+
+    socket.on("coverage_updated", () => {
+      silentRefreshData();
+    });
+
+    return () => {
+      socket.off("team_updated");
+      socket.off("cleaner_updated");
+      socket.off("coverage_updated");
+      socket.disconnect();
+    };
+  }, []);
+
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,6 +246,19 @@ export default function AdminTeamsClientView({
       (c) => c.id === formLeaderId || c.userId === formLeaderId,
     ) || registeredCleaners[0];
 
+  // Auto-remove Team Leader from Squad Cleaners selection
+  useEffect(() => {
+    if (formLeaderId) {
+      const leaderIdStr = selectedLeader?.id;
+      const leaderUserIdStr = selectedLeader?.userId;
+      setSelectedCleanerIds((prev) =>
+        prev.filter(
+          (id) => id !== formLeaderId && id !== leaderIdStr && id !== leaderUserIdStr
+        )
+      );
+    }
+  }, [formLeaderId, selectedLeader]);
+
   // Coverage Areas Collection State
   const [coverageAreas, setCoverageAreas] = useState<ICoverageArea[]>(
     initialCoverages || [],
@@ -180,12 +272,27 @@ export default function AdminTeamsClientView({
 
   const openCreateModal = () => {
     setEditingTeamId(null);
-    setSelectedCleanerIds(registeredCleaners.slice(0, 2).map((c) => c.id));
+    // Find first cleaner who is NOT already leading an active team squad
+    const availableLeader =
+      registeredCleaners.find(
+        (c) =>
+          !teams.some(
+            (t) =>
+              t.leader.id === c.id ||
+              t.leader.userId === c.id ||
+              t.leader.id === c.userId ||
+              t.leader.userId === c.userId
+          )
+      ) || registeredCleaners[0];
+
+    const defaultLeaderId = availableLeader?.id || availableLeader?.userId || "";
+
+    setSelectedCleanerIds([]);
     reset({
       teamCode: `TEAM-SQUAD-${Math.floor(100 + Math.random() * 900)}`,
       teamName: "",
       teamImage: "",
-      leader: registeredCleaners[0]?.id || registeredCleaners[0]?.userId || "",
+      leader: defaultLeaderId,
       zone: coverageAreas[0]?.id || "",
       commissionRate: 10,
       cleanerPoolShare: 40,
@@ -196,12 +303,18 @@ export default function AdminTeamsClientView({
 
   const openEditModal = (team: TeamSquad) => {
     setEditingTeamId(team.id);
-    setSelectedCleanerIds(team.members.map((m) => m.id));
+    const leaderId = team.leader.id || team.leader.userId;
+    // Exclude leader from members list
+    const validMembers = team.members
+      .filter((m) => m.id !== leaderId)
+      .map((m) => m.id);
+
+    setSelectedCleanerIds(validMembers);
     reset({
       teamCode: team.teamCode,
       teamName: team.teamName,
       teamImage: team.teamImage,
-      leader: team.leader.id || team.leader.userId,
+      leader: leaderId,
       zone:
         team.zoneId ||
         (typeof team.zone === "string" ? team.zone : team.zone?.id || ""),
@@ -213,14 +326,53 @@ export default function AdminTeamsClientView({
   };
 
   const toggleCleanerSelection = (id: string) => {
+    if (id === formLeaderId || id === selectedLeader?.id || id === selectedLeader?.userId) {
+      toast.error("The Team Leader cannot be selected as a squad cleaner!");
+      return;
+    }
+
+    const assignedTeam = teams.find(
+      (t) =>
+        t.id !== editingTeamId &&
+        (t.members.some((m) => m.id === id) ||
+          t.leader.id === id ||
+          t.leader.userId === id)
+    );
+
+    if (assignedTeam) {
+      toast.error(
+        `This cleaner is already assigned to squad '${assignedTeam.teamName}' (${assignedTeam.teamCode})! Please remove them from that squad first.`
+      );
+      return;
+    }
+
     setSelectedCleanerIds((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
   };
 
   const onSubmit = async (data: TeamFormValues) => {
-    if (selectedCleanerIds.length === 0) {
-      toast.error("Please select at least one cleaner for the squad!");
+    // Validation: Team Name must be unique
+    const isDuplicateName = teams.some(
+      (t) =>
+        t.id !== editingTeamId &&
+        t.teamName.trim().toLowerCase() === data.teamName.trim().toLowerCase()
+    );
+
+    if (isDuplicateName) {
+      toast.error(`Team name '${data.teamName}' already exists!`);
+      return;
+    }
+
+    const totalSplit =
+      (Number(data.commissionRate) || 0) +
+      (Number(data.cleanerPoolShare) || 0) +
+      (Number(data.adminShare) || 0);
+
+    if (totalSplit !== 100) {
+      toast.error(
+        `Total Revenue Commission Split must equal exactly 100%! Current total: ${totalSplit}%`
+      );
       return;
     }
 
@@ -229,11 +381,45 @@ export default function AdminTeamsClientView({
         (c) => c.id === data.leader || c.userId === data.leader,
       ) || registeredCleaners[0];
 
+    const leaderIdStr = leaderObj?.userId || leaderObj?.id || "";
+
+    // Validation: A cleaner can lead ONLY ONE active team squad!
+    const existingLeaderTeam = teams.find(
+      (t) =>
+        t.id !== editingTeamId &&
+        (t.leader.id === data.leader ||
+          t.leader.userId === data.leader ||
+          t.leader.id === leaderIdStr ||
+          t.leader.userId === leaderIdStr)
+    );
+
+    if (existingLeaderTeam) {
+      toast.error(
+        `This cleaner is already assigned as the Team Leader of squad '${existingLeaderTeam.teamName}' (${existingLeaderTeam.teamCode})! A cleaner can lead only one team squad.`
+      );
+      return;
+    }
+
+    // Strictly exclude team leader and cleaners assigned to other squads
+    const memberCleaners = selectedCleanerIds.filter(
+      (id) =>
+        id !== data.leader &&
+        id !== leaderObj?.id &&
+        id !== leaderObj?.userId &&
+        !teams.some(
+          (t) =>
+            t.id !== editingTeamId &&
+            (t.members.some((m) => m.id === id) ||
+              t.leader.id === id ||
+              t.leader.userId === id)
+        )
+    );
+
     const memberObjs: TeamMember[] = registeredCleaners
       .filter(
         (c) =>
-          selectedCleanerIds.includes(c.id) ||
-          selectedCleanerIds.includes(c.userId),
+          memberCleaners.includes(c.id) ||
+          memberCleaners.includes(c.userId),
       )
       .map((c) => ({
         id: c.id,
@@ -248,7 +434,7 @@ export default function AdminTeamsClientView({
       teamImage:
         data.teamImage ||
         "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600",
-      leader: leaderObj?.userId || leaderObj?.id || "",
+      leader: leaderIdStr,
       members: memberObjs.map((m) => m.id),
       zone: data.zone,
       commissionRate: Number(data.commissionRate),
@@ -259,17 +445,34 @@ export default function AdminTeamsClientView({
 
     setIsSubmitting(true);
     try {
+      let res;
       if (editingTeamId) {
-        await updateTeamAPI(editingTeamId, payload);
+        res = await updateTeamAPI(editingTeamId, payload);
       } else {
-        await createTeamAPI(payload);
+        res = await createTeamAPI(payload);
       }
 
-      setIsModalOpen(false);
-      await refreshData();
+      if (res?.success) {
+        toast.success(
+          res?.message ||
+            (editingTeamId
+              ? "Team squad updated successfully!"
+              : "Team squad created successfully!")
+        );
+        setIsModalOpen(false);
+        await refreshData();
+      } else {
+        const errorMsg =
+          res?.message ||
+          res?.errorMessages?.[0]?.message ||
+          "Failed to save team squad";
+        toast.error(errorMsg);
+      }
     } catch (err: any) {
       console.error("Failed to save team:", err);
-      setIsModalOpen(false);
+      toast.error(
+        err?.message || "An unexpected error occurred while saving team squad!"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -280,26 +483,37 @@ export default function AdminTeamsClientView({
     if (!targetTeam) return;
 
     const newStatus = targetTeam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    setTeams((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)),
-    );
 
     try {
-      await updateTeamAPI(id, { status: newStatus });
-    } catch (err) {
+      const res = await updateTeamAPI(id, { status: newStatus });
+      if (res?.success) {
+        toast.success(res?.message || `Team status updated to ${newStatus}`);
+        setTeams((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+        );
+      } else {
+        toast.error(res?.message || "Failed to update team status");
+      }
+    } catch (err: any) {
       console.error("Failed to update status:", err);
+      toast.error(err?.message || "Failed to update team status");
     }
   };
 
   const handleDeleteTeam = async (id: string) => {
     if (!confirm("Are you sure you want to delete this Team Squad?")) return;
 
-    setTeams((prev) => prev.filter((t) => t.id !== id));
-
     try {
-      await deleteTeamAPI(id);
-    } catch (err) {
+      const res = await deleteTeamAPI(id);
+      if (res?.success) {
+        toast.success(res?.message || "Team squad deleted successfully");
+        setTeams((prev) => prev.filter((t) => t.id !== id));
+      } else {
+        toast.error(res?.message || "Failed to delete team squad");
+      }
+    } catch (err: any) {
       console.error("Failed to delete team:", err);
+      toast.error(err?.message || "Failed to delete team squad");
     }
   };
 
@@ -840,22 +1054,44 @@ export default function AdminTeamsClientView({
                       const isSelected =
                         cleaner.id === formLeaderId ||
                         cleaner.userId === formLeaderId;
+
+                      const existingLeaderTeam = teams.find(
+                        (t) =>
+                          t.id !== editingTeamId &&
+                          (t.leader.id === cleaner.id ||
+                            t.leader.userId === cleaner.id ||
+                            t.leader.id === cleaner.userId ||
+                            t.leader.userId === cleaner.userId)
+                      );
+
                       return (
                         <button
                           key={cleaner.id}
                           type="button"
                           onClick={() => {
+                            if (existingLeaderTeam) {
+                              toast.error(
+                                `This cleaner is already assigned as the Team Leader of team squad '${existingLeaderTeam.teamName}' (${existingLeaderTeam.teamCode})!`
+                              );
+                              return;
+                            }
                             setValue("leader", cleaner.id);
                             setIsLeaderDropdownOpen(false);
                           }}
-                          className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? "bg-blue-50/90 border border-[#007eff]/30 shadow-2xs"
-                              : "hover:bg-slate-50 border border-transparent"
+                          className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-all ${
+                            existingLeaderTeam
+                              ? "bg-slate-50 opacity-60 cursor-not-allowed border border-slate-200"
+                              : isSelected
+                              ? "bg-blue-50/90 border border-[#007eff]/30 shadow-2xs cursor-pointer"
+                              : "hover:bg-slate-50 border border-transparent cursor-pointer"
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-[#007eff] text-white flex items-center justify-center font-black text-xs flex-shrink-0">
+                            <div
+                              className={`w-7 h-7 rounded-lg text-white flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                                existingLeaderTeam ? "bg-slate-400" : "bg-[#007eff]"
+                              }`}
+                            >
                               {cleaner.role === "TEAM_LEADER" ? "TL" : "CL"}
                             </div>
                             <div>
@@ -875,11 +1111,15 @@ export default function AdminTeamsClientView({
                             </div>
                           </div>
 
-                          {isSelected && (
+                          {existingLeaderTeam ? (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                              🔒 Leading {existingLeaderTeam.teamCode}
+                            </span>
+                          ) : isSelected ? (
                             <span className="text-xs font-extrabold text-[#007eff] flex items-center gap-1">
                               <Check className="w-4 h-4 stroke-[3]" />
                             </span>
-                          )}
+                          ) : null}
                         </button>
                       );
                     })}
@@ -888,27 +1128,39 @@ export default function AdminTeamsClientView({
               </div>
 
               {/* Revenue Split Rates Section (% Commission Model) */}
-              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-3">
+              <div
+                className={`p-4 rounded-2xl border space-y-3 transition-colors ${
+                  Number(formCommissionRate || 0) +
+                    Number(formCleanerPoolShare || 0) +
+                    Number(formAdminShare || 0) ===
+                  100
+                    ? "bg-blue-50/70 border-blue-200"
+                    : "bg-red-50/50 border-red-300"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <label className="font-extrabold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-[#007eff]" />
                     <span>Revenue Commission Split (% Model)</span>
                   </label>
                   <span
-                    className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
-                      Number(formCommissionRate) +
-                        Number(formCleanerPoolShare) +
-                        Number(formAdminShare) ===
+                    className={`text-xs font-black px-2.5 py-0.5 rounded-full border transition-all ${
+                      Number(formCommissionRate || 0) +
+                        Number(formCleanerPoolShare || 0) +
+                        Number(formAdminShare || 0) ===
                       100
-                        ? "bg-blue-100 text-blue-800 border-blue-300"
-                        : "bg-amber-100 text-amber-800 border-amber-300"
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                        : "bg-red-100 text-red-700 border-red-300 animate-pulse font-extrabold"
                     }`}
                   >
                     Total:{" "}
-                    {Number(formCommissionRate) +
-                      Number(formCleanerPoolShare) +
-                      Number(formAdminShare)}
-                    %
+                    {Number(formCommissionRate || 0) +
+                      Number(formCleanerPoolShare || 0) +
+                      Number(formAdminShare || 0)}
+                    %{Number(formCommissionRate || 0) +
+                      Number(formCleanerPoolShare || 0) +
+                      Number(formAdminShare || 0) !==
+                      100 && " ⚠️ Must be 100%"}
                   </span>
                 </div>
 
@@ -955,6 +1207,19 @@ export default function AdminTeamsClientView({
                     />
                   </div>
                 </div>
+
+                {Number(formCommissionRate || 0) +
+                  Number(formCleanerPoolShare || 0) +
+                  Number(formAdminShare || 0) !==
+                  100 && (
+                  <span className="text-red-600 font-bold text-xs mt-1 block">
+                    ⚠️ Total commission split percentage must equal exactly 100% (Leader + Cleaner Pool + Admin). Current Total:{" "}
+                    {Number(formCommissionRate || 0) +
+                      Number(formCleanerPoolShare || 0) +
+                      Number(formAdminShare || 0)}
+                    %
+                  </span>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -985,17 +1250,89 @@ export default function AdminTeamsClientView({
 
               {/* Cleaners Checkbox Selector */}
               <div className="space-y-2 pt-1">
-                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
-                  Select Squad Cleaners (40% Pool Share):
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                    Select Squad Cleaners ({formCleanerPoolShare || 40}% Pool Share) <span className="text-red-500">*</span>
+                  </label>
+                </div>
                 <div
                   data-lenis-prevent="true"
                   data-lenis-prevent-wheel="true"
                   data-lenis-prevent-touch="true"
-                  className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200"
                 >
                   {registeredCleaners.map((cleaner) => {
-                    const isChecked = selectedCleanerIds.includes(cleaner.id);
+                    const isLeader =
+                      cleaner.id === formLeaderId ||
+                      cleaner.userId === formLeaderId ||
+                      cleaner.id === selectedLeader?.id ||
+                      cleaner.userId === selectedLeader?.userId;
+
+                    const existingSquadTeam = teams.find(
+                      (t) =>
+                        t.id !== editingTeamId &&
+                        (t.members.some(
+                          (m) => m.id === cleaner.id || m.id === cleaner.userId
+                        ) ||
+                          t.leader.id === cleaner.id ||
+                          t.leader.userId === cleaner.id ||
+                          t.leader.id === cleaner.userId ||
+                          t.leader.userId === cleaner.userId)
+                    );
+
+                    const isChecked =
+                      selectedCleanerIds.includes(cleaner.id) ||
+                      selectedCleanerIds.includes(cleaner.userId);
+
+                    if (isLeader) {
+                      return (
+                        <div
+                          key={cleaner.id}
+                          className="p-2.5 rounded-xl border border-slate-200 bg-slate-100/90 text-slate-400 flex items-center justify-between cursor-not-allowed select-none"
+                          title="This cleaner is assigned as Team Leader and cannot be added as a squad cleaner"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-4 h-4 rounded bg-slate-300 flex items-center justify-center text-white text-[10px] font-bold">
+                              ✓
+                            </div>
+                            <span className="text-xs sm:text-sm font-bold truncate">
+                              {cleaner.name}
+                            </span>
+                          </div>
+                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 border border-slate-300">
+                            👑 TEAM LEADER
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    if (existingSquadTeam) {
+                      return (
+                        <div
+                          key={cleaner.id}
+                          onClick={() => {
+                            toast.error(
+                              `Cleaner '${cleaner.name}' is already assigned to squad '${existingSquadTeam.teamName}' (${existingSquadTeam.teamCode})! Remove them from that squad first.`
+                            );
+                          }}
+                          className="p-2.5 rounded-xl border border-slate-200 bg-slate-100/70 text-slate-400 flex items-center justify-between cursor-not-allowed select-none"
+                          title={`Assigned to ${existingSquadTeam.teamCode}. Remove from current squad first.`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-4 h-4 rounded bg-slate-200 flex items-center justify-center text-slate-400 text-[10px] font-bold">
+                              🔒
+                            </div>
+                            <span className="text-xs sm:text-sm font-bold truncate">
+                              {cleaner.name}
+                            </span>
+                          </div>
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                            🔒 In {existingSquadTeam.teamCode}
+                          </span>
+                        </div>
+                      );
+                    }
+
                     return (
                       <label
                         key={cleaner.id}

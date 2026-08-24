@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Truck,
@@ -13,15 +13,22 @@ import {
   Star,
   DollarSign,
   User,
-  Building,
-  Home,
   Check,
-  ChevronRight,
+  X,
+  Sparkles,
+  Award,
   ShieldCheck,
-  Sliders,
   Calendar,
 } from "lucide-react";
+import { io } from "socket.io-client";
+import { toast } from "sonner";
 import ProofOfWorkModal from "@/components/cleaner/ProofOfWorkModal";
+import {
+  fetchAllTeamsAPI,
+  respondLeaderRequestAPI,
+  TeamSquad,
+} from "@/services/teamService";
+import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
 
 interface JobItem {
   id: string;
@@ -42,6 +49,10 @@ export default function CleanerDashboardPage() {
 
   // Active Selected Job for Proof Upload Modal
   const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(null);
+
+  // Pending Team Leader Appointment Invitation State
+  const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(null);
+  const [isResponding, setIsResponding] = useState(false);
 
   // Daily Assigned Jobs State
   const [jobs, setJobs] = useState<JobItem[]>([
@@ -99,6 +110,103 @@ export default function CleanerDashboardPage() {
     },
   ]);
 
+  // Check if current cleaner has a pending Team Leader assignment request
+  const checkPendingLeaderRequest = async () => {
+    try {
+      const user = getAuthUser();
+      if (!user) return;
+
+      const teams = await fetchAllTeamsAPI();
+      const invitation = teams.find((t) => {
+        const isLeaderMatch =
+          t.leader?.userId === user.id ||
+          t.leader?.id === user.id ||
+          t.leader?.phone === user.phone ||
+          (user.name && t.leader?.name?.toLowerCase() === user.name?.toLowerCase());
+
+        return isLeaderMatch && t.leaderRequestStatus === "PENDING";
+      });
+
+      setPendingLeaderTeam(invitation || null);
+    } catch (err) {
+      console.error("Failed to check pending leader request:", err);
+    }
+  };
+
+  // Subscribe to real-time Socket.IO team updates
+  useEffect(() => {
+    checkPendingLeaderRequest();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("team_updated", () => {
+      checkPendingLeaderRequest();
+    });
+
+    socket.on("leader_request_updated", () => {
+      checkPendingLeaderRequest();
+    });
+
+    socket.on("cleaner_updated", () => {
+      checkPendingLeaderRequest();
+    });
+
+    return () => {
+      socket.off("team_updated");
+      socket.off("leader_request_updated");
+      socket.off("cleaner_updated");
+      socket.disconnect();
+    };
+  }, []);
+
+  // Respond to Leader Assignment Request (ACCEPT / DECLINE)
+  const handleRespondRequest = async (action: "ACCEPT" | "DECLINE") => {
+    if (!pendingLeaderTeam) return;
+    setIsResponding(true);
+
+    try {
+      const res = await respondLeaderRequestAPI(pendingLeaderTeam.id, action);
+
+      if (res?.success) {
+        if (action === "ACCEPT") {
+          toast.success(
+            `👑 Congratulations! You accepted Team Leader role for squad '${pendingLeaderTeam.teamName}'!`
+          );
+
+          // Update local Auth Cookie and Role to TEAM_LEADER
+          const currentUser = getAuthUser();
+          if (currentUser) {
+            currentUser.role = "TEAM_LEADER";
+            setAuthUser(currentUser);
+          }
+          setAuthRole("TEAM_LEADER");
+
+          // Automatically redirect to Team Leader Dashboard
+          setTimeout(() => {
+            window.location.href = "/team-leader";
+          }, 800);
+        } else {
+          toast.info("You have declined the Team Leader appointment request.");
+          setPendingLeaderTeam(null);
+        }
+      } else {
+        toast.error(res?.message || "Failed to respond to leader request");
+      }
+    } catch (err: any) {
+      console.error("Error responding to leader request:", err);
+      toast.error(err?.message || "Failed to respond to leader request");
+    } finally {
+      setIsResponding(false);
+    }
+  };
+
   // One-Tap Status Update Handler
   const updateJobStatus = (id: string, newStatus: JobItem["status"]) => {
     setJobs((prev) =>
@@ -110,8 +218,73 @@ export default function CleanerDashboardPage() {
 
   return (
     <div className="space-y-8 pb-12 w-full">
+      {/* 👑 Team Leader Appointment Request Banner */}
+      {pendingLeaderTeam && (
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-5 animate-in fade-in zoom-in-95 border-2 border-amber-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-400/50 pb-5">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md text-amber-100 flex items-center justify-center font-black text-2xl border border-white/30 flex-shrink-0">
+                👑
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-black px-3 py-1 rounded-full bg-white text-amber-900 uppercase">
+                    ⚡ TEAM LEADER APPOINTMENT REQUEST
+                  </span>
+                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-900/40 text-amber-100 border border-amber-400/40">
+                    {pendingLeaderTeam.teamCode}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-1">
+                  Admin appointed you as Leader of &apos;{pendingLeaderTeam.teamName}&apos;
+                </h2>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+              <button
+                type="button"
+                disabled={isResponding}
+                onClick={() => handleRespondRequest("ACCEPT")}
+                className="px-6 py-3 rounded-2xl bg-white hover:bg-amber-50 text-amber-900 font-extrabold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                <span>Accept Leader Role & Redirect</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isResponding}
+                onClick={() => handleRespondRequest("DECLINE")}
+                className="px-4 py-3 rounded-2xl bg-amber-900/40 hover:bg-amber-900/60 text-amber-100 border border-amber-400/40 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+                <span>Decline Request</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold bg-amber-900/30 backdrop-blur-md p-4 rounded-2xl border border-amber-400/30">
+            <div>
+              <span className="text-amber-200 text-[10px] uppercase font-black block">Leader Revenue Cut</span>
+              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.commissionRate}% Leader Commission</p>
+            </div>
+            <div>
+              <span className="text-amber-200 text-[10px] uppercase font-black block">Cleaner Squad Pool</span>
+              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.cleanerPoolShare}% Cleaner Pool</p>
+            </div>
+            <div>
+              <span className="text-amber-200 text-[10px] uppercase font-black block">Assigned Coverage Zone</span>
+              <p className="text-sm font-black text-white mt-0.5">{pendingLeaderTeam.zone?.zoneName || "Dhaka Zone"}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Duty Status & Shift Banner */}
-      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
+      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
         <div className="space-y-2">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
@@ -128,7 +301,7 @@ export default function CleanerDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            স্বাগতম সুপারভাইজার রাহাত করিম! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
+            স্বাগতম ক্লিনার রাহাত করিম! আজকের অ্যাসাইন করা ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি আপলোড করুন।
           </p>
         </div>
 
@@ -144,17 +317,18 @@ export default function CleanerDashboardPage() {
           <button
             type="button"
             onClick={() => setIsOnDuty(!isOnDuty)}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer shadow-xs ${isOnDuty
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer shadow-xs ${
+              isOnDuty
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400"
                 : "bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300"
-              }`}
+            }`}
           >
             {isOnDuty ? "অফলাইন যান" : "অনলাইন যান"}
           </button>
         </div>
       </div>
 
-      {/* KPI Cards Overview Grid - Flat Border Clean Design */}
+      {/* KPI Cards Overview Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Today's Jobs Card */}
         <div className="bg-gradient-to-br from-blue-50/70 via-white to-slate-50/40 border border-blue-200 rounded-3xl p-6 sm:p-7 space-y-4">
@@ -269,7 +443,6 @@ export default function CleanerDashboardPage() {
         {/* Jobs List Grid */}
         <div className="space-y-5">
           {jobs.map((job) => {
-            // Status styling selector
             const getStatusBadge = () => {
               switch (job.status) {
                 case "EN_ROUTE":
@@ -306,12 +479,13 @@ export default function CleanerDashboardPage() {
             return (
               <div
                 key={job.id}
-                className={`p-6 rounded-3xl border transition-all space-y-5 ${job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
+                className={`p-6 rounded-3xl border transition-all space-y-5 ${
+                  job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
                     ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-sm"
                     : job.status === "COMPLETED"
-                      ? "bg-slate-50/70 border-slate-200"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                  }`}
+                    ? "bg-slate-50/70 border-slate-200"
+                    : "bg-white border-slate-200 hover:border-slate-300"
+                }`}
               >
                 {/* Row Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">

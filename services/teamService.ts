@@ -48,6 +48,7 @@ export interface TeamSquad {
   commissionRate: number; // 10%
   cleanerPoolShare: number; // 40%
   adminShare: number; // 50%
+  leaderRequestStatus?: "PENDING" | "ACCEPTED" | "DECLINED";
   status: "ACTIVE" | "INACTIVE";
   completedJobsCount: number;
 }
@@ -167,6 +168,16 @@ export const updateTeamAPI = async (id: string, payload: Partial<CreateTeamPaylo
     method: "PATCH",
     headers: getHeaders(),
     body: JSON.stringify(payload),
+  });
+  return res.json();
+};
+
+export const respondLeaderRequestAPI = async (teamId: string, action: "ACCEPT" | "DECLINE") => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/teams/${teamId}/leader-request`, {
+    method: "PATCH",
+    headers: getHeaders(),
+    body: JSON.stringify({ action }),
   });
   return res.json();
 };

@@ -201,17 +201,34 @@ export default function AdminCoverageClientView({
 
     setIsSubmitting(true);
     try {
+      let res;
       if (editingId) {
-        await updateCoverageAPI(editingId, payload);
+        res = await updateCoverageAPI(editingId, payload);
       } else {
-        await createCoverageAPI(payload);
+        res = await createCoverageAPI(payload);
       }
 
-      setIsModalOpen(false);
-      await refreshData();
-    } catch (err) {
+      if (res?.success) {
+        toast.success(
+          res?.message ||
+            (editingId
+              ? "Coverage Area updated successfully!"
+              : "Coverage Area created successfully!")
+        );
+        setIsModalOpen(false);
+        await refreshData();
+      } else {
+        const errorMsg =
+          res?.message ||
+          res?.errorMessages?.[0]?.message ||
+          "Failed to save coverage area";
+        toast.error(errorMsg);
+      }
+    } catch (err: any) {
       console.error("Failed to save coverage area:", err);
-      setIsModalOpen(false);
+      toast.error(
+        err?.message || "An unexpected error occurred while saving coverage area!"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -219,16 +236,24 @@ export default function AdminCoverageClientView({
 
   const toggleCoverageStatus = async (coverage: ICoverageArea) => {
     const newStatus = !coverage.isActive;
-    setCoverages((prev) =>
-      prev.map((c) =>
-        c.id === coverage.id ? { ...c, isActive: newStatus } : c,
-      ),
-    );
 
     try {
-      await updateCoverageAPI(coverage.id, { isActive: newStatus });
-    } catch (err) {
+      const res = await updateCoverageAPI(coverage.id, { isActive: newStatus });
+      if (res?.success) {
+        toast.success(
+          res?.message || `Zone status updated to ${newStatus ? "ACTIVE" : "INACTIVE"}`
+        );
+        setCoverages((prev) =>
+          prev.map((c) =>
+            c.id === coverage.id ? { ...c, isActive: newStatus } : c
+          )
+        );
+      } else {
+        toast.error(res?.message || "Failed to update coverage zone status");
+      }
+    } catch (err: any) {
       console.error("Failed to toggle status:", err);
+      toast.error(err?.message || "Failed to update coverage zone status");
     }
   };
 
@@ -236,12 +261,17 @@ export default function AdminCoverageClientView({
     if (!confirm("Are you sure you want to delete this coverage area zone?"))
       return;
 
-    setCoverages((prev) => prev.filter((c) => c.id !== id));
-
     try {
-      await deleteCoverageAPI(id);
-    } catch (err) {
+      const res = await deleteCoverageAPI(id);
+      if (res?.success) {
+        toast.success(res?.message || "Coverage Area deleted successfully");
+        setCoverages((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        toast.error(res?.message || "Failed to delete coverage area");
+      }
+    } catch (err: any) {
       console.error("Failed to delete coverage area:", err);
+      toast.error(err?.message || "Failed to delete coverage area");
     }
   };
 
