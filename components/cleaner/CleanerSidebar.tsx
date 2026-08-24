@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -17,9 +17,16 @@ import {
   ShieldAlert,
   ShieldCheck,
   Crown,
+  Loader2,
 } from "lucide-react";
+import { io } from "socket.io-client";
+import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import {
+  fetchCleanerProfileMeAPI,
+  toggleCleanerDutyStatusAPI,
+} from "@/services/cleanerService";
 
 interface CleanerSidebarProps {
   mobileOpen?: boolean;
@@ -32,7 +39,61 @@ export default function CleanerSidebar({
 }: CleanerSidebarProps) {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [isOnDuty, setIsOnDuty] = useState(false);
+  const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+
+  const loadDutyProfile = async () => {
+    const prof = await fetchCleanerProfileMeAPI();
+    if (prof) {
+      setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
+    }
+  };
+
+  useEffect(() => {
+    loadDutyProfile();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cleaner_updated", () => {
+      loadDutyProfile();
+    });
+
+    return () => {
+      socket.off("cleaner_updated");
+      socket.disconnect();
+    };
+  }, []);
+
+  const handleToggleDuty = async () => {
+    setIsTogglingDuty(true);
+    try {
+      const targetStatus = isOnDuty ? "OFF_DUTY" : "ON_DUTY";
+      const res = await toggleCleanerDutyStatusAPI(targetStatus);
+      if (res?.success && res?.data) {
+        const newDuty = res.data.dutyStatus === "ON_DUTY" || res.data.dutyStatus === "IN_SERVICE";
+        setIsOnDuty(newDuty);
+        toast.success(
+          newDuty
+            ? "অন-ডিউটি চালু হয়েছে! আপনার নাম স্কোয়াডে অন-ডিউটিতে প্রদর্শিত হচ্ছে।"
+            : "ডিউটি বন্ধ করা হয়েছে! সিস্টেমে আপনি এখন অফ-ডিউটিতে আছেন।"
+        );
+      } else {
+        toast.error(res?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করা যায়নি");
+      }
+    } catch (err: any) {
+      console.error("Toggle duty error:", err);
+      toast.error(err?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে");
+    } finally {
+      setIsTogglingDuty(false);
+    }
+  };
 
   const navItems = [
     { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
@@ -82,14 +143,16 @@ export default function CleanerSidebar({
           </span>
           <button
             type="button"
-            onClick={() => setIsOnDuty(!isOnDuty)}
-            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+            disabled={isTogglingDuty}
+            onClick={handleToggleDuty}
+            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1 ${
               isOnDuty
                 ? "bg-emerald-500 text-white border-emerald-600"
                 : "bg-slate-200 text-slate-700 border-slate-300"
-            }`}
+            } disabled:opacity-50`}
           >
-            {isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}
+            {isTogglingDuty && <Loader2 className="w-3 h-3 animate-spin" />}
+            <span>{isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}</span>
           </button>
         </div>
         <p className="text-sm text-red-600 font-medium leading-snug">

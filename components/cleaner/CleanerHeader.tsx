@@ -14,9 +14,15 @@ import {
   PhoneCall,
   Truck,
   MapPin,
+  Timer,
 } from "lucide-react";
+import { io } from "socket.io-client";
 import { getAuthUser } from "@/utils/cookie";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import {
+  fetchCleanerProfileMeAPI,
+  ICleanerProfile,
+} from "@/services/cleanerService";
 
 interface CleanerHeaderProps {
   onToggleMobileMenu: () => void;
@@ -27,13 +33,72 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(null);
+  const [elapsedTimeStr, setElapsedTimeStr] = useState<string>("00h 00m 00s");
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  const loadCleanerProfile = async () => {
+    const prof = await fetchCleanerProfileMeAPI();
+    if (prof) {
+      setCleanerProfile(prof);
+    }
+  };
+
   useEffect(() => {
     setUserProfile(getAuthUser());
+    loadCleanerProfile();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cleaner_updated", () => {
+      loadCleanerProfile();
+    });
+
+    return () => {
+      socket.off("cleaner_updated");
+      socket.disconnect();
+    };
   }, []);
+
+  // 1-second live countdown timer interval
+  useEffect(() => {
+    if (
+      !cleanerProfile ||
+      (cleanerProfile.dutyStatus !== "ON_DUTY" && cleanerProfile.dutyStatus !== "IN_SERVICE") ||
+      !cleanerProfile.dutyStartedAt
+    ) {
+      setElapsedTimeStr("00h 00m 00s");
+      return;
+    }
+
+    const calculateElapsed = () => {
+      const startMs = new Date(cleanerProfile.dutyStartedAt!).getTime();
+      const nowMs = Date.now();
+      const diffMs = Math.max(0, nowMs - startMs);
+
+      const totalSecs = Math.floor(diffMs / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const minutes = Math.floor((totalSecs % 3600) / 60);
+      const seconds = totalSecs % 60;
+
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      setElapsedTimeStr(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+    };
+
+    calculateElapsed();
+    const interval = setInterval(calculateElapsed, 1000);
+
+    return () => clearInterval(interval);
+  }, [cleanerProfile]);
 
   const getInitials = (name?: string) => {
     if (!name) return "CL";
@@ -112,15 +177,50 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
         </div>
       </div>
 
-      {/* Right Area: Status, Dispatch Hotline, Notifications, User */}
+      {/* Right Area: Status, Duty Countdown Timer, Dispatch Hotline, Notifications, User */}
       <div className="flex items-center gap-2.5 sm:gap-4">
+        {/* Live Duty Time Countdown Badge */}
+        {cleanerProfile && (
+          <div>
+            {cleanerProfile.dutyStatus === "ON_DUTY" || cleanerProfile.dutyStatus === "IN_SERVICE" ? (
+              <div className="px-3.5 py-1.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center gap-2.5 shadow-xs">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                </span>
+                <div className="flex flex-col text-[11px] leading-tight">
+                  <div className="font-extrabold text-emerald-950 flex items-center gap-1">
+                    <span className="bg-emerald-200/80 text-emerald-900 px-1.5 py-0.2 rounded text-[10px] uppercase tracking-wider font-black">
+                      ON-DUTY
+                    </span>
+                    {cleanerProfile.dutyStartedAt && (
+                      <span className="text-slate-600 font-semibold text-[10px]">
+                        Start: {new Date(cleanerProfile.dutyStartedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-mono font-black text-xs text-emerald-700 tracking-wide mt-0.5 flex items-center gap-1">
+                    <Timer className="w-3 h-3 text-emerald-600 animate-spin" />
+                    <span>{elapsedTimeStr}</span>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-500 flex items-center gap-1.5 text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span>Off Duty</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Support Dispatch Hotline */}
         <a
           href="tel:+8801700000000"
-          className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors"
+          className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold hover:bg-blue-100 transition-colors"
         >
-          <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Dispatch Control: +880 1700-999888</span>
+          <PhoneCall className="w-3.5 h-3.5 text-[#007eff]" />
+          <span>Dispatch: +880 1700-999888</span>
         </a>
 
         {/* Notification Bell Dropdown */}

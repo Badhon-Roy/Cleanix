@@ -19,6 +19,7 @@ import {
   Award,
   ShieldCheck,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
@@ -33,6 +34,10 @@ import {
   respondAppointmentAPI,
   LeaderAppointmentItem,
 } from "@/services/appointmentService";
+import {
+  fetchCleanerProfileMeAPI,
+  toggleCleanerDutyStatusAPI,
+} from "@/services/cleanerService";
 import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
 import { slugifyTeamName } from "@/utils/slug";
 
@@ -51,7 +56,39 @@ interface JobItem {
 }
 
 export default function CleanerDashboardPage() {
-  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [isOnDuty, setIsOnDuty] = useState(false);
+  const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+
+  const loadCleanerDutyProfile = async () => {
+    const prof = await fetchCleanerProfileMeAPI();
+    if (prof) {
+      setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
+    }
+  };
+
+  const handleToggleDuty = async () => {
+    setIsTogglingDuty(true);
+    try {
+      const targetStatus = isOnDuty ? "OFF_DUTY" : "ON_DUTY";
+      const res = await toggleCleanerDutyStatusAPI(targetStatus);
+      if (res?.success && res?.data) {
+        const newDuty = res.data.dutyStatus === "ON_DUTY" || res.data.dutyStatus === "IN_SERVICE";
+        setIsOnDuty(newDuty);
+        toast.success(
+          newDuty
+            ? "অন-ডিউটি চালু হয়েছে! আপনার নাম স্কোয়াডে অন-ডিউটিতে প্রদর্শিত হচ্ছে।"
+            : "ডিউটি বন্ধ করা হয়েছে! সিস্টেমে আপনি এখন অফ-ডিউটিতে আছেন।"
+        );
+      } else {
+        toast.error(res?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করা যায়নি");
+      }
+    } catch (err: any) {
+      console.error("Toggle duty error:", err);
+      toast.error(err?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে");
+    } finally {
+      setIsTogglingDuty(false);
+    }
+  };
 
   // Active Selected Job for Proof Upload Modal
   const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(
@@ -233,6 +270,7 @@ export default function CleanerDashboardPage() {
   // Subscribe to real-time Socket.IO team and appointment updates
   useEffect(() => {
     checkPendingLeaderRequest();
+    loadCleanerDutyProfile();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -257,6 +295,7 @@ export default function CleanerDashboardPage() {
 
     socket.on("cleaner_updated", () => {
       checkPendingLeaderRequest();
+      loadCleanerDutyProfile();
     });
 
     return () => {
@@ -442,14 +481,16 @@ export default function CleanerDashboardPage() {
 
           <button
             type="button"
-            onClick={() => setIsOnDuty(!isOnDuty)}
+            disabled={isTogglingDuty}
+            onClick={handleToggleDuty}
             className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer shadow-xs ${
               isOnDuty
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400"
                 : "bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300"
-            }`}
+            } disabled:opacity-50 flex items-center gap-1.5`}
           >
-            {isOnDuty ? "অফলাইন যান" : "অনলাইন যান"}
+            {isTogglingDuty && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isOnDuty ? "অফলাইন যান" : "অনলাইন যান"}</span>
           </button>
         </div>
       </div>

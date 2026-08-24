@@ -11,6 +11,7 @@ const getHeaders = () => {
 };
 
 export type TCleanerStatus = "PENDING_APPROVAL" | "APPROVED" | "BLOCKED";
+export type TDutyStatus = "ON_DUTY" | "OFF_DUTY" | "IN_SERVICE";
 
 export interface ICleanerProfile {
   id: string;
@@ -23,6 +24,10 @@ export interface ICleanerProfile {
   gender?: "Male" | "Female" | "Other";
   nidNumber?: string;
   status: TCleanerStatus;
+  dutyStatus: TDutyStatus;
+  dutyStartedAt?: string | null;
+  dutyEndedAt?: string | null;
+  totalDutyMinutes: number;
   isApproved: boolean;
   isAvailable: boolean;
   rating: number;
@@ -43,8 +48,12 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
   gender: c.gender || "Male",
   nidNumber: c.nidNumber || "N/A",
   status: (c.status || "PENDING_APPROVAL") as TCleanerStatus,
+  dutyStatus: (c.dutyStatus || "OFF_DUTY") as TDutyStatus,
+  dutyStartedAt: c.dutyStartedAt || null,
+  dutyEndedAt: c.dutyEndedAt || null,
+  totalDutyMinutes: c.totalDutyMinutes ?? 0,
   isApproved: c.isApproved ?? false,
-  isAvailable: c.isAvailable ?? true,
+  isAvailable: c.isAvailable ?? false,
   rating: c.rating ?? 5.0,
   totalJobsDone: c.totalJobsDone ?? 0,
   totalEarnings: c.totalEarnings ?? 0,
@@ -70,6 +79,35 @@ export const fetchAllCleanersAPI = async (statusQuery?: string): Promise<ICleane
     console.error("Error in fetchAllCleanersAPI:", error);
     return [];
   }
+};
+
+export const fetchCleanerProfileMeAPI = async (): Promise<ICleanerProfile | null> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cleaners/profile/me`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return mapCleanerProfile(data.data);
+    }
+    return null;
+  } catch (error) {
+    console.error("Error in fetchCleanerProfileMeAPI:", error);
+    return null;
+  }
+};
+
+export const toggleCleanerDutyStatusAPI = async (dutyStatus?: TDutyStatus) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/cleaners/toggle-duty`, {
+    method: "PATCH",
+    headers: getHeaders(),
+    body: JSON.stringify(dutyStatus ? { dutyStatus } : {}),
+  });
+  return res.json();
 };
 
 export const updateCleanerApprovalAPI = async (
