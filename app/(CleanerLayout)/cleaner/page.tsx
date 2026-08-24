@@ -294,9 +294,14 @@ export default function CleanerDashboardPage() {
           }
           setAuthRole("TEAM_LEADER");
 
-          // Automatically redirect to Team Leader Dashboard
+          // Automatically redirect to Team Leader Dashboard with dynamic team slug
+          const teamNameSlug = (pendingLeaderTeam?.teamName || "team-squad")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
           setTimeout(() => {
-            window.location.href = "/team-leader";
+            window.location.href = `/team/${teamNameSlug}`;
           }, 800);
         } else {
           toast.info("You have declined the Team Leader appointment request.");

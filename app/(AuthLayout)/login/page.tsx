@@ -96,7 +96,7 @@ export default function LoginPage() {
       const isApproved = res.data?.user?.isApproved !== undefined ? res.data?.user?.isApproved : true;
 
       // Store user auth in cookies
-      const userData = {
+      const userData: any = {
         id: res.data?.user?._id || res.data?.user?.id || "",
         email: res.data?.user?.email || data.email,
         name: res.data?.user?.name || data.email.split("@")[0],
@@ -104,6 +104,7 @@ export default function LoginPage() {
         role,
         status,
         isApproved,
+        leadTeam: res.data?.user?.leadTeam || null,
         isLoggedIn: true,
         loginTime: new Date().toISOString(),
       };
@@ -120,8 +121,10 @@ export default function LoginPage() {
           router.push("/admin");
         }, 800);
       } else if (role === "TEAM_LEADER") {
+        const teamSlug = userData?.leadTeam?.teamSlug;
+        const targetPath = teamSlug ? `/team/${teamSlug}` : "/team/team-squad";
         setTimeout(() => {
-          router.push("/team-leader");
+          router.push(targetPath);
         }, 800);
       } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
         setTimeout(() => {

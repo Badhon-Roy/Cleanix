@@ -36,40 +36,39 @@ export default function TeamLeaderSidebar({
   const [isOnDuty, setIsOnDuty] = useState(true);
 
   const navItems = [
-    { name: "Overview & Roster", href: "/team-leader", icon: LayoutDashboard },
-    { name: "Assigned Team Services", href: "/team-leader/bookings", icon: Truck, badge: "3 Active" },
-    { name: "Cleaner Requests", href: "/team-leader/requests", icon: UserCheck, badge: "2 Pending" },
-    { name: "Request New Bookings", href: "/team-leader/available-bookings", icon: CheckSquare, badge: "5 Open" },
-    { name: "Proof of Work Monitor", href: "/team-leader/proofs", icon: FileCheck, badge: "Quality" },
-    { name: "Team Wallet & Earnings", href: "/team-leader/earnings", icon: Wallet, badge: "10% Cut" },
-    { name: "Admin Control HQ", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
+    { name: "Overview & Roster", key: "", icon: LayoutDashboard },
+    { name: "My Team Squad", key: "my-team", icon: Users, badge: "Squad" },
+    { name: "Assigned Team Services", key: "bookings", icon: Truck, badge: "3 Active" },
+    { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "2 Pending" },
+    { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "5 Open" },
+    { name: "Proof of Work Monitor", key: "proofs", icon: FileCheck, badge: "Quality" },
+    { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
+    { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
   const teamMatch = pathname.match(/^\/team\/([^/]+)/);
   const teamSlug = teamMatch ? teamMatch[1] : null;
 
-  const getNavHref = (basePath: string) => {
-    if (basePath === "/admin") return "/admin";
-    if (teamSlug) {
-      if (basePath === "/team-leader") return `/team/${teamSlug}`;
-      return basePath.replace("/team-leader", `/team/${teamSlug}`);
-    }
-    return basePath;
+  const effectiveSlug = teamSlug || "team-squad";
+
+  const getNavHref = (key: string) => {
+    if (key === "/admin") return "/admin";
+    if (!key) return `/team/${effectiveSlug}`;
+    return `/team/${effectiveSlug}/${key}`;
   };
 
-  const checkIsActive = (basePath: string) => {
-    const targetHref = getNavHref(basePath);
-    if (basePath === "/team-leader") {
-      return pathname === targetHref || pathname === "/team-leader";
-    }
-    return pathname.startsWith(targetHref) || pathname.startsWith(basePath);
+  const checkIsActive = (key: string) => {
+    if (key === "/admin") return pathname === "/admin";
+    const targetHref = getNavHref(key);
+    if (!key) return pathname === targetHref;
+    return pathname.startsWith(targetHref);
   };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
       {/* Brand Header */}
       <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-        <Link href={getNavHref("/team-leader")} className="flex items-center gap-3 group">
+        <Link href={getNavHref("")} className="flex items-center gap-3 group">
           <SwirlLogo />
           <div>
             <div className="flex items-center gap-1.5">
@@ -117,12 +116,12 @@ export default function TeamLeaderSidebar({
       <div className="flex-1 space-y-1.5 overflow-y-auto py-5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = checkIsActive(item.href);
+          const isActive = checkIsActive(item.key);
 
           return (
             <Link
               key={item.name}
-              href={getNavHref(item.href)}
+              href={getNavHref(item.key)}
               onClick={() => setMobileOpen && setMobileOpen(false)}
               className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
                 isActive

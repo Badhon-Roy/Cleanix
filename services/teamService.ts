@@ -13,8 +13,10 @@ const getHeaders = () => {
 export interface TeamMember {
   id: string;
   name: string;
+  email?: string;
   phone: string;
   role: "TEAM_LEADER" | "CLEANER";
+  status?: string;
 }
 
 export interface RegisteredCleaner {
@@ -52,6 +54,7 @@ export interface TeamSquad {
   leaderRequestStatus?: "PENDING" | "ACCEPTED" | "DECLINED";
   status: "ACTIVE" | "INACTIVE";
   completedJobsCount: number;
+  createdAt?: string;
 }
 
 export interface CreateTeamPayload {
@@ -91,8 +94,10 @@ export const mapTeamSquad = (t: any): TeamSquad => {
       ? t.members.map((m: any) => ({
           id: m._id || m.id || "",
           name: m.name || "",
+          email: m.email || "",
           phone: m.phone || "",
           role: (m.role || "CLEANER") as "CLEANER" | "TEAM_LEADER",
+          status: m.status || "APPROVED",
         }))
       : [],
     zone: {
@@ -107,6 +112,7 @@ export const mapTeamSquad = (t: any): TeamSquad => {
     leaderRequestStatus: (t.leaderRequestStatus || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED",
     status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
     completedJobsCount: t.completedJobsCount ?? 0,
+    createdAt: t.createdAt || t.created_at || undefined,
   };
 };
 export const mapRegisteredCleaner = (c: any): RegisteredCleaner => ({
@@ -135,6 +141,25 @@ export const fetchAllTeamsAPI = async (): Promise<TeamSquad[]> => {
   } catch (error) {
     console.error("Error in fetchAllTeamsAPI:", error);
     return [];
+  }
+};
+
+export const fetchTeamByIdOrSlugAPI = async (idOrSlug: string): Promise<TeamSquad | null> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/teams/${idOrSlug}`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return mapTeamSquad(data.data);
+    }
+    return null;
+  } catch (error) {
+    console.error("Error in fetchTeamByIdOrSlugAPI:", error);
+    return null;
   }
 };
 

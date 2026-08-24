@@ -103,8 +103,13 @@ export default function CleanerAppointmentsPage() {
             setAuthUser(currentUser);
           }
           setAuthRole("TEAM_LEADER");
+          const teamNameSlug = (appointments.find((a) => a.id === appointmentId)?.team?.teamName || "team-squad")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
           setTimeout(() => {
-            window.location.href = "/team-leader";
+            window.location.href = `/team/${teamNameSlug}`;
           }, 800);
         } else {
           toast.info("Appointment request declined");

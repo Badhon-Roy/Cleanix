@@ -58,3 +58,40 @@ export const fetchCleanersServer = async (): Promise<RegisteredCleaner[]> => {
     return [];
   }
 };
+
+export const fetchTeamByIdOrSlugServer = async (idOrSlug: string): Promise<TeamSquad | null> => {
+  try {
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get("cleanix_token")?.value ||
+      cookieStore.get("accessToken")?.value;
+
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/teams/${idOrSlug}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return mapTeamSquad(data.data);
+    }
+
+    // Fallback: search in all teams list
+    const teams = await fetchTeamsServer();
+    const found = teams.find(
+      (t) =>
+        t.id === idOrSlug ||
+        t.teamCode.toLowerCase() === idOrSlug.toLowerCase() ||
+        t.teamName.toLowerCase().replace(/[^a-z0-9]+/g, "-") === idOrSlug.toLowerCase()
+    );
+    return found || (teams.length > 0 ? teams[0] : null);
+  } catch (error) {
+    console.error("Error in fetchTeamByIdOrSlugServer:", error);
+    return null;
+  }
+};

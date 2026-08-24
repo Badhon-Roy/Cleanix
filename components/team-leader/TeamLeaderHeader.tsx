@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Bell,
   Search,
@@ -21,9 +22,14 @@ interface TeamLeaderHeaderProps {
 }
 
 export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeaderProps) {
+  const pathname = usePathname();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const teamMatch = pathname?.match(/^\/team\/([^/]+)/);
+  const teamSlug = teamMatch ? teamMatch[1] : "team-squad";
+  const leaderProfileHref = `/team/${teamSlug}`;
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -200,7 +206,7 @@ export default function TeamLeaderHeader({ onToggleMobileMenu }: TeamLeaderHeade
               </div>
 
               <Link
-                href="/team-leader"
+                href={leaderProfileHref}
                 onClick={() => setUserMenuOpen(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium"
               >

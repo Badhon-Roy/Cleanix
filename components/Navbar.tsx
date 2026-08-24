@@ -75,7 +75,12 @@ export default function Navbar({ user: initialUser }: NavbarProps) {
   const getDashboardHref = () => {
     if (!user) return "/dashboard";
     if (user.role === "ADMIN") return "/admin";
-    if (user.role === "TEAM_LEADER") return "/team-leader";
+    if (user.role === "TEAM_LEADER") {
+      if (user.leadTeam?.teamSlug) {
+        return `/team/${user.leadTeam.teamSlug}`;
+      }
+      return "/team/team-squad";
+    }
     if (user.role === "CLEANER") {
       if (user.status === "PENDING_APPROVAL" || user.isApproved === false) {
         return "/waiting-approval";

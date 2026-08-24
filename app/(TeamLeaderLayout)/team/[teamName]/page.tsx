@@ -1,8 +1,8 @@
 "use client";
 
-import React, { use, useState, useEffect } from "react";
-import TeamLeaderDashboardView from "@/components/team-leader/TeamLeaderDashboardView";
+import { use} from "react";
 import { unslugifyTeamName } from "@/utils/slug";
+import TeamLeaderDashboardView from "@/components/team-leader/TeamLeaderDashboardView";
 
 export default function DynamicTeamLeaderDashboardPage({
   params,
