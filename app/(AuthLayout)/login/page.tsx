@@ -117,6 +117,10 @@ export default function LoginPage() {
         setTimeout(() => {
           router.push("/admin");
         }, 800);
+      } else if (role === "TEAM_LEADER") {
+        setTimeout(() => {
+          router.push("/team-leader");
+        }, 800);
       } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
         setTimeout(() => {
           router.push("/waiting-approval");

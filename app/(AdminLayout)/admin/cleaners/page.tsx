@@ -19,6 +19,7 @@ import AddCleanerModal, { NewCleanerFormData } from "@/components/admin/AddClean
 
 export default function AdminCleanersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hubFilter, setHubFilter] = useState("ALL");
 
@@ -132,14 +133,25 @@ export default function AdminCleanersPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-[#007eff] hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Register New Cleaner</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsTeamModalOpen(true)}
+            className="px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-[#0d274c] hover:bg-slate-800 text-white shadow-md transition-all cursor-pointer flex items-center gap-2"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Manage Teams & Leader Allocation</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-[#007eff] hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Register New Cleaner</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Container */}
@@ -252,6 +264,85 @@ export default function AdminCleanersPage() {
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddCleaner}
       />
+
+      {/* Render Admin Team Management & Leader Assignment Modal */}
+      {isTeamModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-xs font-black text-[#007eff] uppercase">
+                  ADMIN HQ TEAM CONTROL
+                </span>
+                <h3 className="text-xl font-extrabold text-slate-900">
+                  Cleanix Team Hierarchy & Leader Manager
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTeamModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 space-y-1">
+                <p className="text-xs font-extrabold text-slate-900">
+                  ⚡ Single-Team Rule Enforced (১-জন-১-টিম নিয়ম)
+                </p>
+                <p className="text-xs text-slate-600 font-medium">
+                  প্রতিটি টিমে ঠিক ১ জন টিম লিডার এবং নির্দিষ্ট ক্লিনার সদস্য থাকবে। একজন ক্লিনার একই সময়ে কেবল ১টি টিমেই অন্তর্ভুক্ত থাকবে।
+                </p>
+              </div>
+
+              {/* Active Teams List */}
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-black text-slate-900 text-sm">TEAM ALPHA (Gulshan / Banani Zone)</h4>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Team Leader: <strong className="text-slate-900">Rahat Karim (Supervisor)</strong>
+                    </p>
+                    <p className="text-xs text-blue-600 font-bold mt-0.5">
+                      Cleaners: Asif Khan, Kamrul Islam, Sajjad Hossain, Mahfuzur Rahman (4 Members)
+                    </p>
+                  </div>
+                  <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                    ACTIVE TEAM
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-black text-slate-900 text-sm">TEAM BRAVO (Dhanmondi Zone)</h4>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Team Leader: <strong className="text-slate-900">Selim Reza (Senior Tech)</strong>
+                    </p>
+                    <p className="text-xs text-blue-600 font-bold mt-0.5">
+                      Cleaners: Shakil Ahmed, Anisur Rahman (2 Members)
+                    </p>
+                  </div>
+                  <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                    ACTIVE TEAM
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsTeamModalOpen(false)}
+                className="px-6 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close Manager
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
