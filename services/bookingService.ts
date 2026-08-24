@@ -75,7 +75,7 @@ export const fetchAdminBookingsAPI = async () => {
 
 export const updateAdminBookingStatusAPI = async (
   bookingId: string,
-  payload: { status?: string; cleanerTeam?: string }
+  payload: { status?: string; cleanerTeam?: string; teamId?: string }
 ) => {
   try {
     const baseUrl = getBaseUrl();
@@ -89,6 +89,25 @@ export const updateAdminBookingStatusAPI = async (
   } catch (error: any) {
     console.error("Error updating booking status:", error);
     return { success: false, message: error.message || "Failed to update booking status" };
+  }
+};
+
+export const assignTeamToBookingAPI = async (
+  bookingId: string,
+  payload: { teamId?: string; cleanerTeam?: string; notes?: string }
+) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/assign-team`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error assigning team to booking:", error);
+    return { success: false, message: error.message || "Failed to assign team to booking" };
   }
 };
 

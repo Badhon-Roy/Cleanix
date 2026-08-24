@@ -366,7 +366,7 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
             </div>
             <div className="min-w-0">
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Email Address</p>
-              <p className="text-sm font-bold text-slate-900 truncate">{leader.email || "No email available"}</p>
+              <p className="text-sm font-bold text-slate-900 break-all">{leader.email || "No email available"}</p>
             </div>
           </div>
 
@@ -523,14 +523,18 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
                     )}
 
                     {member.email && (
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span className="font-semibold flex items-center gap-1.5 text-slate-500">
+                      <div className="flex items-start justify-between gap-2 text-slate-600">
+                        <span className="font-semibold flex items-center gap-1.5 text-slate-500 flex-shrink-0">
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
                           Email:
                         </span>
-                        <span className="font-bold text-slate-800 truncate max-w-[140px]" title={member.email}>
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="font-bold text-slate-800 hover:text-blue-600 break-all text-right"
+                          title={member.email}
+                        >
                           {member.email}
-                        </span>
+                        </a>
                       </div>
                     )}
                   </div>

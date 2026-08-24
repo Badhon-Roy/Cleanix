@@ -494,6 +494,11 @@ export default function AdminTeamsClientView({
     const targetTeam = teams.find((t) => t.id === id);
     if (!targetTeam) return;
 
+    if (targetTeam.status === "INACTIVE" && targetTeam.leaderRequestStatus !== "ACCEPTED") {
+      toast.error("Team Leader has not accepted the invitation request yet! Squad cannot be activated until accepted.");
+      return;
+    }
+
     const newStatus = targetTeam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 
     try {

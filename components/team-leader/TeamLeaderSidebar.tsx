@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,13 +14,11 @@ import {
   LogOut,
   X,
   ShieldCheck,
-  Sparkles,
-  ChevronRight,
   Home,
-  CheckCircle2,
 } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import { fetchMyTeamAssignmentsAPI } from "@/services/teamService";
 
 interface TeamLeaderSidebarProps {
   mobileOpen?: boolean;
@@ -34,22 +32,50 @@ export default function TeamLeaderSidebar({
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isOnDuty, setIsOnDuty] = useState(true);
+  const [assignedCount, setAssignedCount] = useState<number | null>(null);
+
+  const teamMatch = pathname.match(/^\/team\/([^/]+)/);
+  const teamSlug = teamMatch ? teamMatch[1] : null;
+  const effectiveSlug = teamSlug || "team-squad";
+
+  useEffect(() => {
+    const loadAssignmentsCount = async () => {
+      try {
+        const data = await fetchMyTeamAssignmentsAPI(effectiveSlug);
+        if (Array.isArray(data)) {
+          const seen = new Set<string>();
+          const unique = data.filter((item) => {
+            if (!item.booking) return false;
+            const bKey = item.booking?.bookingRef || item.booking?._id || item._id;
+            if (seen.has(bKey)) return false;
+            seen.add(bKey);
+            return true;
+          });
+          setAssignedCount(unique.length);
+        }
+      } catch (err) {
+        console.error("Error fetching assigned count for sidebar:", err);
+      }
+    };
+
+    loadAssignmentsCount();
+  }, [effectiveSlug, pathname]);
 
   const navItems = [
     { name: "Overview & Roster", key: "", icon: LayoutDashboard },
     { name: "My Team Squad", key: "my-team", icon: Users, badge: "Squad" },
-    { name: "Assigned Team Services", key: "bookings", icon: Truck, badge: "3 Active" },
-    { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "2 Pending" },
-    { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "5 Open" },
+    {
+      name: "Assigned Team Services",
+      key: "bookings",
+      icon: Truck,
+      badge: assignedCount !== null ? `${assignedCount} Active` : "Active",
+    },
+    { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "Requests" },
+    { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "Available" },
     { name: "Proof of Work Monitor", key: "proofs", icon: FileCheck, badge: "Quality" },
     { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
     { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
-
-  const teamMatch = pathname.match(/^\/team\/([^/]+)/);
-  const teamSlug = teamMatch ? teamMatch[1] : null;
-
-  const effectiveSlug = teamSlug || "team-squad";
 
   const getNavHref = (key: string) => {
     if (key === "/admin") return "/admin";
@@ -84,7 +110,7 @@ export default function TeamLeaderSidebar({
         </Link>
       </div>
 
-      {/* Duty Status Quick Switcher Box - Matching Cleaner Sidebar */}
+      {/* Duty Status Quick Switcher Box */}
       <div className="mt-5 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-emerald-50/80 border border-blue-100 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -108,7 +134,7 @@ export default function TeamLeaderSidebar({
           </button>
         </div>
         <p className="text-xs text-slate-600 font-medium leading-snug">
-          Team Alpha • Gulshan Hub #01 • Leader: Rahat Karim
+          Squad Slug: <span className="font-extrabold text-blue-600">{effectiveSlug}</span>
         </p>
       </div>
 
@@ -153,7 +179,7 @@ export default function TeamLeaderSidebar({
         })}
       </div>
 
-      {/* Bottom Footer Actions - Matching Cleaner Sidebar */}
+      {/* Bottom Footer Actions */}
       <div className="mt-auto pt-4 border-t border-slate-100">
         <div className="flex items-center gap-2">
           <Link

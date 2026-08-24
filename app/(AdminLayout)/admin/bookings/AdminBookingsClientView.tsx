@@ -17,7 +17,11 @@ import BookingDetailsModal, {
   BookingDetailRecord,
   IBookingServiceItem,
 } from "@/components/admin/BookingDetailsModal";
-import { fetchAdminBookingsAPI, updateAdminBookingStatusAPI } from "@/services/bookingService";
+import {
+  fetchAdminBookingsAPI,
+  updateAdminBookingStatusAPI,
+  assignTeamToBookingAPI,
+} from "@/services/bookingService";
 
 interface AdminBookingsClientViewProps {
   initialBookings?: any[];
@@ -144,41 +148,50 @@ export default function AdminBookingsClientView({
     };
   }, []);
 
-  const handleAssignTeamFromModal = async (teamName: string) => {
-    if (selectedBookingForAssign) {
-      const targetDbId = selectedBookingForAssign.dbId;
+  const handleAssignTeamFromModal = async (
+    teamId: string,
+    teamName: string,
+    notes?: string,
+  ): Promise<boolean> => {
+    if (!selectedBookingForAssign) return false;
 
-      const res = await updateAdminBookingStatusAPI(targetDbId, {
-        status: "ASSIGNED",
-        cleanerTeam: teamName,
-      });
+    const targetDbId = selectedBookingForAssign.dbId;
 
-      if (res?.success) {
-        setBookingList((prev) =>
-          prev.map((b) =>
-            b._dbId === targetDbId || b.id === selectedBookingForAssign.ref
-              ? { ...b, status: "ASSIGNED", cleanerTeam: teamName }
-              : b,
-          ),
+    const res = await assignTeamToBookingAPI(targetDbId, {
+      teamId,
+      cleanerTeam: teamName,
+      notes,
+    });
+
+    if (res?.success) {
+      const assignedTeamDisplay = res.data?.cleanerTeam || teamName;
+
+      setBookingList((prev) =>
+        prev.map((b) =>
+          b._dbId === targetDbId || b.id === selectedBookingForAssign.ref
+            ? { ...b, status: "ASSIGNED", cleanerTeam: assignedTeamDisplay }
+            : b,
+        ),
+      );
+
+      if (
+        selectedBookingForDetails &&
+        (selectedBookingForDetails._dbId === targetDbId ||
+          selectedBookingForDetails.id === selectedBookingForAssign.ref)
+      ) {
+        setSelectedBookingForDetails((prev) =>
+          prev ? { ...prev, status: "ASSIGNED", cleanerTeam: assignedTeamDisplay } : null,
         );
-
-        if (
-          selectedBookingForDetails &&
-          (selectedBookingForDetails._dbId === targetDbId ||
-            selectedBookingForDetails.id === selectedBookingForAssign.ref)
-        ) {
-          setSelectedBookingForDetails((prev) =>
-            prev ? { ...prev, status: "ASSIGNED", cleanerTeam: teamName } : null,
-          );
-        }
-
-        toast.success(
-          `Assigned "${teamName}" to Booking #${selectedBookingForAssign.ref}`,
-        );
-      } else {
-        toast.error(res?.message || "Failed to assign team");
       }
+
+      toast.success(
+        `Assigned "${assignedTeamDisplay}" to Booking #${selectedBookingForAssign.ref}`,
+      );
       setSelectedBookingForAssign(null);
+      return true;
+    } else {
+      toast.error(res?.message || "Failed to assign team");
+      return false;
     }
   };
 

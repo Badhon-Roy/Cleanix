@@ -30,7 +30,7 @@ export default function TeamLeaderMobileShell({ children }: { children?: React.R
 
         {/* SPA View Shell / Server Page Children */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full space-y-8">
-          {children || <TeamLeaderViewShell />}
+          <TeamLeaderViewShell />
         </main>
       </div>
     </div>

@@ -110,7 +110,7 @@ export const mapTeamSquad = (t: any): TeamSquad => {
     cleanerPoolShare: t.cleanerPoolShare ?? 40,
     adminShare: t.adminShare ?? 50,
     leaderRequestStatus: (t.leaderRequestStatus || "PENDING") as "PENDING" | "ACCEPTED" | "DECLINED",
-    status: (t.status || "ACTIVE") as "ACTIVE" | "INACTIVE",
+    status: ((t.leaderRequestStatus || "PENDING") === "ACCEPTED" ? (t.status || "ACTIVE") : "INACTIVE") as "ACTIVE" | "INACTIVE",
     completedJobsCount: t.completedJobsCount ?? 0,
     createdAt: t.createdAt || t.created_at || undefined,
   };
@@ -125,10 +125,11 @@ export const mapRegisteredCleaner = (c: any): RegisteredCleaner => ({
 });
 
 // Client-side API Calls
-export const fetchAllTeamsAPI = async (): Promise<TeamSquad[]> => {
+export const fetchAllTeamsAPI = async (activeOnly?: boolean): Promise<TeamSquad[]> => {
   try {
     const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/teams`, {
+    const queryStr = activeOnly ? "?status=ACTIVE&activeOnly=true" : "";
+    const res = await fetch(`${baseUrl}/teams${queryStr}`, {
       method: "GET",
       headers: getHeaders(),
       cache: "no-store",
@@ -217,6 +218,39 @@ export const deleteTeamAPI = async (id: string) => {
   const res = await fetch(`${baseUrl}/teams/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
+  });
+  return res.json();
+};
+
+export const fetchMyTeamAssignmentsAPI = async (teamSlug?: string): Promise<any[]> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const queryStr = teamSlug ? `?teamSlug=${encodeURIComponent(teamSlug)}` : "";
+    const res = await fetch(`${baseUrl}/team-assignments/my-team${queryStr}`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.success && Array.isArray(data?.data)) {
+      return data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in fetchMyTeamAssignmentsAPI:", error);
+    return [];
+  }
+};
+
+export const updateTeamAssignmentAPI = async (
+  assignmentId: string,
+  payload: { assignedCleaners?: string[]; status?: string; dispatchNotes?: string }
+) => {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/team-assignments/${assignmentId}`, {
+    method: "PATCH",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
   });
   return res.json();
 };
