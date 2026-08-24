@@ -503,7 +503,7 @@ export default function AdminCoverageClientView({
             data-lenis-prevent="true"
             data-lenis-prevent-wheel="true"
             data-lenis-prevent-touch="true"
-            className="bg-white w-full max-w-xl sm:max-w-2xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
+            className="bg-white w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-9 space-y-6 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>

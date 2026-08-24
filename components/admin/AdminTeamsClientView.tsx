@@ -15,6 +15,7 @@ import {
   Trash2,
   DollarSign,
   ImageIcon,
+  UploadCloud,
   ChevronDown,
   Loader2,
   RefreshCw,
@@ -73,6 +74,22 @@ export default function AdminTeamsClientView({
   // Custom Leader Dropdown State
   const [isLeaderDropdownOpen, setIsLeaderDropdownOpen] = useState(false);
   const leaderDropdownRef = useRef<HTMLDivElement>(null);
+
+  // File Upload Ref & Handler for Team Squad Image Preview
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setFormTeamImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Search Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -264,47 +281,36 @@ export default function AdminTeamsClientView({
 
   return (
     <div className="space-y-8 pb-12 w-full">
-      {/* Header Banner - Dark Gradient Admin HQ Style */}
-      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              SQUAD MANAGEMENT HQ
-            </span>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-slate-200 border border-white/10">
-              50% - 10% - 40% SPLIT MODEL ACTIVE
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+      {/* Clean Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Team & Squad Creation Control Center
           </h1>
-
-          <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            রেজিস্টার্ড ক্লিনারদের থেকে টিম লিডার নিযুক্ত করুন, লিডার অ্যাসাইন করলে স্বয়ংক্রিয়ভাবে তার রোল `TEAM_LEADER`-এ আপডেট হবে।
+          <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-xl">
+            টিম স্কোয়াড তৈরি, লিডার ও মেম্বার ক্লিনারদের দায়িত্ব বণ্টন এবং কমিশন স্প্লিট মডেল পরিচালনা করুন।
           </p>
         </div>
 
-        {/* Create Team CTA Button & Refresh */}
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        {/* CTA Buttons */}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <button
             type="button"
             onClick={refreshData}
             title="Refresh Data"
-            className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all cursor-pointer border border-white/10"
+            className="p-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all cursor-pointer border border-slate-200"
           >
             <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin text-emerald-400" : ""}`}
+              className={`w-4 h-4 ${isLoading ? "animate-spin text-[#007eff]" : ""}`}
             />
           </button>
           <button
             type="button"
             onClick={openCreateModal}
-            className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="px-5 py-3 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>নতুন টিম ক্রিয়েট করুন</span>
+            <span>Add New Team Squad</span>
           </button>
         </div>
       </div>
@@ -548,16 +554,13 @@ export default function AdminTeamsClientView({
             data-lenis-prevent="true"
             data-lenis-prevent-wheel="true"
             data-lenis-prevent-touch="true"
-            className="bg-white w-full max-w-2xl sm:max-w-3xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
+            className="bg-white w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-9 space-y-6 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                   {editingTeamId ? "টিম স্কোয়াড সম্পাদনা করুন" : "নতুন টিম স্কোয়াড তৈরি করুন"}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                  রেজিস্টার্ড ক্লিনারদের থেকে টিম লিডার সিলেক্ট করুন, সিলেক্ট করলে রোল `TEAM_LEADER`-এ প্রোমোট হবে।
-                </p>
               </div>
               <button
                 type="button"
@@ -581,55 +584,113 @@ export default function AdminTeamsClientView({
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">Team Name</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 text-xs sm:text-sm block">Team Name</label>
                   <input
                     type="text"
                     value={formTeamName}
                     onChange={(e) => setFormTeamName(e.target.value)}
                     required
                     placeholder="e.g. Delta Dhanmondi Squad"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-[#007eff]" />
-                  <span>Team Squad Image URL</span>
+              {/* Image Preview & Upload Box (Matching Screenshot UI) */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-[#007eff]" />
+                  <span>Team Squad Image</span>
                 </label>
-                <input
-                  type="text"
-                  value={formTeamImage}
-                  onChange={(e) => setFormTeamImage(e.target.value)}
-                  required
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#007eff]"
-                />
+
+                <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+                  {/* Left Square Thumbnail Preview */}
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-2xs flex-shrink-0 relative flex items-center justify-center">
+                    {formTeamImage ? (
+                      <img
+                        src={formTeamImage}
+                        alt="Squad Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-slate-400">
+                        <ImageIcon className="w-6 h-6" />
+                        <span className="text-[10px] font-bold">No Image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Actions & URL Field */}
+                  <div className="flex-1 space-y-3 w-full">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100/80 text-[#007eff] font-extrabold text-xs border border-blue-200 flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                        <span>Choose Image File</span>
+                      </button>
+
+                      {formTeamImage && (
+                        <button
+                          type="button"
+                          onClick={() => setFormTeamImage("")}
+                          className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-xs border border-red-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* URL Input Box */}
+                    <div className="space-y-1">
+                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                        🔗 Or paste Image URL directly:
+                      </span>
+                      <input
+                        type="text"
+                        value={formTeamImage}
+                        onChange={(e) => setFormTeamImage(e.target.value)}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Custom Select System for Assigning Team Leader */}
-              <div className="space-y-1 relative z-30" ref={leaderDropdownRef}>
-                <label className="font-bold text-slate-700 block">
-                  Select Team Leader (Auto Promotes Cleaner Role to `TEAM_LEADER`)
+              <div className="space-y-1.5 relative z-30" ref={leaderDropdownRef}>
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
+                  Select Team Leader
                 </label>
 
                 {/* Select Trigger Box */}
                 <button
                   type="button"
                   onClick={() => setIsLeaderDropdownOpen(!isLeaderDropdownOpen)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-200 focus:border-[#007eff] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition-all cursor-pointer shadow-2xs"
+                  className="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-200 focus:border-[#007eff] rounded-xl px-4 py-2.5 flex items-center justify-between transition-all cursor-pointer shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-2xs flex-shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#007eff] text-white flex items-center justify-center font-black text-xs shadow-2xs flex-shrink-0">
                       TL
                     </div>
                     <div className="text-left truncate">
                       <span className="font-extrabold text-slate-900 text-xs sm:text-sm block leading-tight truncate">
                         {selectedLeader?.name || "Select Registered Cleaner"}{" "}
                         {selectedLeader?.phone && (
-                          <span className="font-medium text-slate-500 text-xs">
+                          <span className="font-medium text-slate-500 text-xs sm:text-sm">
                             ({selectedLeader?.phone})
                           </span>
                         )}
@@ -672,11 +733,7 @@ export default function AdminTeamsClientView({
                         >
                           <div className="flex items-center gap-2.5">
                             <div
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 ${
-                                cleaner.role === "TEAM_LEADER"
-                                  ? "bg-emerald-600 text-white"
-                                  : "bg-[#007eff] text-white"
-                              }`}
+                              className="w-7 h-7 rounded-lg bg-[#007eff] text-white flex items-center justify-center font-black text-xs flex-shrink-0"
                             >
                               {cleaner.role === "TEAM_LEADER" ? "TL" : "CL"}
                             </div>
@@ -686,18 +743,14 @@ export default function AdminTeamsClientView({
                                   {cleaner.name}
                                 </span>
                                 <span
-                                  className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                                    cleaner.role === "TEAM_LEADER"
-                                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                      : "bg-blue-100 text-blue-800 border border-blue-200"
-                                  }`}
+                                  className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200"
                                 >
                                   {cleaner.role === "TEAM_LEADER"
                                     ? "👑 TEAM LEADER"
                                     : "🧹 CLEANER"}
                                 </span>
                               </div>
-                              <span className="text-[11px] text-slate-500 font-medium">
+                              <span className="text-xs text-slate-500 font-medium">
                                 {cleaner.phone}
                               </span>
                             </div>
@@ -716,19 +769,19 @@ export default function AdminTeamsClientView({
               </div>
 
               {/* Revenue Split Rates Section (% Commission Model) */}
-              <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-2.5">
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                  <label className="font-extrabold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-[#007eff]" />
                     <span>Revenue Commission Split (% Model)</span>
                   </label>
                   <span
-                    className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                    className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
                       Number(formCommissionRate) +
                         Number(formCleanerPoolShare) +
                         Number(formAdminShare) ===
                       100
-                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                        ? "bg-blue-100 text-blue-800 border-blue-300"
                         : "bg-amber-100 text-amber-800 border-amber-300"
                     }`}
                   >
@@ -740,9 +793,9 @@ export default function AdminTeamsClientView({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 block">
+                    <label className="text-xs font-bold text-slate-700 block">
                       Leader Cut (%)
                     </label>
                     <input
@@ -755,12 +808,12 @@ export default function AdminTeamsClientView({
                       min={0}
                       max={100}
                       placeholder="10"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 block">
+                    <label className="text-xs font-bold text-slate-700 block">
                       Cleaner Pool (%)
                     </label>
                     <input
@@ -773,12 +826,12 @@ export default function AdminTeamsClientView({
                       min={0}
                       max={100}
                       placeholder="40"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 block">
+                    <label className="text-xs font-bold text-slate-700 block">
                       Admin Share (%)
                     </label>
                     <input
@@ -791,7 +844,7 @@ export default function AdminTeamsClientView({
                       min={0}
                       max={100}
                       placeholder="50"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
                     />
                   </div>
                 </div>
@@ -818,14 +871,14 @@ export default function AdminTeamsClientView({
 
               {/* Cleaners Checkbox Selector */}
               <div className="space-y-2 pt-1">
-                <label className="font-bold text-slate-700 block">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm block">
                   Select Squad Cleaners (40% Pool Share):
                 </label>
                 <div
                   data-lenis-prevent="true"
                   data-lenis-prevent-wheel="true"
                   data-lenis-prevent-touch="true"
-                  className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded-2xl border border-slate-200"
+                  className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200"
                 >
                   {registeredCleaners.map((cleaner) => {
                     const isChecked = selectedCleanerIds.includes(cleaner.id);
@@ -848,28 +901,28 @@ export default function AdminTeamsClientView({
                         >
                           {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
-                        <span className="text-xs truncate">{cleaner.name}</span>
+                        <span className="text-xs sm:text-sm font-bold truncate">{cleaner.name}</span>
                       </label>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-colors cursor-pointer disabled:opacity-50"
                 >
                   বাতিল করুন
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>
                     {editingTeamId ? "আপডেট সংরক্ষণ করুন" : "টিম সংরক্ষণ করুন"}
                   </span>
