@@ -20,7 +20,14 @@ import {
   Info,
 } from "lucide-react";
 
+export interface IBookingServiceItem {
+  name: string;
+  value: number;
+  addOn: boolean;
+}
+
 export interface BookingDetailRecord {
+  _dbId?: string;
   id: string;
   customer: string;
   phone: string;
@@ -31,19 +38,21 @@ export interface BookingDetailRecord {
   sqft: number;
   specs: string;
   addons: string[];
+  services?: IBookingServiceItem[];
   amount: string;
   paymentStatus: string;
   date: string;
   time: string;
-  status: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED";
+  status: "PENDING" | "CONFIRMED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   cleanerTeam: string;
+  teamRequests?: any[];
 }
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   booking: BookingDetailRecord | null;
-  onStatusChange: (newStatus: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED") => void;
+  onStatusChange: (newStatus: any) => void;
   onOpenAssignModal: () => void;
 }
 
@@ -63,10 +72,10 @@ export default function BookingDetailsModal({
   if (!isOpen || !mounted || !booking) return null;
 
   const stages = [
-    { key: "PENDING", label: "Pending Dispatch", desc: "Waiting for team assignment" },
-    { key: "ASSIGNED", label: "Team Assigned", desc: "Cleaner team dispatched" },
-    { key: "IN_PROGRESS", label: "In Progress", desc: "Cleaners on site working" },
-    { key: "COMPLETED", label: "Completed", desc: "Work completed & verified" },
+    { key: "PENDING", label: "Pending", desc: "Waiting for confirmation" },
+    { key: "ASSIGNED", label: "Assigned", desc: "Team assigned" },
+    { key: "IN_PROGRESS", label: "In Progress", desc: "Cleaners on site" },
+    { key: "COMPLETED", label: "Completed", desc: "Work completed" },
   ];
 
   const currentStageIndex = stages.findIndex((s) => s.key === booking.status);
@@ -122,7 +131,7 @@ export default function BookingDetailsModal({
                 <button
                   key={st.key}
                   type="button"
-                  onClick={() => onStatusChange(st.key as any)}
+                  onClick={() => onStatusChange(st.key)}
                   className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isCurrent
                       ? "bg-[#007eff] text-white border-[#007eff] shadow-sm"
@@ -163,28 +172,47 @@ export default function BookingDetailsModal({
             </div>
           </div>
 
-          {/* Property & Addons */}
+          {/* Property & Bill Items Breakdown */}
           <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/80 space-y-2">
             <h4 className="font-extrabold text-[#11233F] text-xs uppercase tracking-wider border-b border-slate-200 pb-2">
-              Property Specs &amp; Add-ons:
+              Property Specs &amp; Services:
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <p className="font-extrabold text-slate-900">{booking.specs}</p>
-              <p className="text-xs text-[#007eff] font-bold">Total Area: {booking.sqft} sqft</p>
+              {booking.sqft > 0 && (
+                <p className="text-xs text-[#007eff] font-bold">Total Area: {booking.sqft} sqft</p>
+              )}
 
-              <div className="pt-2">
-                <span className="text-[11px] font-bold text-slate-500 block mb-1">Selected Add-on Wash Services:</span>
-                <div className="flex flex-wrap gap-1">
-                  {booking.addons.map((ad, i) => (
-                    <span key={i} className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
-                      + {ad}
-                    </span>
-                  ))}
-                  {booking.addons.length === 0 && (
-                    <span className="text-xs text-slate-400 italic">No add-ons selected</span>
-                  )}
+              {/* Dynamic Services Bill Items */}
+              {booking.services && booking.services.length > 0 && (
+                <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-500 block">Itemized Service Bill:</span>
+                  <div className="space-y-1">
+                    {booking.services.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className={item.addOn ? "text-blue-600 font-semibold" : "text-slate-700 font-medium"}>
+                          {item.name}
+                        </span>
+                        <span className="font-mono font-bold text-slate-900">৳{item.value.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Addons fallback list if services is empty */}
+              {(!booking.services || booking.services.length === 0) && booking.addons && booking.addons.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-[11px] font-bold text-slate-500 block mb-1">Selected Add-on Wash Services:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {booking.addons.map((ad, i) => (
+                      <span key={i} className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
+                        + {ad}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -213,6 +241,26 @@ export default function BookingDetailsModal({
                 Assigned Cleaner Team:
               </h4>
               <p className="font-extrabold text-slate-900 text-sm mt-2">{booking.cleanerTeam}</p>
+
+              {Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status)) && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold space-y-1">
+                    <span className="font-black text-amber-950 block">⚡ Team Leader Request Pending:</span>
+                    <span className="block text-[11px] text-amber-800">
+                      {booking.teamRequests
+                        .filter((r: any) => r && (r.status === "PENDING" || !r.status))
+                        .map((r: any) => {
+                          const tName = r.team?.teamName || "Field Squad";
+                          const lName =
+                            r.team?.leader?.name ||
+                            r.requestedBy?.name ||
+                            (r.team?.teamCode ? `${r.team.teamCode}` : "Team Leader");
+                          return `${tName} (${lName})`;
+                        })
+                        .join(", ")}
+                    </span>
+                  </div>
+                )}
             </div>
 
             <button
@@ -221,10 +269,24 @@ export default function BookingDetailsModal({
                 onClose();
                 onOpenAssignModal();
               }}
-              className="w-full py-2.5 px-4 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+              className={`w-full py-2.5 px-4 rounded-2xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 ${
+                Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status))
+                  ? "bg-[#42990E] hover:bg-[#37800c] text-white"
+                  : booking.cleanerTeam !== "Unassigned"
+                  ? "bg-[#F2D701] hover:bg-[#e2ca01] text-slate-950 border border-yellow-500/30"
+                  : "bg-[#007eff] hover:bg-blue-600 text-white"
+              }`}
             >
               <Truck className="w-4 h-4" />
-              <span>{booking.cleanerTeam === "Unassigned" ? "Assign Cleaner Team" : "Reassign Team"}</span>
+              <span>
+                {Array.isArray(booking.teamRequests) &&
+                booking.teamRequests.some((r: any) => r && (r.status === "PENDING" || !r.status))
+                  ? "Approve Team Leader Request"
+                  : booking.cleanerTeam === "Unassigned"
+                  ? "Assign Cleaner Team"
+                  : "Change Cleaner Team"}
+              </span>
             </button>
           </div>
         </div>

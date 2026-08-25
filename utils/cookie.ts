@@ -93,6 +93,13 @@ export const getAuthUser = () => {
 
 export const removeAuthUser = () => {
   removeCookie("cleanix_user");
+  removeCookie("user");
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("cleanix_user");
+      localStorage.removeItem("user");
+    } catch {}
+  }
 };
 
 export const setAuthRole = (role: string, days = 7) => {
@@ -105,4 +112,13 @@ export const getAuthRole = () => {
 
 export const removeAuthRole = () => {
   removeCookie("cleanix_role");
+};
+
+export const logoutUser = (redirectUrl = "/login") => {
+  removeAuthToken();
+  removeAuthUser();
+  removeAuthRole();
+  if (typeof window !== "undefined") {
+    window.location.href = redirectUrl;
+  }
 };

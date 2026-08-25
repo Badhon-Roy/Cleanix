@@ -4,117 +4,105 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CalendarCheck,
+  LayoutDashboard,
   Truck,
-  Camera,
-  DollarSign,
+  Users,
   UserCheck,
+  CheckSquare,
+  FileCheck,
+  Wallet,
   LogOut,
-  Sparkles,
-  Home,
-  CheckCircle2,
-  Sliders,
-  ShieldAlert,
+  X,
   ShieldCheck,
-  Crown,
-  Loader2,
+  Home,
 } from "lucide-react";
-import { io } from "socket.io-client";
-import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
-import {
-  fetchCleanerProfileMeAPI,
-  toggleCleanerDutyStatusAPI,
-} from "@/services/cleanerService";
+import { fetchMyTeamAssignmentsAPI } from "@/services/teamService";
+import { getAuthUser } from "@/utils/cookie";
+import { slugifyTeamName } from "@/utils/slug";
 
-interface CleanerSidebarProps {
+interface TeamLeaderSidebarProps {
   mobileOpen?: boolean;
   setMobileOpen?: (open: boolean) => void;
 }
 
-export default function CleanerSidebar({
+export default function TeamLeaderSidebar({
   mobileOpen = false,
   setMobileOpen,
-}: CleanerSidebarProps) {
+}: TeamLeaderSidebarProps) {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [isOnDuty, setIsOnDuty] = useState(false);
-  const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [assignedCount, setAssignedCount] = useState<number | null>(null);
 
-  const loadDutyProfile = async () => {
-    const prof = await fetchCleanerProfileMeAPI();
-    if (prof) {
-      setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
-    }
-  };
+  const teamMatch = pathname.match(/^\/team\/([^/]+)/);
+  const teamSlugFromUrl = teamMatch ? teamMatch[1] : null;
+
+  const authUser = getAuthUser();
+  const authTeamSlug =
+    authUser?.leadTeam?.teamSlug ||
+    (authUser?.leadTeam?.teamName ? slugifyTeamName(authUser.leadTeam.teamName) : null);
+
+  const effectiveSlug = teamSlugFromUrl || authTeamSlug || "";
 
   useEffect(() => {
-    loadDutyProfile();
-
-    const socketUrl =
-      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
-      "http://localhost:5000";
-
-    const socket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-    });
-
-    socket.on("cleaner_updated", () => {
-      loadDutyProfile();
-    });
-
-    return () => {
-      socket.off("cleaner_updated");
-      socket.disconnect();
-    };
-  }, []);
-
-  const handleToggleDuty = async () => {
-    setIsTogglingDuty(true);
-    try {
-      const targetStatus = isOnDuty ? "OFF_DUTY" : "ON_DUTY";
-      const res = await toggleCleanerDutyStatusAPI(targetStatus);
-      if (res?.success && res?.data) {
-        const newDuty = res.data.dutyStatus === "ON_DUTY" || res.data.dutyStatus === "IN_SERVICE";
-        setIsOnDuty(newDuty);
-        toast.success(
-          newDuty
-            ? "অন-ডিউটি চালু হয়েছে! আপনার নাম স্কোয়াডে অন-ডিউটিতে প্রদর্শিত হচ্ছে।"
-            : "ডিউটি বন্ধ করা হয়েছে! সিস্টেমে আপনি এখন অফ-ডিউটিতে আছেন।"
-        );
-      } else {
-        toast.error(res?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করা যায়নি");
+    const loadAssignmentsCount = async () => {
+      try {
+        const data = await fetchMyTeamAssignmentsAPI(effectiveSlug);
+        if (Array.isArray(data)) {
+          const seen = new Set<string>();
+          const unique = data.filter((item) => {
+            if (!item.booking) return false;
+            const bKey = item.booking?.bookingRef || item.booking?._id || item._id;
+            if (seen.has(bKey)) return false;
+            seen.add(bKey);
+            return true;
+          });
+          setAssignedCount(unique.length);
+        }
+      } catch (err) {
+        console.error("Error fetching assigned count for sidebar:", err);
       }
-    } catch (err: any) {
-      console.error("Toggle duty error:", err);
-      toast.error(err?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে");
-    } finally {
-      setIsTogglingDuty(false);
-    }
-  };
+    };
+
+    loadAssignmentsCount();
+  }, [effectiveSlug, pathname]);
 
   const navItems = [
-    { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
-    { name: "Appointment Notice", href: "/cleaner/appointments", icon: Crown, badge: "NOTICE" },
-    { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
-    { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
-    { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
-    { name: "Profile & Settings", href: "/cleaner/profile", icon: UserCheck },
-    { name: "Admin Control HQ", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
+    { name: "Overview & Roster", key: "", icon: LayoutDashboard },
+    { name: "My Team Squad", key: "my-team", icon: Users, badge: "Squad" },
+    {
+      name: "Assigned Team Services",
+      key: "bookings",
+      icon: Truck,
+      badge: assignedCount !== null ? `${assignedCount} Active` : "Active",
+    },
+    { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "Requests" },
+    { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "Available" },
+    { name: "Proof of Work Monitor", key: "proofs", icon: FileCheck, badge: "Quality" },
+    { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
+    { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
-  const checkIsActive = (href: string) => {
-    if (href === "/cleaner") return pathname === "/cleaner";
-    return pathname.startsWith(href);
+  const getNavHref = (key: string) => {
+    if (key === "/admin") return "/admin";
+    if (!key) return `/team/${effectiveSlug}`;
+    return `/team/${effectiveSlug}/${key}`;
+  };
+
+  const checkIsActive = (key: string) => {
+    if (key === "/admin") return pathname === "/admin";
+    const targetHref = getNavHref(key);
+    if (!key) return pathname === targetHref;
+    return pathname.startsWith(targetHref);
   };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
       {/* Brand Header */}
       <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-        <Link href="/cleaner" className="flex items-center gap-3 group">
+        <Link href={getNavHref("")} className="flex items-center gap-3 group">
           <SwirlLogo />
           <div>
             <div className="flex items-center gap-1.5">
@@ -122,10 +110,10 @@ export default function CleanerSidebar({
                 Cleanix
               </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                PRO CLEANER
+                TEAM LEADER
               </span>
             </div>
-            <p className="text-sm text-slate-500 font-medium">Field Staff Dispatch Portal</p>
+            <p className="text-xs text-slate-500 font-medium">Field Operations HQ</p>
           </div>
         </Link>
       </div>
@@ -139,24 +127,22 @@ export default function CleanerSidebar({
                 isOnDuty ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
               }`}
             />
-            Duty Status
+            Dispatch Status
           </span>
           <button
             type="button"
-            disabled={isTogglingDuty}
-            onClick={handleToggleDuty}
-            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1 ${
+            onClick={() => setIsOnDuty(!isOnDuty)}
+            className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
               isOnDuty
                 ? "bg-emerald-500 text-white border-emerald-600"
                 : "bg-slate-200 text-slate-700 border-slate-300"
-            } disabled:opacity-50`}
+            }`}
           >
-            {isTogglingDuty && <Loader2 className="w-3 h-3 animate-spin" />}
-            <span>{isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}</span>
+            {isOnDuty ? "ONLINE / ACTIVE" : "OFFLINE"}
           </button>
         </div>
-        <p className="text-sm text-red-600 font-medium leading-snug">
-          Team Delta • Vehicle Unit #04 • Supervisor: Rahat Karim
+        <p className="text-xs text-slate-600 font-medium leading-snug">
+          Squad Slug: <span className="font-extrabold text-blue-600">{effectiveSlug}</span>
         </p>
       </div>
 
@@ -164,12 +150,12 @@ export default function CleanerSidebar({
       <div className="flex-1 space-y-1.5 overflow-y-auto py-5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = checkIsActive(item.href);
+          const isActive = checkIsActive(item.key);
 
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={getNavHref(item.key)}
               onClick={() => setMobileOpen && setMobileOpen(false)}
               className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
                 isActive
@@ -214,7 +200,7 @@ export default function CleanerSidebar({
           <button
             type="button"
             onClick={() => setIsLogoutModalOpen(true)}
-            title="Log out"
+            title="Log Out Leader Portal"
             className="p-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
@@ -222,12 +208,13 @@ export default function CleanerSidebar({
         </div>
       </div>
 
-      {/* Logout Modal */}
+      {/* Logout Confirmation Modal */}
       <LogoutConfirmModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={() => {
-          alert("Cleaner Team logged out successfully!");
+          setIsLogoutModalOpen(false);
+          window.location.href = "/";
         }}
       />
     </div>
@@ -235,19 +222,28 @@ export default function CleanerSidebar({
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop Permanent Sidebar */}
       <aside className="hidden lg:block h-screen sticky top-0 z-40">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Drawer Backdrop & Sidebar */}
+      {/* Mobile Drawer Overlay */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileOpen && setMobileOpen(false)}
           />
-          <div className="relative z-10">{sidebarContent}</div>
+          <div className="relative flex-1 max-w-xs w-full bg-white h-full shadow-2xl z-10">
+            <button
+              type="button"
+              onClick={() => setMobileOpen && setMobileOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {sidebarContent}
+          </div>
         </div>
       )}
     </>
