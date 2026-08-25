@@ -329,7 +329,19 @@ export default function AdminServicesClientView({
   const [addonFormPrice, setAddonFormPrice] = useState("");
   const [addonFormSubLabel, setAddonFormSubLabel] = useState("");
   const [addonFormTag, setAddonFormTag] = useState("ADD-ON");
+  const [addonFormIconImage, setAddonFormIconImage] = useState("");
   const [isSubmittingAddon, setIsSubmittingAddon] = useState(false);
+
+  const handleAddonIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAddonFormIconImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Delete Confirmation Modal States
   const [addonToDelete, setAddonToDelete] = useState<any | null>(null);
@@ -749,6 +761,7 @@ export default function AdminServicesClientView({
     setAddonFormPrice("");
     setAddonFormSubLabel("");
     setAddonFormTag("ADD-ON");
+    setAddonFormIconImage("");
     setIsAddonModalOpen(true);
   };
 
@@ -758,6 +771,7 @@ export default function AdminServicesClientView({
     setAddonFormPrice(String(addon.price || ""));
     setAddonFormSubLabel(addon.subLabel || "");
     setAddonFormTag(addon.tag || "ADD-ON");
+    setAddonFormIconImage(addon.iconImage || "");
     setIsAddonModalOpen(true);
   };
 
@@ -777,6 +791,7 @@ export default function AdminServicesClientView({
         price: numPrice || 1000,
         subLabel: addonFormSubLabel || "সার্ভিস বিবরণ",
         tag: addonFormTag || "ADD-ON",
+        iconImage: addonFormIconImage || undefined,
       });
     } else {
       res = await createAddonAPI({
@@ -784,6 +799,7 @@ export default function AdminServicesClientView({
         price: numPrice || 1000,
         subLabel: addonFormSubLabel || "সার্ভিস বিবরণ",
         tag: addonFormTag || "ADD-ON",
+        iconImage: addonFormIconImage || undefined,
         active: true,
       });
     }
@@ -800,6 +816,7 @@ export default function AdminServicesClientView({
       setAddonFormName("");
       setAddonFormPrice("");
       setAddonFormSubLabel("");
+      setAddonFormIconImage("");
       refreshAddons();
     } else {
       toast.error(res?.message || "Failed to save Add-on service.");
@@ -1107,13 +1124,17 @@ export default function AdminServicesClientView({
             >
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all overflow-hidden ${
                     addon.active
                       ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                       : "bg-slate-200 text-slate-500 border border-slate-300"
                   }`}
                 >
-                  {getAddonIcon(addon.name, addon.iconName)}
+                  {addon.iconImage ? (
+                    <img src={addon.iconImage} alt={addon.name} className="w-8 h-8 object-contain" />
+                  ) : (
+                    getAddonIcon(addon.name, addon.iconName)
+                  )}
                 </div>
 
                 <div>
@@ -1228,6 +1249,23 @@ export default function AdminServicesClientView({
                   placeholder="e.g. হাই-প্রেসার ওয়াটার স্যানিটাইজিং"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#007eff]"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Add-on Icon Image:</label>
+                <div className="flex items-center gap-3">
+                  {addonFormIconImage && (
+                    <div className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <img src={addonFormIconImage} alt="Icon Preview" className="w-full h-full object-contain p-1" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAddonIconUpload}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-600 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#007eff] file:text-white hover:file:bg-[#0066ee]"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">

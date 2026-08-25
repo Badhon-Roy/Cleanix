@@ -1244,13 +1244,17 @@ export default function NewBookingClientView({
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 overflow-hidden ${
                             isChecked
                               ? "bg-white/20 text-white backdrop-blur-md"
                               : "bg-emerald-50 text-emerald-600 border border-emerald-200 group-hover:scale-105"
                           }`}
                         >
-                          {getAddonIcon(item.name, item.iconName)}
+                          {item.iconImage ? (
+                            <img src={item.iconImage} alt={item.name} className="w-8 h-8 object-contain" />
+                          ) : (
+                            getAddonIcon(item.name, item.iconName)
+                          )}
                         </div>
                         <div>
                           <p

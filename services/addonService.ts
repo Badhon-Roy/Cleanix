@@ -17,7 +17,7 @@ export interface IAddonItem {
   subLabel: string;
   price: number;
   tag?: string;
-  iconName?: string;
+  iconImage?: string;
   active: boolean;
 }
 
@@ -52,13 +52,23 @@ export const fetchAdminAddonsAPI = async () => {
   }
 };
 
-export const createAddonAPI = async (payload: Partial<IAddonItem>) => {
+export const createAddonAPI = async (payload: Partial<IAddonItem> | FormData) => {
   try {
     const baseUrl = getBaseUrl();
+    const token = getAuthToken();
+    const isFormData = payload instanceof FormData;
+
+    const headers: Record<string, string> = {
+      ...(token && token.trim() !== "" ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
+
     const res = await fetch(`${baseUrl}/addons`, {
       method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(payload),
+      headers,
+      body: isFormData ? payload : JSON.stringify(payload),
     });
     const data = await res.json();
     return data;
@@ -68,13 +78,23 @@ export const createAddonAPI = async (payload: Partial<IAddonItem>) => {
   }
 };
 
-export const updateAddonAPI = async (addonId: string, payload: Partial<IAddonItem>) => {
+export const updateAddonAPI = async (addonId: string, payload: Partial<IAddonItem> | FormData) => {
   try {
     const baseUrl = getBaseUrl();
+    const token = getAuthToken();
+    const isFormData = payload instanceof FormData;
+
+    const headers: Record<string, string> = {
+      ...(token && token.trim() !== "" ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
+
     const res = await fetch(`${baseUrl}/addons/${addonId}`, {
       method: "PATCH",
-      headers: getHeaders(),
-      body: JSON.stringify(payload),
+      headers,
+      body: isFormData ? payload : JSON.stringify(payload),
     });
     const data = await res.json();
     return data;
