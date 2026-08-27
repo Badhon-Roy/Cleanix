@@ -1,5 +1,3 @@
-"use client";
-
 export interface ServiceOfferItem {
   iconName: string;
   title: string;

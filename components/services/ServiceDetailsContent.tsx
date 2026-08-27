@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
   Plus,
@@ -50,6 +51,30 @@ export default function ServiceDetailsContent({ service }: Props) {
       default:
         return <Sparkles className="w-5 h-5 text-[#007eff]" />;
     }
+  };
+
+  // Why Choose Icon Resolver
+  const getWhyChooseIcon = (title: string, index: number) => {
+    const t = title.toLowerCase();
+    if (t.includes("nid") || t.includes("staff") || t.includes("verified")) {
+      return <ShieldCheck className="w-5 h-5 stroke-[2.5]" />;
+    }
+    if (t.includes("eco") || t.includes("chemical") || t.includes("safe")) {
+      return <Sparkles className="w-5 h-5 stroke-[2.5]" />;
+    }
+    if (t.includes("time") || t.includes("tracking") || t.includes("schedule")) {
+      return <Clock className="w-5 h-5 stroke-[2.5]" />;
+    }
+    if (t.includes("invoice") || t.includes("payment") || t.includes("digital")) {
+      return <Check className="w-5 h-5 stroke-[2.5]" />;
+    }
+    const icons = [
+      <ShieldCheck key="1" className="w-5 h-5 stroke-[2.5]" />,
+      <Sparkles key="2" className="w-5 h-5 stroke-[2.5]" />,
+      <Clock key="3" className="w-5 h-5 stroke-[2.5]" />,
+      <Check key="4" className="w-5 h-5 stroke-[2.5]" />,
+    ];
+    return icons[index % icons.length];
   };
 
   return (
@@ -105,29 +130,41 @@ export default function ServiceDetailsContent({ service }: Props) {
         </div>
       </div>
 
-      {/* 4. WHY CHOOSE OUR SERVICE Container */}
-      <div className="bg-[#f4f6f9] rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-xs">
-        <h2 className="text-2xl sm:text-3xl font-black uppercase text-[#001837] tracking-tight mb-4">
+      {/* 4. WHY CHOOSE OUR SERVICE Container (Sleek Flat Professional Design - No Shadows) */}
+      <div className="bg-[#f8fafc] rounded-3xl p-6 sm:p-10 border border-slate-200/80 relative overflow-hidden">
+        {/* Subtitle Badge Pill */}
+        <div className="inline-flex items-center gap-2 border border-[#007eff]/30 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-4 py-1.5 mb-4 bg-blue-50/70">
+          <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
+          <span>WHY CHOOSE CLEANIX</span>
+        </div>
+
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase text-[#001837] tracking-tight leading-tight mb-3">
           {service.whyChooseTitle}
         </h2>
-        <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8">
+        <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8 max-w-3xl font-medium">
           {service.whyChooseDesc}
         </p>
 
-        {/* Checklist Points */}
-        <div className="space-y-4">
+        {/* 2x2 Clean Flat Feature Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           {service.whyChoosePoints.map((pt, i) => (
-            <div key={i} className="flex items-start gap-3.5">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
-                <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-              </div>
+            <div
+              key={i}
+              className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 hover:border-[#007eff] hover:bg-blue-50/20 transition-all duration-200 group flex flex-col justify-between"
+            >
               <div>
-                <span className="font-extrabold text-sm sm:text-base text-[#001837] mr-1.5">
-                  {pt.title}:
-                </span>
-                <span className="text-slate-600 text-xs sm:text-sm leading-relaxed font-medium">
+                <div className="flex items-center gap-3.5 mb-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#007eff] border border-blue-100/80 flex items-center justify-center flex-shrink-0 group-hover:bg-[#007eff] group-hover:text-white transition-colors duration-200">
+                    {getWhyChooseIcon(pt.title, i)}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#001837] leading-snug group-hover:text-[#007eff] transition-colors">
+                    {pt.title}
+                  </h3>
+                </div>
+
+                <p className="text-slate-600 text-xs sm:text-sm font-normal leading-relaxed">
                   {pt.desc}
-                </span>
+                </p>
               </div>
             </div>
           ))}
@@ -163,7 +200,7 @@ export default function ServiceDetailsContent({ service }: Props) {
               >
                 <button
                   onClick={() => toggleFaq(idx)}
-                  className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-[#001837]"
+                  className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-[#001837] cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-[#007eff] font-black">
@@ -172,9 +209,9 @@ export default function ServiceDetailsContent({ service }: Props) {
                     <span>{faq.question}</span>
                   </div>
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
                       isOpen
-                        ? "bg-[#007eff] text-white"
+                        ? "bg-[#007eff] text-white rotate-0"
                         : "bg-white text-[#007eff] border border-slate-200"
                     }`}
                   >
@@ -186,11 +223,22 @@ export default function ServiceDetailsContent({ service }: Props) {
                   </div>
                 </button>
 
-                {isOpen && (
-                  <div className="px-6 pb-6 text-slate-600 text-xs sm:text-sm leading-relaxed border-t border-slate-200/60 pt-4 font-normal">
-                    {faq.answer}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: [0.04, 0.62, 0.23, 0.98] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 text-slate-600 text-xs sm:text-sm leading-relaxed border-t border-slate-200/60 pt-4 font-normal">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
