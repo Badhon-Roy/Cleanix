@@ -61,7 +61,7 @@ export default function BlogDetailsContent({ blog }: Props) {
         </div>
 
         {/* 3. Hero Article Featured Image */}
-        <div className="relative w-full max-w-4xl mx-auto h-[360px] sm:h-[460px] md:h-[500px] rounded-3xl overflow-hidden shadow-xl mb-12 border border-slate-200/80 bg-slate-100">
+        <div className="relative w-full max-w-5xl mx-auto h-[360px] sm:h-[460px] md:h-[500px] overflow-hidden mb-12">
           {blog?.image && (
             <Image
               src={blog.image}
@@ -69,7 +69,7 @@ export default function BlogDetailsContent({ blog }: Props) {
               fill
               unoptimized
               priority
-              className="object-cover object-center"
+              className="object-contain object-center"
               sizes="(max-width: 1024px) 100vw, 80vw"
             />
           )}
