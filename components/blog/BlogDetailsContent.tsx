@@ -8,6 +8,17 @@ interface Props {
   blog: BlogDetail;
 }
 
+const decodeHtml = (str?: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'");
+};
+
 export default function BlogDetailsContent({ blog }: Props) {
   return (
     <article className="w-full bg-[#f4f6f9] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-200/80">
@@ -69,22 +80,24 @@ export default function BlogDetailsContent({ blog }: Props) {
           {/* Intro Paragraph */}
           {blog?.introParagraph && (
             <div
-              className="text-slate-700 font-medium text-base sm:text-lg leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: blog.introParagraph }}
+              className="text-slate-700 font-medium text-base sm:text-lg leading-relaxed [&_h2]:text-2xl [&_h2]:sm:text-3xl [&_h2]:font-extrabold [&_h2]:text-[#001837] [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-extrabold [&_h3]:text-[#001837] [&_h3]:mt-5 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ul]:my-3 [&_a]:text-[#007eff] [&_a]:underline font-bold"
+              dangerouslySetInnerHTML={{ __html: decodeHtml(blog.introParagraph) }}
             />
           )}
 
           {/* Dynamic Article Sections */}
           {blog?.sections?.map((section, idx) => (
             <div key={idx} className="space-y-4 pt-2">
-              <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-[#001837] tracking-tight">
-                {section?.title}
-              </h2>
+              {section?.title && (
+                <h2 className="text-2xl sm:text-3xl font-extrabold uppercase text-[#001837] tracking-tight">
+                  {section.title}
+                </h2>
+              )}
               {section?.paragraphs?.map((p, pIdx) => (
                 <div
                   key={pIdx}
-                  className="text-slate-600 font-normal leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: p }}
+                  className="text-slate-600 font-normal leading-relaxed [&_h2]:text-2xl [&_h2]:sm:text-3xl [&_h2]:font-extrabold [&_h2]:text-[#001837] [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-extrabold [&_h3]:text-[#001837] [&_h3]:mt-5 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ul]:my-3 [&_a]:text-[#007eff] [&_a]:underline font-bold [&_p]:mb-4"
+                  dangerouslySetInnerHTML={{ __html: decodeHtml(p) }}
                 />
               ))}
             </div>

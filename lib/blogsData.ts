@@ -9,7 +9,7 @@ export interface BlogDetail {
     avatar: string;
   };
   image: string;
-  shortDesc: string;
+  shortDesc?: string;
   introParagraph: string;
   sections: {
     title: string;

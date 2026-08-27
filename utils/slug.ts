@@ -1,10 +1,16 @@
-export const slugifyTeamName = (name?: string): string => {
-  if (!name) return "";
-  return name
+export const slugify = (text?: string): string => {
+  if (!text) return "";
+  return text
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[?,!@#$%^&*()=+|\\[\]/;:."'`~—–<>]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+};
+
+export const slugifyTeamName = (name?: string): string => {
+  return slugify(name);
 };
 
 export const unslugifyTeamName = (slug?: string): string => {

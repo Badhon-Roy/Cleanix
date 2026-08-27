@@ -49,7 +49,6 @@ export default function BlogModal({
     "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
   );
   const [image, setImage] = useState("");
-  const [shortDesc, setShortDesc] = useState("");
   const [introParagraph, setIntroParagraph] = useState("");
   const [sections, setSections] = useState<
     { title: string; paragraphs: string[] }[]
@@ -73,7 +72,6 @@ export default function BlogModal({
       setAuthorName(blogData.author?.name || "Cleanix Editorial Team");
       setAuthorAvatar(blogData.author?.avatar || "");
       setImage(blogData.image || "");
-      setShortDesc(blogData.shortDesc || "");
       setIntroParagraph(blogData.introParagraph || "");
       setSections(blogData.sections && blogData.sections.length > 0 ? blogData.sections : [
         {
@@ -106,7 +104,6 @@ export default function BlogModal({
       setAuthorName(loggedInName);
       setAuthorAvatar(loggedInAvatar);
       setImage("https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80");
-      setShortDesc("");
       setIntroParagraph("");
       setSections([
         {
@@ -120,11 +117,14 @@ export default function BlogModal({
   }, [blogData, isOpen]);
 
   const makeSlug = (text: string) => {
+    if (!text) return `blog-post-${Date.now()}`;
     const cleaned = text
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
       .trim()
-      .replace(/\s+/g, "-");
+      .replace(/[?,!@#$%^&*()=+|\\[\]/;:."'`~—–<>]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-+/g, "-");
     return cleaned || `blog-post-${Date.now()}`;
   };
 
@@ -220,7 +220,6 @@ export default function BlogModal({
         avatar: authorAvatar.trim() || loggedInAvatar,
       },
       image: image.trim(),
-      shortDesc: shortDesc.trim(),
       introParagraph: introParagraph.trim(),
       sections: sections.map((s) => ({
         title: s.title.trim(),
@@ -388,16 +387,8 @@ export default function BlogModal({
             </div>
           </div>
 
-          {/* Short Excerpt & Intro Paragraph */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <RichTextEditor
-              label="Short Summary (Card Excerpt):"
-              value={shortDesc}
-              onChange={(val) => setShortDesc(val)}
-              rows={3}
-              placeholder="Enter brief card summary in Bengali or English..."
-            />
-
+          {/* Intro Paragraph */}
+          <div className="w-full">
             <RichTextEditor
               label="Article Intro Paragraph:"
               value={introParagraph}

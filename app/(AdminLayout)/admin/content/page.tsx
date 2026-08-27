@@ -121,7 +121,7 @@ export default function AdminContentCMSPage() {
     (b) =>
       b.title.toLowerCase().includes(blogSearchQuery.toLowerCase()) ||
       b.category.toLowerCase().includes(blogSearchQuery.toLowerCase()) ||
-      b.shortDesc.toLowerCase().includes(blogSearchQuery.toLowerCase())
+      (b.shortDesc || b.introParagraph || "").toLowerCase().includes(blogSearchQuery.toLowerCase())
   );
 
   return (
