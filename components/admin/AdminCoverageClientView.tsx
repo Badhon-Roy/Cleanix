@@ -82,11 +82,13 @@ export default function AdminCoverageClientView({
   // Search Filter State
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Re-fetch Data manually
-  const refreshData = async () => {
+  // Re-fetch Data manually with search term
+  const refreshData = async (query?: string) => {
     setIsLoading(true);
     try {
-      const fetched = await fetchAllCoveragesAPI();
+      const fetched = await fetchAllCoveragesAPI({
+        searchTerm: query !== undefined ? query : searchQuery,
+      });
       setCoverages(fetched);
     } catch (err) {
       console.error("Error refreshing coverages:", err);
@@ -94,6 +96,10 @@ export default function AdminCoverageClientView({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    refreshData(searchQuery);
+  }, [searchQuery]);
 
   // Real-time Socket.IO Live Data Synchronization (No page reload)
   useEffect(() => {
@@ -111,7 +117,7 @@ export default function AdminCoverageClientView({
 
     socket.on("coverage_updated", async () => {
       try {
-        const updated = await fetchAllCoveragesAPI();
+        const updated = await fetchAllCoveragesAPI({ searchTerm: searchQuery });
         setCoverages(updated);
       } catch (err) {
         console.error("Socket update fetch failed:", err);
@@ -122,7 +128,7 @@ export default function AdminCoverageClientView({
       socket.off("coverage_updated");
       socket.disconnect();
     };
-  }, []);
+  }, [searchQuery]);
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -275,15 +281,7 @@ export default function AdminCoverageClientView({
     }
   };
 
-  const filteredCoverages = coverages.filter((c) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      c.zoneName.toLowerCase().includes(q) ||
-      c.district.toLowerCase().includes(q) ||
-      c.areasIncluded.some((a) => a.toLowerCase().includes(q))
-    );
-  });
+  const filteredCoverages = coverages;
 
   const totalDistricts = new Set(coverages.map((c) => c.district)).size;
   const totalSubAreas = coverages.reduce(
@@ -310,7 +308,7 @@ export default function AdminCoverageClientView({
         <div className="flex items-center gap-3 self-start sm:self-auto">
           <button
             type="button"
-            onClick={refreshData}
+            onClick={() => refreshData(searchQuery)}
             title="Refresh Data"
             className="p-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all cursor-pointer border border-slate-200"
           >
