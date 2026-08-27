@@ -120,28 +120,3 @@ export const defaultServicesCMSData: ServicesCMSContent = {
     },
   ],
 };
-
-export const SERVICES_CMS_STORAGE_KEY = "cleanix_services_cms_v4";
-
-export function getStoredServicesCMSData(): ServicesCMSContent {
-  if (typeof window === "undefined") return defaultServicesCMSData;
-  try {
-    const raw = localStorage.getItem(SERVICES_CMS_STORAGE_KEY);
-    if (!raw) return defaultServicesCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultServicesCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Services CMS data:", err);
-    return defaultServicesCMSData;
-  }
-}
-
-export function saveServicesCMSData(data: ServicesCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(SERVICES_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_services_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Services CMS data:", err);
-  }
-}

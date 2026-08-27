@@ -4,26 +4,46 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Home, Building2, Check } from "lucide-react";
 import {
-  getStoredServicesCMSData,
   defaultServicesCMSData,
   ServicesCMSContent,
 } from "@/lib/servicesCMSData";
+import { io } from "socket.io-client";
 
-export default function ServicesOverview() {
-  const [data, setData] = useState<ServicesCMSContent>(defaultServicesCMSData);
+interface ServicesOverviewProps {
+  initialData?: ServicesCMSContent;
+}
+
+export default function ServicesOverview({ initialData }: ServicesOverviewProps) {
+  const [data, setData] = useState<ServicesCMSContent>(
+    initialData || defaultServicesCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredServicesCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredServicesCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "services" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-100">
@@ -33,7 +53,7 @@ export default function ServicesOverview() {
           <div className="lg:col-span-6 relative w-full h-[460px] sm:h-[540px] md:h-[580px] flex items-center justify-center group">
             <Image
               src={
-                data.overviewFeatureImage ||
+                data?.overviewFeatureImage ||
                 "https://framerusercontent.com/images/c5y1nznyANddYfGro1eQOAip3bc.png?width=588&height=640"
               }
               alt="Professional Cleaner Service Overview"
@@ -50,21 +70,21 @@ export default function ServicesOverview() {
             {/* Pill Badge */}
             <div>
               <span className="inline-block border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-blue-50/50">
-                {data.overviewBadge || "SERVICES OVERVIEW"}
+                {data?.overviewBadge || "SERVICES OVERVIEW"}
               </span>
             </div>
 
             {/* Main Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12] mb-6">
-              {data.overviewTitle1}{" "}
-              {data.overviewTitleHighlight && (
-                <span className="text-[#007eff]">{data.overviewTitleHighlight}</span>
+              {data?.overviewTitle1}{" "}
+              {data?.overviewTitleHighlight && (
+                <span className="text-[#007eff]">{data?.overviewTitleHighlight}</span>
               )}{" "}
-              {data.overviewTitle2}
+              {data?.overviewTitle2}
             </h2>
 
             {/* Paragraph Description */}
-            {data.overviewDesc && (
+            {data?.overviewDesc && (
               <div
                 className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8 font-medium [&_p]:mb-2 [&_b]:text-[#001837] [&_b]:font-bold"
                 dangerouslySetInnerHTML={{ __html: data.overviewDesc }}
@@ -81,7 +101,7 @@ export default function ServicesOverview() {
                       <Home className="w-6 h-6 stroke-[2]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#001837] leading-tight">
-                      {data.card1Title || "Residential Cleaning (B2C)"}
+                      {data?.card1Title || "Residential Cleaning (B2C)"}
                     </h3>
                   </div>
 
@@ -89,7 +109,7 @@ export default function ServicesOverview() {
 
                   {/* Checklist */}
                   <div className="space-y-2.5">
-                    {(data.card1Checks || []).map((checkItem, idx) => (
+                    {(data?.card1Checks || []).map((checkItem, idx) => (
                       <div
                         key={idx}
                         className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700"
@@ -110,7 +130,7 @@ export default function ServicesOverview() {
                       <Building2 className="w-6 h-6 stroke-[2]" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#001837] leading-tight">
-                      {data.card2Title || "Commercial Cleaning (B2B)"}
+                      {data?.card2Title || "Commercial Cleaning (B2B)"}
                     </h3>
                   </div>
 
@@ -118,7 +138,7 @@ export default function ServicesOverview() {
 
                   {/* Checklist */}
                   <div className="space-y-2.5">
-                    {(data.card2Checks || []).map((checkItem, idx) => (
+                    {(data?.card2Checks || []).map((checkItem, idx) => (
                       <div
                         key={idx}
                         className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700"
