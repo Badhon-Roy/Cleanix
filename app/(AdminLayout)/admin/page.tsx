@@ -26,27 +26,41 @@ import {
   Phone,
 } from "lucide-react";
 import AssignCleanerModal from "@/components/admin/AssignCleanerModal";
-import { ContactMessage, getStoredContactMessages } from "@/lib/contactMessagesData";
+import { IContact, fetchAllContactsAPI } from "@/services/contactService";
+import { io } from "socket.io-client";
 
-export default function AdminOverviewPage() {
+export default function AdminDashboardOverview() {
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<{
     ref: string;
     customer: string;
     service: string;
   } | null>(null);
 
-  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [contactMessages, setContactMessages] = useState<IContact[]>([]);
 
   useEffect(() => {
-    setContactMessages(getStoredContactMessages());
+    fetchAllContactsAPI().then((data) => {
+      setContactMessages(data);
+    });
 
-    const handleUpdate = () => {
-      setContactMessages(getStoredContactMessages());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_contact_messages_updated", handleUpdate);
+    socket.on("contact_created", () => {
+      fetchAllContactsAPI().then((data) => setContactMessages(data));
+    });
+
+    socket.on("contact_updated", () => {
+      fetchAllContactsAPI().then((data) => setContactMessages(data));
+    });
+
     return () => {
-      window.removeEventListener("cleanix_contact_messages_updated", handleUpdate);
+      socket.disconnect();
     };
   }, []);
 

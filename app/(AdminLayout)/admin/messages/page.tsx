@@ -22,18 +22,22 @@ import {
   Filter,
   ChevronDown,
   Check,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  ContactMessage,
-  getStoredContactMessages,
-  updateContactMessageStatus,
-  deleteContactMessage,
-} from "@/lib/contactMessagesData";
+  IContact,
+  TContactStatus,
+  fetchAllContactsAPI,
+  updateContactStatusAPI,
+  deleteContactAPI,
+} from "@/services/contactService";
+import { io } from "socket.io-client";
 
 interface CustomStatusDropdownProps {
-  status: ContactMessage["status"];
-  onChangeStatus: (newStatus: ContactMessage["status"]) => void;
+  status: TContactStatus;
+  onChangeStatus: (newStatus: TContactStatus) => void;
 }
 
 function CustomStatusDropdown({ status, onChangeStatus }: CustomStatusDropdownProps) {
@@ -61,7 +65,7 @@ function CustomStatusDropdown({ status, onChangeStatus }: CustomStatusDropdownPr
   };
 
   const options: {
-    value: ContactMessage["status"];
+    value: TContactStatus;
     label: string;
     activeStyle: string;
     hoverStyle: string;
@@ -138,61 +142,98 @@ function CustomStatusDropdown({ status, onChangeStatus }: CustomStatusDropdownPr
 }
 
 export default function AdminContactMessagesPage() {
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [messages, setMessages] = useState<IContact[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL");
-  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<IContact | null>(null);
   const [adminNoteInput, setAdminNoteInput] = useState("");
-
-  const loadMessages = () => {
-    setMessages(getStoredContactMessages());
-  };
-
-  useEffect(() => {
-    loadMessages();
-
-    const handleUpdate = () => {
-      loadMessages();
-    };
-
-    window.addEventListener("cleanix_contact_messages_updated", handleUpdate);
-    return () => {
-      window.removeEventListener("cleanix_contact_messages_updated", handleUpdate);
-    };
-  }, []);
-
-  const handleStatusChange = (id: string, newStatus: ContactMessage["status"]) => {
-    const updated = updateContactMessageStatus(id, newStatus);
-    setMessages(updated);
-    if (selectedMessage && selectedMessage.id === id) {
-      setSelectedMessage({ ...selectedMessage, status: newStatus });
-    }
-    toast.success(`Message #${id} status updated to ${newStatus}`);
-  };
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<IContact | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSaveNotes = () => {
     if (!selectedMessage) return;
-    const updated = updateContactMessageStatus(
-      selectedMessage.id,
-      selectedMessage.status,
-      adminNoteInput
-    );
-    setMessages(updated);
-    setSelectedMessage({ ...selectedMessage, notes: adminNoteInput });
     toast.success("Admin notes saved successfully!");
   };
 
-  const handleDelete = (id: string) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this contact message?"
-    );
-    if (confirmDelete) {
-      const updated = deleteContactMessage(id);
-      setMessages(updated);
-      if (selectedMessage?.id === id) {
-        setSelectedMessage(null);
+  const loadMessages = async (statusFilter = activeStatusFilter, search = searchQuery) => {
+    setIsLoading(true);
+    try {
+      const data = await fetchAllContactsAPI({
+        status: statusFilter,
+        searchTerm: search,
+      });
+      setMessages(data);
+    } catch (err) {
+      console.error("Error loading messages:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMessages(activeStatusFilter, searchQuery);
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("contact_created", () => {
+      toast.info("⚡ New Contact Form Inquiry Received!");
+      loadMessages(activeStatusFilter, searchQuery);
+    });
+
+    socket.on("contact_updated", () => {
+      loadMessages(activeStatusFilter, searchQuery);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [activeStatusFilter, searchQuery]);
+
+  const handleStatusChange = async (id: string, newStatus: TContactStatus) => {
+    try {
+      const res = await updateContactStatusAPI(id, newStatus);
+      if (res && res.success) {
+        toast.success(`Contact status updated to ${newStatus}`);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m))
+        );
+        if (selectedMessage && selectedMessage.id === id) {
+          setSelectedMessage({ ...selectedMessage, status: newStatus });
+        }
+      } else {
+        toast.error(res?.message || "Failed to update contact status");
       }
-      toast.error(`Contact message #${id} deleted.`);
+    } catch (err) {
+      toast.error("Error updating status");
+    }
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!deleteConfirmTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteContactAPI(deleteConfirmTarget.id);
+      if (res && res.success) {
+        toast.success("Contact message deleted successfully.");
+        setMessages((prev) => prev.filter((m) => m.id !== deleteConfirmTarget.id));
+        if (selectedMessage?.id === deleteConfirmTarget.id) {
+          setSelectedMessage(null);
+        }
+        setDeleteConfirmTarget(null);
+      } else {
+        toast.error(res?.message || "Failed to delete message");
+      }
+    } catch (err) {
+      toast.error("Error deleting message");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -440,7 +481,12 @@ export default function AdminContactMessagesPage() {
 
                   {/* Date */}
                   <td className="p-4 text-xs text-slate-500 font-semibold whitespace-nowrap">
-                    {msg.submittedAt}
+                    {msg.createdAt
+                      ? new Date(msg.createdAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : msg.submittedAt || "N/A"}
                   </td>
 
                   {/* Custom Status Dropdown Pill */}
@@ -468,7 +514,7 @@ export default function AdminContactMessagesPage() {
 
                       <button
                         type="button"
-                        onClick={() => handleDelete(msg.id)}
+                        onClick={() => setDeleteConfirmTarget(msg)}
                         className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                         title="Delete Message"
                       >
@@ -493,8 +539,18 @@ export default function AdminContactMessagesPage() {
 
       {/* FULL MESSAGE DETAILS MODAL */}
       {selectedMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl border border-slate-200/90 max-w-2xl w-full p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+        >
+          <div
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+            className="bg-white rounded-3xl border border-slate-200/90 max-w-2xl w-full p-6 sm:p-8 space-y-6 relative overflow-hidden"
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -506,7 +562,13 @@ export default function AdminContactMessagesPage() {
                     Contact Submission #{selectedMessage.id}
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold">
-                    Submitted: {selectedMessage.submittedAt}
+                    Submitted:{" "}
+                    {selectedMessage.createdAt
+                      ? new Date(selectedMessage.createdAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : selectedMessage.submittedAt || "N/A"}
                   </p>
                 </div>
               </div>
@@ -617,6 +679,68 @@ export default function AdminContactMessagesPage() {
                 className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer"
               >
                 Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM DELETE CONFIRMATION POPUP MODAL */}
+      {deleteConfirmTarget && (
+        <div
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+        >
+          <div
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+            className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 sm:p-7 space-y-5 relative overflow-hidden"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  Delete Contact Inquiry?
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Ref ID: <span className="text-[#007eff] font-bold">{deleteConfirmTarget.id}</span>
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed bg-slate-50 border border-slate-100 p-4 rounded-2xl">
+              Are you sure you want to permanently delete this contact inquiry from{" "}
+              <strong className="text-slate-900">{deleteConfirmTarget.name}</strong> (
+              {deleteConfirmTarget.phone})? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteConfirmTarget(null)}
+                className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-extrabold text-xs transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDeleteAction}
+                className="px-5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shadow-md shadow-red-500/20"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                <span>{isDeleting ? "Deleting..." : "Yes, Delete"}</span>
               </button>
             </div>
           </div>
