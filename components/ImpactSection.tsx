@@ -13,6 +13,103 @@ interface ImpactSectionProps {
   initialData?: HomeCMSContent;
 }
 
+function AnimatedStatNumber({ value }: { value: string }) {
+  const [displayValue, setDisplayValue] = useState("0");
+  const containerRef = React.useRef<HTMLSpanElement>(null);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setHasAnimated(true);
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasAnimated) return;
+
+    const raw = value || "0";
+    const prefixMatch = raw.match(/^[^0-9.]+/);
+    const prefix = prefixMatch ? prefixMatch[0] : "";
+
+    const suffixMatch = raw.match(/[^0-9.]+$/);
+    const suffix = suffixMatch ? suffixMatch[0] : "";
+
+    let numStr = raw;
+    if (prefix && numStr.startsWith(prefix)) numStr = numStr.substring(prefix.length);
+    if (suffix && numStr.endsWith(suffix)) numStr = numStr.substring(0, numStr.length - suffix.length);
+
+    const hasCommas = numStr.includes(",");
+    const cleanNumStr = numStr.replace(/,/g, "");
+    const targetNum = parseFloat(cleanNumStr);
+
+    if (isNaN(targetNum)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const dotIndex = cleanNumStr.indexOf(".");
+    const decimals = dotIndex !== -1 ? cleanNumStr.length - dotIndex - 1 : 0;
+
+    const duration = 1800; // 1.8 seconds duration
+    const startTime = performance.now();
+
+    let animationFrameId: number;
+
+    const updateCounter = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ultra-smooth easeOutCubic
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentVal = targetNum * easedProgress;
+
+      let formattedNum = "";
+      if (decimals > 0) {
+        formattedNum = currentVal.toFixed(decimals);
+      } else {
+        const roundedInt = Math.floor(currentVal);
+        formattedNum = hasCommas
+          ? roundedInt.toLocaleString("en-US")
+          : roundedInt.toString();
+      }
+
+      setDisplayValue(`${prefix}${formattedNum}${suffix}`);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(updateCounter);
+      } else {
+        let finalFormatted = "";
+        if (decimals > 0) {
+          finalFormatted = targetNum.toFixed(decimals);
+        } else {
+          finalFormatted = hasCommas
+            ? Math.floor(targetNum).toLocaleString("en-US")
+            : Math.floor(targetNum).toString();
+        }
+        setDisplayValue(`${prefix}${finalFormatted}${suffix}`);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateCounter);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [value, hasAnimated]);
+
+  return <span ref={containerRef}>{displayValue}</span>;
+}
+
 export default function ImpactSection({ initialData }: ImpactSectionProps) {
   const [data, setData] = useState<HomeCMSContent>(
     initialData || defaultHomeCMSData
@@ -49,7 +146,7 @@ export default function ImpactSection({ initialData }: ImpactSectionProps) {
   const statsList = [
     {
       id: 1,
-      value: data?.impactStat1Value || "2,500+",
+      value: data?.impactStat1Value || "3,500+",
       label: data?.impactStat1Label || "ক্লিন করা বাসা ও অফিস",
     },
     {
@@ -120,7 +217,7 @@ export default function ImpactSection({ initialData }: ImpactSectionProps) {
                 className="flex-1 bg-[#f4f6f8] rounded-2xl p-5 sm:p-6 flex items-center justify-between border border-slate-200/60 hover:border-slate-300 transition-all duration-300 min-h-[96px]"
               >
                 <span className="text-3xl sm:text-4xl lg:text-[36px] font-black text-[#007eff] tracking-tight">
-                  {stat.value}
+                  <AnimatedStatNumber value={stat.value} />
                 </span>
                 <span className="text-slate-700 font-extrabold text-xs sm:text-base tracking-wider uppercase text-right">
                   {stat.label}
