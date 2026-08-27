@@ -4,40 +4,56 @@ import React, { useRef } from "react";
 import Image from "next/image";
 import { Upload, Trash2, ImageIcon, Link as LinkIcon } from "lucide-react";
 
+import { compressImageToWebP } from "@/utils/imageCompressor";
+
 interface ImageUploadPreviewProps {
   label: string;
   value: string;
   onChange: (newValue: string) => void;
+  onMultipleChange?: (newValues: string[]) => void;
   recommendedSize?: string;
   aspectRatio?: "banner" | "square" | "portrait";
+  multiple?: boolean;
 }
 
 export default function ImageUploadPreview({
   label,
   value,
   onChange,
+  onMultipleChange,
   recommendedSize = "Recommended JPG/PNG/WebP format",
   aspectRatio = "banner",
+  multiple = false,
 }: ImageUploadPreviewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    // Check size limit (e.g., max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size exceeds 5MB limit. Please choose a smaller image.");
+    if (files.length > 1 && onMultipleChange) {
+      const results: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 20 * 1024 * 1024) continue;
+        const compressed = await compressImageToWebP(file, 900, 900, 0.72);
+        if (compressed) results.push(compressed);
+      }
+      if (results.length > 0) {
+        onMultipleChange(results);
+      }
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") {
-        onChange(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    const file = files[0];
+    if (file.size > 20 * 1024 * 1024) {
+      alert("File size exceeds 20MB limit. Please choose a smaller image.");
+      return;
+    }
+
+    const compressed = await compressImageToWebP(file, 900, 900, 0.72);
+    if (compressed) {
+      onChange(compressed);
+    }
   };
 
   const handleClear = () => {
@@ -118,6 +134,7 @@ export default function ImageUploadPreview({
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            multiple={multiple}
             onChange={handleFileChange}
             className="hidden"
           />

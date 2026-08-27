@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Save,
+  Loader2,
   ExternalLink,
   Sparkles,
   FolderCheck,
@@ -18,30 +19,47 @@ import {
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import {
-  getStoredProjectsCMSData,
-  saveProjectsCMSData,
+  defaultProjectsCMSData,
   ProjectsCMSContent,
 } from "@/lib/projectsCMSData";
+import { fetchProjectsCMSAPI, updateProjectsCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 export default function ProjectsCMSManager() {
   const { register, handleSubmit, reset, control, watch, setValue, getValues } =
     useForm<ProjectsCMSContent>({
-      defaultValues: getStoredProjectsCMSData(),
+      defaultValues: defaultProjectsCMSData,
     });
 
   const formData = watch();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    reset(getStoredProjectsCMSData());
+    fetchProjectsCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultProjectsCMSData, ...res.data });
+      }
+    });
   }, [reset]);
 
   const [draggedCheckIndex, setDraggedCheckIndex] = useState<number | null>(null);
 
-  const onSubmit = (data: ProjectsCMSContent) => {
-    saveProjectsCMSData(data);
-    toast.success("Projects Page CMS updated live!");
+  const onSubmit = async (data: ProjectsCMSContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updateProjectsCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Projects Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Projects CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating Projects CMS:", err);
+      toast.error("Failed to update Projects CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Dynamic Checklist Handlers
@@ -118,11 +136,16 @@ export default function ProjectsCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -412,10 +435,15 @@ export default function ProjectsCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Projects CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Projects CMS Live"}</span>
           </button>
         </div>
       </form>

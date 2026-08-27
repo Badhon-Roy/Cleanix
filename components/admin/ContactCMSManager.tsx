@@ -1,30 +1,48 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Save, ExternalLink, Sparkles, PhoneCall, Mail, MapPin, Headphones, Clock } from "lucide-react";
+import { Save, Loader2, ExternalLink, Sparkles, PhoneCall, Mail, MapPin, Headphones, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import {
-  getStoredContactCMSData,
-  saveContactCMSData,
+  defaultContactCMSData,
   ContactCMSContent,
 } from "@/lib/contactCMSData";
+import { fetchContactCMSAPI, updateContactCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 export default function ContactCMSManager() {
   const { register, handleSubmit, reset, control } = useForm<ContactCMSContent>({
-    defaultValues: getStoredContactCMSData(),
+    defaultValues: defaultContactCMSData,
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    reset(getStoredContactCMSData());
+    fetchContactCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultContactCMSData, ...res.data });
+      }
+    });
   }, [reset]);
 
-  const onSubmit = (data: ContactCMSContent) => {
-    saveContactCMSData(data);
-    toast.success("Contact Page CMS updated live!");
+  const onSubmit = async (data: ContactCMSContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updateContactCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Contact Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Contact CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating Contact CMS:", err);
+      toast.error("Failed to update Contact CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -60,11 +78,16 @@ export default function ContactCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -330,10 +353,15 @@ export default function ContactCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Contact CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Contact CMS Live"}</span>
           </button>
         </div>
       </form>

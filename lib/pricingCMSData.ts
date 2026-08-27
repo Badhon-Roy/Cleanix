@@ -29,28 +29,3 @@ export const defaultPricingCMSData: PricingCMSContent = {
   sectionTitle: "FLEXIBLE PRICING PLANS CLEANING SERVICES",
   sectionAssetImage: "/cleaning-bucket.png",
 };
-
-export const PRICING_CMS_STORAGE_KEY = "cleanix_pricing_cms_v1";
-
-export function getStoredPricingCMSData(): PricingCMSContent {
-  if (typeof window === "undefined") return defaultPricingCMSData;
-  try {
-    const raw = localStorage.getItem(PRICING_CMS_STORAGE_KEY);
-    if (!raw) return defaultPricingCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultPricingCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Pricing CMS data:", err);
-    return defaultPricingCMSData;
-  }
-}
-
-export function savePricingCMSData(data: PricingCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(PRICING_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_pricing_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Pricing CMS data:", err);
-  }
-}

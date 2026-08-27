@@ -2,26 +2,47 @@
 
 import React, { useState, useEffect } from "react";
 import { Sparkles, Calendar } from "lucide-react";
-import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
+import { defaultAboutData, AboutContent } from "@/lib/aboutData";
+import { io } from "socket.io-client";
 
-export default function OurJourneyStepper() {
-  const [data, setData] = useState<AboutContent>(getStoredAboutData());
+interface OurJourneyStepperProps {
+  initialData?: AboutContent;
+}
+
+export default function OurJourneyStepper({ initialData }: OurJourneyStepperProps) {
+  const [data, setData] = useState<AboutContent>(
+    initialData || defaultAboutData
+  );
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
-    setData(getStoredAboutData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredAboutData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_about_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "about" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
-  const steps = data.journeySteps && data.journeySteps.length > 0
+  const steps = data?.journeySteps && data?.journeySteps.length > 0
     ? data.journeySteps
     : [
         {
@@ -89,12 +110,12 @@ export default function OurJourneyStepper() {
         <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-blue-50/10 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>{data.journeyBadge || "OUR JOURNEY"}</span>
+            <span>{data?.journeyBadge || "OUR JOURNEY"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white leading-[1.12]">
-            {data.journeyTitle || "BUILDING CLEANER SPACES"} <br />
-            <span className="text-[#007eff]">{data.journeyHighlight || "WITH EVERY SERVICE"}</span>
+            {data?.journeyTitle || "BUILDING CLEANER SPACES"} <br />
+            <span className="text-[#007eff]">{data?.journeyHighlight || "WITH EVERY SERVICE"}</span>
           </h2>
         </div>
 

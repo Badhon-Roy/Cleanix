@@ -4,25 +4,46 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Check } from "lucide-react";
-import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
+import { defaultAboutData, AboutContent } from "@/lib/aboutData";
+import { io } from "socket.io-client";
 
-export default function TeamSpecialists() {
-  const [data, setData] = useState<AboutContent>(getStoredAboutData());
+interface TeamSpecialistsProps {
+  initialData?: AboutContent;
+}
+
+export default function TeamSpecialists({ initialData }: TeamSpecialistsProps) {
+  const [data, setData] = useState<AboutContent>(
+    initialData || defaultAboutData
+  );
 
   useEffect(() => {
-    setData(getStoredAboutData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredAboutData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_about_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "about" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
-  const team = data.teamMembers || [];
+  const team = data?.teamMembers || [];
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-100">
@@ -89,7 +110,7 @@ export default function TeamSpecialists() {
           <div className="absolute inset-0 overflow-hidden rounded-xl">
             <Image
               src={
-                data.ctaBannerImage ||
+                data?.ctaBannerImage ||
                 "https://framerusercontent.com/images/hykQu8sbeIwxfZ3UXUa3Ce7b47E.png?width=1880&height=750"
               }
               alt="Professional Floor Cleaning Banner"
@@ -115,7 +136,7 @@ export default function TeamSpecialists() {
                 />
                 <text className="text-[9.2px] font-bold fill-white tracking-widest uppercase">
                   <textPath href="#circlePath" startOffset="0%">
-                    {data.ctaBadgeText || "• CLEANING • DEEP CLEAN • HOME CARE • SANITIZE"}
+                    {data?.ctaBadgeText || "• CLEANING • DEEP CLEAN • HOME CARE • SANITIZE"}
                   </textPath>
                 </text>
               </svg>
@@ -138,16 +159,16 @@ export default function TeamSpecialists() {
           <div className="relative lg:absolute lg:right-10 lg:top-1/2 lg:-bottom-16 z-20 w-full lg:max-w-md bg-[#007eff] rounded-3xl p-8 sm:p-10 text-white shadow-2xl border border-white/20 my-4 lg:my-0 flex flex-col justify-between">
             <div>
               <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight leading-tight mb-6">
-                {data.ctaTitle || "LET'S MOVE YOUR CLEANING WITH PROFESSIONAL"}
+                {data?.ctaTitle || "LET'S MOVE YOUR CLEANING WITH PROFESSIONAL"}
               </h3>
 
               <div className="space-y-3 mb-8">
-                {(data.ctaChecks && data.ctaChecks.length > 0
-                  ? data.ctaChecks
+                {(data?.ctaChecks && data?.ctaChecks.length > 0
+                  ? data?.ctaChecks
                   : [
-                      data.ctaCheck1 || "RESIDENTIAL CLEANING SERVICES",
-                      data.ctaCheck2 || "COMMERCIAL CLEANING SOLUTIONS",
-                      data.ctaCheck3 || "ECO-FRIENDLY CLEANING PRODUCTS",
+                      data?.ctaCheck1 || "RESIDENTIAL CLEANING SERVICES",
+                      data?.ctaCheck2 || "COMMERCIAL CLEANING SOLUTIONS",
+                      data?.ctaCheck3 || "ECO-FRIENDLY CLEANING PRODUCTS",
                     ]
                 ).map((checkItem, idx) => (
                   <div key={idx} className="flex items-center gap-3">
@@ -164,7 +185,7 @@ export default function TeamSpecialists() {
 
             <div>
               <Link
-                href={data.ctaButtonLink || "/#quote"}
+                href={data?.ctaButtonLink || "/#quote"}
                 className="bg-[#001837] hover:bg-[#0b2144] text-white font-bold text-xs uppercase tracking-wider pl-6 hover:pl-10 pr-2 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-xl hover:scale-105"
               >
                 <span>Get a Quote</span>

@@ -1,30 +1,48 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Save, ExternalLink, Sparkles, BadgePercent, Tag, DollarSign } from "lucide-react";
+import { Save, Loader2, ExternalLink, Sparkles, BadgePercent, Tag, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import {
-  getStoredPricingCMSData,
-  savePricingCMSData,
+  defaultPricingCMSData,
   PricingCMSContent,
 } from "@/lib/pricingCMSData";
+import { fetchPricingCMSAPI, updatePricingCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 export default function PricingCMSManager() {
   const { register, handleSubmit, reset, control } = useForm<PricingCMSContent>({
-    defaultValues: getStoredPricingCMSData(),
+    defaultValues: defaultPricingCMSData,
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    reset(getStoredPricingCMSData());
+    fetchPricingCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultPricingCMSData, ...res.data });
+      }
+    });
   }, [reset]);
 
-  const onSubmit = (data: PricingCMSContent) => {
-    savePricingCMSData(data);
-    toast.success("Pricing Page CMS updated live!");
+  const onSubmit = async (data: PricingCMSContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updatePricingCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Pricing Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Pricing CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating Pricing CMS:", err);
+      toast.error("Failed to update Pricing CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -60,11 +78,16 @@ export default function PricingCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -216,10 +239,15 @@ export default function PricingCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Pricing CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Pricing CMS Live"}</span>
           </button>
         </div>
       </form>

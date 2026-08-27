@@ -15,8 +15,14 @@ import {
   Layers,
   Sparkles,
   AlignLeft,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { BlogDetail } from "@/lib/blogsData";
+import { createBlogAPI, updateBlogAPI } from "@/services/blogService";
+import { getAuthUser } from "@/utils/cookie";
+import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -32,6 +38,7 @@ export default function BlogModal({
   onSave,
 }: BlogModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -42,7 +49,6 @@ export default function BlogModal({
     "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
   );
   const [image, setImage] = useState("");
-  const [shortDesc, setShortDesc] = useState("");
   const [introParagraph, setIntroParagraph] = useState("");
   const [sections, setSections] = useState<
     { title: string; paragraphs: string[] }[]
@@ -64,12 +70,8 @@ export default function BlogModal({
       setCategory(blogData.category || "HOME HYGIENE");
       setDate(blogData.date || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase());
       setAuthorName(blogData.author?.name || "Cleanix Editorial Team");
-      setAuthorAvatar(
-        blogData.author?.avatar ||
-          "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
-      );
+      setAuthorAvatar(blogData.author?.avatar || "");
       setImage(blogData.image || "");
-      setShortDesc(blogData.shortDesc || "");
       setIntroParagraph(blogData.introParagraph || "");
       setSections(blogData.sections && blogData.sections.length > 0 ? blogData.sections : [
         {
@@ -78,18 +80,30 @@ export default function BlogModal({
         },
       ]);
     } else {
-      // Defaults for Add New Blog
+      // Defaults for Add New Blog - fetch current logged in user
+      const authUser = getAuthUser();
+      const loggedInName =
+        authUser?.name ||
+        (authUser?.firstName
+          ? `${authUser.firstName} ${authUser.lastName || ""}`.trim()
+          : null) ||
+        authUser?.email ||
+        "Cleanix Editorial Team";
+      const loggedInAvatar =
+        authUser?.avatar ||
+        authUser?.profile?.avatar ||
+        authUser?.image ||
+        authUser?.profileImg ||
+        "";
+
       const defaultDate = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
       setTitle("");
       setSlug("");
       setCategory("HOME HYGIENE");
       setDate(defaultDate);
-      setAuthorName("Cleanix Editorial Team");
-      setAuthorAvatar(
-        "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
-      );
+      setAuthorName(loggedInName);
+      setAuthorAvatar(loggedInAvatar);
       setImage("https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80");
-      setShortDesc("");
       setIntroParagraph("");
       setSections([
         {
@@ -102,16 +116,23 @@ export default function BlogModal({
     }
   }, [blogData, isOpen]);
 
+  const makeSlug = (text: string) => {
+    if (!text) return `blog-post-${Date.now()}`;
+    const cleaned = text
+      .toLowerCase()
+      .trim()
+      .replace(/[?,!@#$%^&*()=+|\\[\]/;:."'`~—–<>]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-+/g, "-");
+    return cleaned || `blog-post-${Date.now()}`;
+  };
+
   // Auto-generate slug when title changes for new post
   const handleTitleChange = (val: string) => {
     setTitle(val);
     if (!blogData) {
-      const generatedSlug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
-      setSlug(generatedSlug);
+      setSlug(makeSlug(val));
     }
   };
 
@@ -168,27 +189,37 @@ export default function BlogModal({
 
   if (!isOpen || !mounted) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalSlug =
-      slug.trim() ||
-      title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
+    setIsSaving(true);
+
+    const finalSlug = slug.trim() ? makeSlug(slug) : makeSlug(title);
+
+    const authUser = getAuthUser();
+    const loggedInName =
+      authUser?.name ||
+      (authUser?.firstName
+        ? `${authUser.firstName} ${authUser.lastName || ""}`.trim()
+        : null) ||
+      authUser?.email ||
+      "Cleanix Editorial Team";
+    const loggedInAvatar =
+      authUser?.avatar ||
+      authUser?.profile?.avatar ||
+      authUser?.image ||
+      authUser?.profileImg ||
+      "";
 
     const savedBlog: BlogDetail = {
       slug: finalSlug,
       title: title.trim(),
       category: category.trim().toUpperCase(),
-      date: date.trim() || "MAY 2, 2026",
+      date: date.trim() || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase(),
       author: {
-        name: authorName.trim() || "Cleanix Editorial Team",
-        avatar: authorAvatar.trim(),
+        name: authorName.trim() || loggedInName,
+        avatar: authorAvatar.trim() || loggedInAvatar,
       },
       image: image.trim(),
-      shortDesc: shortDesc.trim(),
       introParagraph: introParagraph.trim(),
       sections: sections.map((s) => ({
         title: s.title.trim(),
@@ -196,8 +227,32 @@ export default function BlogModal({
       })),
     };
 
-    onSave(savedBlog);
-    onClose();
+    try {
+      if (blogData) {
+        const res = await updateBlogAPI(blogData.slug, savedBlog);
+        if (res && res.success) {
+          toast.success("Blog article updated live on MongoDB database!");
+          onSave(res.data || savedBlog);
+          onClose();
+        } else {
+          toast.error(res?.message || "Failed to update blog article");
+        }
+      } else {
+        const res = await createBlogAPI(savedBlog);
+        if (res && res.success) {
+          toast.success("Blog article published live on MongoDB database!");
+          onSave(res.data || savedBlog);
+          onClose();
+        } else {
+          toast.error(res?.message || "Failed to publish blog article");
+        }
+      }
+    } catch (err: any) {
+      console.error("Error saving blog post:", err);
+      toast.error("Failed to save blog post");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return createPortal(
@@ -311,64 +366,36 @@ export default function BlogModal({
 
           {/* Grid 3: Featured Banner Image & Author Avatar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
-                <ImageIcon className="w-4 h-4 text-[#007eff]" /> Hero Featured Image URL:
-              </label>
-              <input
-                type="text"
+            <div>
+              <ImageUploadPreview
+                label="Hero Featured Image:"
                 value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-xs sm:text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                onChange={(val) => setImage(val)}
+                recommendedSize="Recommended 1200x630 JPG/WebP format"
+                aspectRatio="banner"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
-                <User className="w-4 h-4 text-[#007eff]" /> Author Avatar Image URL:
-              </label>
-              <input
-                type="text"
+            <div>
+              <ImageUploadPreview
+                label="Author Avatar Image:"
                 value={authorAvatar}
-                onChange={(e) => setAuthorAvatar(e.target.value)}
-                placeholder="https://framerusercontent.com/images/..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-xs sm:text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                onChange={(val) => setAuthorAvatar(val)}
+                recommendedSize="Optional JPG/PNG (leave blank for initial badge)"
+                aspectRatio="square"
               />
             </div>
           </div>
 
-          {/* Short Excerpt & Intro Paragraph */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 text-xs sm:text-sm">
-                Short Summary (Card Excerpt):
-              </label>
-              <textarea
-                rows={3}
-                value={shortDesc}
-                onChange={(e) => setShortDesc(e.target.value)}
-                placeholder="Enter brief card summary in Bengali or English..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 text-xs sm:text-sm">
-                Article Intro Paragraph:
-              </label>
-              <textarea
-                rows={3}
-                value={introParagraph}
-                onChange={(e) => setIntroParagraph(e.target.value)}
-                placeholder="Enter lead paragraph opening the article..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
-              />
-            </div>
+          {/* Intro Paragraph */}
+          <div className="w-full">
+            <RichTextEditor
+              label="Article Intro Paragraph:"
+              value={introParagraph}
+              onChange={(val) => setIntroParagraph(val)}
+              rows={3}
+              placeholder="Enter lead paragraph opening the article..."
+            />
           </div>
 
           {/* Dynamic Article Sections (Headings + Paragraphs) */}
@@ -437,26 +464,29 @@ export default function BlogModal({
                     </div>
 
                     {sec.paragraphs.map((pText, pIdx) => (
-                      <div key={pIdx} className="flex items-start gap-2">
-                        <textarea
-                          rows={2}
+                      <div key={pIdx} className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2 relative">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-extrabold text-slate-600">Paragraph #{pIdx + 1}:</span>
+                          {sec.paragraphs.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveParagraph(secIdx, pIdx)}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
+                              title="Remove paragraph"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <RichTextEditor
+                          label=""
                           value={pText}
-                          onChange={(e) =>
-                            handleParagraphChange(secIdx, pIdx, e.target.value)
+                          onChange={(val) =>
+                            handleParagraphChange(secIdx, pIdx, val)
                           }
-                          placeholder={`Enter paragraph #${pIdx + 1} content...`}
-                          required
-                          className="flex-1 bg-white border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                          rows={2}
+                          placeholder={`Enter paragraph #${pIdx + 1} content with formatting...`}
                         />
-                        {sec.paragraphs.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveParagraph(secIdx, pIdx)}
-                            className="p-2 text-slate-400 hover:text-red-600 rounded-xl hover:bg-red-50 cursor-pointer transition-colors mt-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -476,10 +506,21 @@ export default function BlogModal({
             </button>
             <button
               type="submit"
-              className="px-8 py-3 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-[#007eff] hover:bg-blue-600 shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
+              disabled={isSaving}
+              className="px-8 py-3 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{blogData ? "Update Blog Post" : "Publish Blog Post"}</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              <span>
+                {isSaving
+                  ? "Saving..."
+                  : blogData
+                  ? "Update Blog Post"
+                  : "Publish Blog Post"}
+              </span>
             </button>
           </div>
         </form>

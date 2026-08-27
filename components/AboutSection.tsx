@@ -4,23 +4,44 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Star } from "lucide-react";
-import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
+import { defaultAboutData, AboutContent } from "@/lib/aboutData";
+import { io } from "socket.io-client";
 
-export default function AboutSection() {
-  const [data, setData] = useState<AboutContent>(getStoredAboutData());
+interface AboutSectionProps {
+  initialData?: AboutContent;
+}
+
+export default function AboutSection({ initialData }: AboutSectionProps) {
+  const [data, setData] = useState<AboutContent>(
+    initialData || defaultAboutData
+  );
 
   useEffect(() => {
-    setData(getStoredAboutData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredAboutData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_about_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "about" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12">
@@ -30,15 +51,15 @@ export default function AboutSection() {
           {/* Badge Pill (Left) */}
           <div className="flex-shrink-0">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2">
-              {data.whoWeAreBadge || "ABOUT OUR COMPANY"}
+              {data?.whoWeAreBadge || "ABOUT OUR COMPANY"}
             </span>
           </div>
 
           {/* Header Title (Right) */}
           <div className="lg:max-w-4xl">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-              {data.whoWeAreTitle || "DELIVERING RELIABLE CLEANING SOLUTIONS WITH PROFESSIONAL CARE & LASTING"}{" "}
-              <span className="text-[#007eff]">{data.whoWeAreHighlight || "QUALITY"}</span>
+              {data?.whoWeAreTitle || "DELIVERING RELIABLE CLEANING SOLUTIONS WITH PROFESSIONAL CARE & LASTING"}{" "}
+              <span className="text-[#007eff]">{data?.whoWeAreHighlight || "QUALITY"}</span>
             </h2>
           </div>
         </div>
@@ -64,7 +85,7 @@ export default function AboutSection() {
 
             <div className="relative w-full max-w-[480px] h-[520px] sm:h-[580px] flex items-end justify-center">
               <Image
-                src={data.whoWeAreFeatureImage || "/about-cleaner.png"}
+                src={data?.whoWeAreFeatureImage || "/about-cleaner.png"}
                 alt="Professional Cleaning Specialist"
                 fill
                 priority
@@ -82,10 +103,10 @@ export default function AboutSection() {
               {/* Card 1: Experience */}
               <div className="bg-[#f1f5f9] rounded-2xl p-6 sm:p-7 flex flex-col justify-center border border-slate-100/80">
                 <span className="text-4xl sm:text-5xl font-black text-[#007eff] mb-2 leading-none">
-                  {data.whoWeAreExpYears || "10+"}
+                  {data?.whoWeAreExpYears || "10+"}
                 </span>
                 <p className="text-[#001837] font-bold text-base sm:text-lg leading-snug">
-                  {data.whoWeAreExpLabel || "Years of Cleaning Experience"}
+                  {data?.whoWeAreExpLabel || "Years of Cleaning Experience"}
                 </p>
               </div>
 
@@ -120,7 +141,7 @@ export default function AboutSection() {
                     </div>
                   </div>
                   <span className="text-[#001837] font-extrabold text-sm sm:text-base leading-tight">
-                    {data.whoWeAreClientsCount || "1,250+ Happy Clients"}
+                    {data?.whoWeAreClientsCount || "1,250+ Happy Clients"}
                   </span>
                 </div>
 
@@ -130,7 +151,7 @@ export default function AboutSection() {
                     G
                   </div>
                   <span className="font-extrabold text-[#007eff] text-base">
-                    {data.whoWeAreRatingScore || "4.8/5.0"}
+                    {data?.whoWeAreRatingScore || "4.8/5.0"}
                   </span>
                   <div className="flex items-center gap-0.5 text-[#007eff]">
                     {[...Array(5)].map((_, i) => (
@@ -143,12 +164,12 @@ export default function AboutSection() {
 
             {/* Who We Are Subheading */}
             <h3 className="text-2xl sm:text-3xl font-extrabold text-[#001837] mb-4">
-              {data.whoWeAreSubheading || "আমরা কারা? (Who We Are)"}
+              {data?.whoWeAreSubheading || "আমরা কারা? (Who We Are)"}
             </h3>
 
             {/* Paragraph Descriptions */}
             <div className="space-y-4 text-slate-600 text-sm sm:text-[15px] leading-relaxed mb-8 whitespace-pre-line">
-              {data.whoWeArePara1 ? (
+              {data?.whoWeArePara1 ? (
                 data.whoWeArePara1.split("\n\n").map((para, idx) => (
                   <div
                     key={idx}
@@ -156,7 +177,7 @@ export default function AboutSection() {
                   />
                 ))
               ) : null}
-              {data.whoWeArePara2 ? (
+              {data?.whoWeArePara2 ? (
                 <div dangerouslySetInnerHTML={{ __html: data.whoWeArePara2.replace(/\n/g, "<br />") }} />
               ) : null}
             </div>
@@ -166,25 +187,25 @@ export default function AboutSection() {
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  {data.whoWeAreCheck1 || "98% ON-TIME ARRIVAL IN DHAKA"}
+                  {data?.whoWeAreCheck1 || "98% ON-TIME ARRIVAL IN DHAKA"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  {data.whoWeAreCheck2 || "1,250+ SATISFIED CLIENTS"}
+                  {data?.whoWeAreCheck2 || "1,250+ SATISFIED CLIENTS"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  {data.whoWeAreCheck3 || "100% VERIFIED CLEANER TEAMS"}
+                  {data?.whoWeAreCheck3 || "100% VERIFIED CLEANER TEAMS"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
                 <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  {data.whoWeAreCheck4 || "24/7 DEDICATED SUPPORT"}
+                  {data?.whoWeAreCheck4 || "24/7 DEDICATED SUPPORT"}
                 </span>
               </div>
             </div>

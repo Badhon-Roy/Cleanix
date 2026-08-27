@@ -5,36 +5,58 @@ import Image from "next/image";
 import { Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
   FaqItem,
 } from "@/lib/homeCMSData";
 
-export default function FaqSection() {
+import { io } from "socket.io-client";
+
+interface FaqSectionProps {
+  initialData?: HomeCMSContent;
+}
+
+export default function FaqSection({ initialData }: FaqSectionProps) {
   const [openId, setOpenId] = useState<number | string | null>(1);
-  const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
+  const [cmsData, setCmsData] = useState<HomeCMSContent>(
+    initialData || defaultHomeCMSData
+  );
 
   useEffect(() => {
-    const loaded = getStoredHomeCMSData();
+    const loaded = initialData || defaultHomeCMSData;
     setCmsData(loaded);
     if (loaded.faqItems && loaded.faqItems.length > 0) {
       setOpenId(loaded.faqItems[0].id);
     }
 
-    const handleUpdate = () => {
-      const updated = getStoredHomeCMSData();
-      setCmsData(updated);
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      const delta = payload?.updatedFields || payload?.data;
+      if (delta) {
+        const hasFaqKeys = Object.keys(delta).some((k) => k.startsWith("faq"));
+        if (hasFaqKeys) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+          if (delta.faqItems && delta.faqItems.length > 0) {
+            setOpenId(delta.faqItems[0].id);
+          }
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   const faqItemsList: FaqItem[] =
-    cmsData.faqItems && cmsData.faqItems.length > 0
+    cmsData?.faqItems && cmsData?.faqItems.length > 0
       ? cmsData.faqItems
       : defaultHomeCMSData.faqItems;
 
@@ -48,10 +70,10 @@ export default function FaqSection() {
         {/* Centered Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
           <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4 bg-white/60">
-            {cmsData.faqBadge || "FAQ"}
+            {cmsData?.faqBadge || "FAQ"}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] tracking-tight uppercase">
-            {cmsData.faqTitle || "CLEANING QUESTIONS ANSWERED"}
+            {cmsData?.faqTitle || "CLEANING QUESTIONS ANSWERED"}
           </h2>
         </div>
 
@@ -124,7 +146,7 @@ export default function FaqSection() {
           <div className="lg:col-span-6 relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-3xl overflow-hidden border border-slate-200/80">
             <Image
               src={
-                cmsData.faqImage ||
+                cmsData?.faqImage ||
                 "https://framerusercontent.com/images/UaZYgh11hZSeJVH37MEKUXPqJb0.png?width=708&height=450"
               }
               alt="Two Professional Cleaners at Work"

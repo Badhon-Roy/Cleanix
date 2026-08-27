@@ -3,28 +3,48 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import {
-  getStoredServicesCMSData,
   defaultServicesCMSData,
   ServicesCMSContent,
 } from "@/lib/servicesCMSData";
+import { io } from "socket.io-client";
 
-export default function HowItWorks() {
-  const [data, setData] = useState<ServicesCMSContent>(defaultServicesCMSData);
+interface HowItWorksProps {
+  initialData?: ServicesCMSContent;
+}
+
+export default function HowItWorks({ initialData }: HowItWorksProps) {
+  const [data, setData] = useState<ServicesCMSContent>(
+    initialData || defaultServicesCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredServicesCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredServicesCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "services" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
-  const stepsList = data.howItWorksSteps || defaultServicesCMSData.howItWorksSteps;
+  const stepsList = data?.howItWorksSteps || defaultServicesCMSData.howItWorksSteps;
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100">
@@ -34,21 +54,21 @@ export default function HowItWorks() {
           {/* Badge & Headline (Left) */}
           <div className="max-w-2xl">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4">
-              {data.howItWorksBadge || "HOW IT WORKS"}
+              {data?.howItWorksBadge || "HOW IT WORKS"}
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-              {data.howItWorksTitle}{" "}
-              {data.howItWorksHighlight && (
-                <span className="text-[#007eff]">{data.howItWorksHighlight}</span>
+              {data?.howItWorksTitle}{" "}
+              {data?.howItWorksHighlight && (
+                <span className="text-[#007eff]">{data?.howItWorksHighlight}</span>
               )}
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
-          {data.howItWorksRightDesc && (
+          {data?.howItWorksRightDesc && (
             <div className="lg:max-w-md">
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-medium">
-                {data.howItWorksRightDesc}
+                {data?.howItWorksRightDesc}
               </p>
             </div>
           )}

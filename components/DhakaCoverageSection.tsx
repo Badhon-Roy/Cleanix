@@ -4,12 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { MapPin, Navigation, Search, X, ChevronRight } from "lucide-react";
 
-import { getStoredCoverageAreas, CoverageAreaItem } from "@/lib/coverageData";
 import {
-  getStoredCoverageCMSData,
   defaultCoverageCMSData,
   CoverageCMSContent,
 } from "@/lib/coverageCMSData";
+import {
+  ICoverageArea,
+  fetchAllCoveragesAPI,
+} from "@/services/coverageService";
+import { io } from "socket.io-client";
 
 export function AreaStarIcon() {
   return (
@@ -19,36 +22,69 @@ export function AreaStarIcon() {
   );
 }
 
-export default function DhakaCoverageSection() {
+interface DhakaCoverageSectionProps {
+  initialData?: CoverageCMSContent;
+  initialCoverages?: ICoverageArea[];
+}
+
+export default function DhakaCoverageSection({
+  initialData,
+  initialCoverages = [],
+}: DhakaCoverageSectionProps) {
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [coverageAreas, setCoverageAreas] = useState<CoverageAreaItem[]>([]);
-  const [cmsData, setCmsData] = useState<CoverageCMSContent>(defaultCoverageCMSData);
+  const [coverages, setCoverages] = useState<ICoverageArea[]>(initialCoverages);
+  const [cmsData, setCmsData] = useState<CoverageCMSContent>(
+    initialData || defaultCoverageCMSData
+  );
+
+  const loadCoverages = async (query?: string) => {
+    try {
+      const data = await fetchAllCoveragesAPI({
+        searchTerm: query !== undefined ? query : searchQuery,
+        isActive: true,
+      });
+      if (Array.isArray(data)) {
+        setCoverages(data);
+      }
+    } catch (err) {
+      console.error("Error fetching coverages:", err);
+    }
+  };
 
   useEffect(() => {
-    setCoverageAreas(getStoredCoverageAreas());
-    setCmsData(getStoredCoverageCMSData());
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setCoverageAreas(getStoredCoverageAreas());
-      setCmsData(getStoredCoverageCMSData());
-    };
+    loadCoverages(searchQuery);
 
-    window.addEventListener("cleanix_coverage_areas_updated", handleUpdate);
-    window.addEventListener("cleanix_coverage_cms_updated", handleUpdate);
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "coverage" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
+    socket.on("coverage_updated", () => {
+      loadCoverages();
+    });
+
     return () => {
-      window.removeEventListener("cleanix_coverage_areas_updated", handleUpdate);
-      window.removeEventListener("cleanix_coverage_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData, searchQuery]);
 
-  const activeAreas = coverageAreas.filter((a) => a.status !== "INACTIVE");
-
-  const filteredAreas = activeAreas.filter(
-    (item) =>
-      item.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.desc.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAreas = coverages;
 
   return (
     <section className="w-full bg-[#f4f6f9] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-200/80">
@@ -57,18 +93,18 @@ export default function DhakaCoverageSection() {
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-white shadow-2xs">
             <Navigation className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>{cmsData.sectionBadge || "COVERAGE AREA MAP"}</span>
+            <span>{cmsData?.sectionBadge || "COVERAGE AREA MAP"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12]">
-            {cmsData.sectionTitleLine1} <br />
-            {cmsData.sectionTitleHighlight && (
-              <span className="text-[#007eff]">{cmsData.sectionTitleHighlight}</span>
+            {cmsData?.sectionTitleLine1} <br />
+            {cmsData?.sectionTitleHighlight && (
+              <span className="text-[#007eff]">{cmsData?.sectionTitleHighlight}</span>
             )}{" "}
-            {cmsData.sectionTitleLine2}
+            {cmsData?.sectionTitleLine2}
           </h2>
 
-          {cmsData.sectionSubtitle && (
+          {cmsData?.sectionSubtitle && (
             <div
               className="text-slate-600 text-sm sm:text-base font-normal mt-4 max-w-xl mx-auto [&_p]:mb-2"
               dangerouslySetInnerHTML={{ __html: cmsData.sectionSubtitle }}
@@ -102,44 +138,68 @@ export default function DhakaCoverageSection() {
         {/* Coverage Cards Grid */}
         {filteredAreas.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-14">
-            {filteredAreas.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-2xl hover:border-2 hover:border-[#007eff] hover:-translate-y-1.5 transition-all duration-300 group flex flex-col justify-between relative"
-              >
-                {/* Badge (Turns Blue on Hover) */}
-                <span className="font-extrabold text-[10px] uppercase tracking-wider rounded-full px-3 py-1 absolute -top-3 right-5 shadow-md bg-[#001837] text-white group-hover:bg-[#007eff] group-hover:shadow-blue-500/30 transition-all duration-300 whitespace-nowrap">
-                  ★ {item.time}
-                </span>
+            {filteredAreas.map((item, idx) => {
+              const zoneTitle = item?.zoneName || "Dhaka Zone";
+              const tagLabel = item?.district
+                ? `${item.district.toUpperCase()} COVERAGE`
+                : "DHAKA COVERAGE";
+              const description =
+                item?.desc ||
+                `সরাসরি ${zoneTitle} এলাকায় আমাদের ২৫-৩০ মিনিটের মধ্যে সার্ভিস স্পট বুক করুন।`;
+              const firstWord = zoneTitle.split(" ")[0] || "Area";
 
-                <div>
-                  <AreaStarIcon />
-                  <h3 className="text-[#001837] font-black text-lg tracking-tight uppercase mb-1 group-hover:text-[#007eff] transition-colors leading-snug">
-                    {item.area}
-                  </h3>
-                  <p className="text-[#007eff] font-bold text-[11px] mb-3 uppercase tracking-wider">
-                    {item.tag}
-                  </p>
+              return (
+                <div
+                  key={item?.id || item?._id || idx}
+                  className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-2xl hover:border-2 hover:border-[#007eff] hover:-translate-y-1.5 transition-all duration-300 group flex flex-col justify-between relative"
+                >
+                  {/* Badge (Turns Blue on Hover) */}
+                  <span className="font-extrabold text-[10px] uppercase tracking-wider rounded-full px-3 py-1 absolute -top-3 right-5 shadow-md bg-[#001837] text-white group-hover:bg-[#007eff] group-hover:shadow-blue-500/30 transition-all duration-300 whitespace-nowrap">
+                    ★ {item?.district ? item.district.toUpperCase() : "DHAKA"}
+                  </span>
 
-                  <p className="text-slate-500 font-medium text-xs leading-relaxed mb-6">
-                    {item.desc}
-                  </p>
+                  <div>
+                    <AreaStarIcon />
+                    <h3 className="text-[#001837] font-black text-lg tracking-tight uppercase mb-1 group-hover:text-[#007eff] transition-colors leading-snug">
+                      {zoneTitle}
+                    </h3>
+                    <p className="text-[#007eff] font-bold text-[11px] mb-3 uppercase tracking-wider">
+                      {tagLabel}
+                    </p>
+
+                    <p className="text-slate-500 font-medium text-xs leading-relaxed mb-4">
+                      {description}
+                    </p>
+
+                    {Array.isArray(item?.areasIncluded) && item.areasIncluded.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-5">
+                        {item.areasIncluded.slice(0, 3).map((sub, sIdx) => (
+                          <span
+                            key={sIdx}
+                            className="text-[10px] bg-slate-100 font-bold text-slate-600 px-2 py-0.5 rounded-md"
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Select Button (Turns Blue on Hover) */}
+                  <div>
+                    <Link
+                      href="/contact"
+                      className="font-bold text-[11px] py-3 px-4 rounded-full w-full flex items-center justify-between transition-all duration-300 shadow-md bg-[#001837] text-white group-hover:bg-[#007eff] group-hover:shadow-blue-500/30"
+                    >
+                      <span>Book in {zoneTitle}</span>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-xs bg-[#007eff] text-white group-hover:bg-white group-hover:text-[#007eff] transition-colors">
+                        <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    </Link>
+                  </div>
                 </div>
-
-                {/* Select Button (Turns Blue on Hover) */}
-                <div>
-                  <Link
-                    href="/contact"
-                    className="font-bold text-[11px] py-3 px-4 rounded-full w-full flex items-center justify-between transition-all duration-300 shadow-md bg-[#001837] text-white group-hover:bg-[#007eff] group-hover:shadow-blue-500/30"
-                  >
-                    <span>{item.btnLabel || `Book in ${item.area.split(" ")[0]}`}</span>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-xs bg-[#007eff] text-white group-hover:bg-white group-hover:text-[#007eff] transition-colors">
-                      <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white rounded-3xl p-8 text-center max-w-xl mx-auto border border-slate-200 mb-14 shadow-lg">

@@ -5,28 +5,81 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { getStoredServices, ServiceDetail } from "@/lib/servicesData";
-import { getStoredServicesCMSData, defaultServicesCMSData, ServicesCMSContent } from "@/lib/servicesCMSData";
+import { defaultServicesCMSData, ServicesCMSContent } from "@/lib/servicesCMSData";
+import { io } from "socket.io-client";
 
-export default function CoreServicesSection() {
-  const [servicesList, setServicesList] = useState<ServiceDetail[]>([]);
-  const [cmsData, setCmsData] = useState<ServicesCMSContent>(defaultServicesCMSData);
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
+
+interface CoreServicesSectionProps {
+  initialData?: ServicesCMSContent;
+  initialServices?: any[];
+}
+
+export default function CoreServicesSection({
+  initialData,
+  initialServices,
+}: CoreServicesSectionProps) {
+  const [servicesList, setServicesList] = useState<any[]>(
+    initialServices && initialServices.length > 0 ? initialServices : getStoredServices()
+  );
+  const [cmsData, setCmsData] = useState<ServicesCMSContent>(
+    initialData || defaultServicesCMSData
+  );
+
+  const loadActiveServices = async () => {
+    try {
+      const res = await fetchActiveServicesAPI();
+      if (res?.success && Array.isArray(res?.data) && res.data.length > 0) {
+        setServicesList(res.data);
+      }
+    } catch (e) {
+      console.error("Error loading active services in CoreServicesSection:", e);
+    }
+  };
 
   useEffect(() => {
-    setServicesList(getStoredServices());
-    setCmsData(getStoredServicesCMSData());
+    if (initialServices && initialServices.length > 0) {
+      setServicesList(initialServices);
+    } else {
+      loadActiveServices();
+    }
+
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
     const handleUpdate = () => {
-      setServicesList(getStoredServices());
-      setCmsData(getStoredServicesCMSData());
+      loadActiveServices();
     };
 
     window.addEventListener("cleanix_services_updated", handleUpdate);
-    window.addEventListener("cleanix_services_cms_updated", handleUpdate);
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "services" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
+    socket.on("service_catalog_updated", () => {
+      loadActiveServices();
+    });
+
     return () => {
       window.removeEventListener("cleanix_services_updated", handleUpdate);
-      window.removeEventListener("cleanix_services_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData, initialServices]);
 
   const activeServices = servicesList.filter((s) => s.status !== "INACTIVE");
 
@@ -37,15 +90,15 @@ export default function CoreServicesSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-6 py-2 mb-6 bg-blue-50/50">
             <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>{cmsData.coreBadge || "OUR CORE SERVICES"}</span>
+            <span>{cmsData?.coreBadge || "OUR CORE SERVICES"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12]">
-            {cmsData.coreTitleLine1}{" "}
-            {cmsData.coreTitleHighlight && (
-              <span className="text-[#007eff]">{cmsData.coreTitleHighlight}</span>
+            {cmsData?.coreTitleLine1}{" "}
+            {cmsData?.coreTitleHighlight && (
+              <span className="text-[#007eff]">{cmsData?.coreTitleHighlight}</span>
             )}{" "}
-            {cmsData.coreTitleLine2}
+            {cmsData?.coreTitleLine2}
           </h2>
         </div>
 
@@ -54,7 +107,7 @@ export default function CoreServicesSection() {
           {activeServices.map((item, idx) => {
             const num = (idx + 1).toString().padStart(2, "0");
             const imageFirst = idx % 2 === 0;
-            const checklist = item.offers.slice(0, 2).map((o) => o.title);
+            const checklist = (item.offers || []).slice(0, 2).map((o: any) => o.title);
 
             return (
               <div
@@ -102,7 +155,7 @@ export default function CoreServicesSection() {
                       <div className="relative z-10">
                         <div className="w-full border-t border-white/15 my-6" />
                         <div className="space-y-3">
-                          {checklist.map((point, i) => (
+                          {checklist.map((point: any, i: number) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 shadow-xs">
                                 <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
@@ -158,7 +211,7 @@ export default function CoreServicesSection() {
                       <div className="relative z-10">
                         <div className="w-full border-t border-white/15 my-6" />
                         <div className="space-y-3">
-                          {checklist.map((point, i) => (
+                          {checklist.map((point: any, i: number) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 shadow-xs">
                                 <Check className="w-3.5 h-3.5 text-white stroke-[3]" />

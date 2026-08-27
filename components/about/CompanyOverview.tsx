@@ -4,23 +4,44 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Truck, Users, Star } from "lucide-react";
-import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
+import { defaultAboutData, AboutContent } from "@/lib/aboutData";
+import { io } from "socket.io-client";
 
-export default function CompanyOverview() {
-  const [data, setData] = useState<AboutContent>(getStoredAboutData());
+interface CompanyOverviewProps {
+  initialData?: AboutContent;
+}
+
+export default function CompanyOverview({ initialData }: CompanyOverviewProps) {
+  const [data, setData] = useState<AboutContent>(
+    initialData || defaultAboutData
+  );
 
   useEffect(() => {
-    setData(getStoredAboutData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredAboutData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_about_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "about" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-100">
@@ -30,7 +51,7 @@ export default function CompanyOverview() {
           {/* Left Image */}
           <div className="lg:col-span-3 hidden lg:block relative w-full h-[360px] rounded-[48px_16px_48px_48px] overflow-hidden shadow-lg border border-slate-200">
             <Image
-              src={data.overviewLeftImage || "/RESIDENTIAL-DEEP-CLEANING.png"}
+              src={data?.overviewLeftImage || "/RESIDENTIAL-DEEP-CLEANING.png"}
               alt="Professional Cleaner"
               fill
               unoptimized
@@ -42,18 +63,20 @@ export default function CompanyOverview() {
           {/* Center Content Area */}
           <div className="lg:col-span-6 text-center flex flex-col items-center">
             <div className="inline-flex items-center border border-[#007eff]/60 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-6 py-2 mb-6 bg-blue-50/50">
-              {data.overviewBadge || "COMPANY OVERVIEW"}
+              {data?.overviewBadge || "COMPANY OVERVIEW"}
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] leading-[1.15] tracking-tight mb-6">
-              {data.overviewTitle1 || "PROFESSIONAL CLEANING"} <br />
-              <span className="text-[#007eff]">{data.overviewTitleHighlight || "SERVICE NETWORK"}</span>
+              {data?.overviewTitle1 || "PROFESSIONAL CLEANING"} <br />
+              <span className="text-[#007eff]">{data?.overviewTitleHighlight || "SERVICE NETWORK"}</span>
             </h2>
 
-            <div
-              className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl mx-auto mb-8 font-medium"
-              dangerouslySetInnerHTML={{ __html: data.overviewDesc }}
-            />
+            {data?.overviewDesc && (
+              <div
+                className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl mx-auto mb-8 font-medium"
+                dangerouslySetInnerHTML={{ __html: data.overviewDesc }}
+              />
+            )}
 
             <Link
               href="/#quote"
@@ -69,7 +92,7 @@ export default function CompanyOverview() {
           {/* Right Image */}
           <div className="lg:col-span-3 hidden lg:block relative w-full h-[360px] rounded-[16px_48px_48px_48px] overflow-hidden shadow-lg border border-slate-200">
             <Image
-              src={data.overviewRightImage || "/COMMERCIAL-OFFICE-CLEANING.png"}
+              src={data?.overviewRightImage || "/COMMERCIAL-OFFICE-CLEANING.png"}
               alt="Professional Cleaner"
               fill
               unoptimized
@@ -89,10 +112,10 @@ export default function CompanyOverview() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  {data.stat1Count || "16K+"}
+                  {data?.stat1Count || "16K+"}
                 </h3>
                 <p className="text-slate-300 text-xs sm:text-sm font-medium mt-0.5">
-                  {data.stat1Label || "Cleanings Completed"}
+                  {data?.stat1Label || "Cleanings Completed"}
                 </p>
               </div>
             </div>
@@ -106,10 +129,10 @@ export default function CompanyOverview() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  {data.stat2Count || "1,200+"}
+                  {data?.stat2Count || "1,200+"}
                 </h3>
                 <p className="text-white/90 text-xs sm:text-sm font-medium mt-0.5">
-                  {data.stat2Label || "Satisfied Clients"}
+                  {data?.stat2Label || "Satisfied Clients"}
                 </p>
               </div>
             </div>
@@ -123,10 +146,10 @@ export default function CompanyOverview() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  {data.stat3Count || "4.9 / 5"}
+                  {data?.stat3Count || "4.9 / 5"}
                 </h3>
                 <p className="text-slate-300 text-xs sm:text-sm font-medium mt-0.5">
-                  {data.stat3Label || "Average Client Rating"}
+                  {data?.stat3Label || "Average Client Rating"}
                 </p>
               </div>
             </div>

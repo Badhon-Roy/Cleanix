@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   Info,
   Save,
+  Loader2,
   Plus,
   Trash2,
   Edit3,
@@ -33,38 +34,46 @@ import {
   AboutContent,
   TeamMemberItem,
   JourneyStepItem,
-  getStoredAboutData,
-  saveAboutData,
+  defaultAboutData,
 } from "@/lib/aboutData";
+import { fetchAboutCMSAPI, updateAboutCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 
 export default function AboutCMSManager() {
   const { register, handleSubmit, reset, control, watch, setValue, getValues } =
     useForm<AboutContent>({
-      defaultValues: getStoredAboutData(),
+      defaultValues: defaultAboutData,
     });
 
   const formData = watch();
 
   useEffect(() => {
-    reset(getStoredAboutData());
-
-    const handleUpdate = () => {
-      reset(getStoredAboutData());
-    };
-
-    window.addEventListener("cleanix_about_updated", handleUpdate);
-    return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
-    };
+    fetchAboutCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultAboutData, ...res.data });
+      }
+    });
   }, [reset]);
 
   const [draggedCheckIndex, setDraggedCheckIndex] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form Submit Handler
-  const onSubmit = (data: AboutContent) => {
-    saveAboutData(data);
-    toast.success("About Us Page CMS updated successfully! (Changes Live)");
+  const onSubmit = async (data: AboutContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updateAboutCMSAPI(data);
+      if (res && res.success) {
+        toast.success("About Us Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update About Us CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating About CMS:", err);
+      toast.error("Failed to update About Us CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Dynamic Checkmarks Handlers
@@ -186,7 +195,7 @@ export default function AboutCMSManager() {
     }
 
     setValue("teamMembers", updatedMembers);
-    saveAboutData(getValues());
+    updateAboutCMSAPI(getValues());
     setIsTeamModalOpen(false);
   };
 
@@ -243,7 +252,7 @@ export default function AboutCMSManager() {
           : step
       );
       setValue("journeySteps", updated);
-      saveAboutData(getValues());
+      updateAboutCMSAPI(getValues());
       toast.success("Journey milestone updated successfully!");
     } else {
       const newStep: JourneyStepItem = {
@@ -256,7 +265,7 @@ export default function AboutCMSManager() {
       };
       const updated = [...currentSteps, newStep];
       setValue("journeySteps", updated);
-      saveAboutData(getValues());
+      updateAboutCMSAPI(getValues());
       toast.success("New journey milestone added!");
     }
 
@@ -286,14 +295,14 @@ export default function AboutCMSManager() {
         (m) => m.id !== deleteConfirmModal.id
       );
       setValue("teamMembers", updatedMembers);
-      saveAboutData(getValues());
+      updateAboutCMSAPI(getValues());
       toast.error(`Team Member "${deleteConfirmModal.title}" removed.`);
     } else if (deleteConfirmModal.type === "journey") {
       const updated = (getValues("journeySteps") || []).filter(
         (s) => s.id !== deleteConfirmModal.id
       );
       setValue("journeySteps", updated);
-      saveAboutData(getValues());
+      updateAboutCMSAPI(getValues());
       toast.error(`Journey Milestone "${deleteConfirmModal.title}" removed.`);
     }
 
@@ -310,7 +319,7 @@ export default function AboutCMSManager() {
     current[targetIndex] = temp;
 
     setValue("journeySteps", current);
-    saveAboutData(getValues());
+    updateAboutCMSAPI(getValues());
   };
 
   return (
@@ -338,11 +347,16 @@ export default function AboutCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -1188,18 +1202,33 @@ export default function AboutCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save All Changes Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Changes Live"}</span>
           </button>
         </div>
       </form>
 
       {/* ADD / EDIT TEAM SPECIALIST MODAL */}
       {isTeamModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 relative my-8">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 relative my-8 max-h-[85vh] overflow-y-auto"
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-bold">

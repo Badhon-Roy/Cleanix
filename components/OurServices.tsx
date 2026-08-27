@@ -51,27 +51,49 @@ const servicesList = [
 ];
 
 import {
-  getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
 } from "@/lib/homeCMSData";
 
-export default function OurServices() {
+import { io } from "socket.io-client";
+
+interface OurServicesProps {
+  initialData?: HomeCMSContent;
+}
+
+export default function OurServices({ initialData }: OurServicesProps) {
   const [activeService, setActiveService] = useState(servicesList[0]);
-  const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
+  const [cmsData, setCmsData] = useState<HomeCMSContent>(
+    initialData || defaultHomeCMSData
+  );
 
   useEffect(() => {
-    setCmsData(getStoredHomeCMSData());
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setCmsData(getStoredHomeCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      const delta = payload?.updatedFields || payload?.data;
+      if (delta) {
+        const hasServicesKeys = Object.keys(delta).some((k) => k.startsWith("services"));
+        if (hasServicesKeys) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
@@ -81,23 +103,23 @@ export default function OurServices() {
           {/* Badge & Headline (Left/Center) */}
           <div className="max-w-2xl">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4">
-              {cmsData.servicesBadge || "OUR SERVICES"}
+              {cmsData?.servicesBadge || "OUR SERVICES"}
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-              {cmsData.servicesTitleLine1}{" "}
-              {cmsData.servicesTitleHighlight && (
-                <span className="text-[#007eff]">{cmsData.servicesTitleHighlight}</span>
+              {cmsData?.servicesTitleLine1}{" "}
+              {cmsData?.servicesTitleHighlight && (
+                <span className="text-[#007eff]">{cmsData?.servicesTitleHighlight}</span>
               )}{" "}
-              {cmsData.servicesTitleLine2}
+              {cmsData?.servicesTitleLine2}
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
           <div className="lg:max-w-md">
-            {cmsData.servicesSubtitle ? (
+            {cmsData?.servicesSubtitle ? (
               <div
                 className="text-slate-600 text-sm sm:text-base leading-relaxed [&_p]:mb-2"
-                dangerouslySetInnerHTML={{ __html: cmsData.servicesSubtitle }}
+                dangerouslySetInnerHTML={{ __html: cmsData?.servicesSubtitle }}
               />
             ) : (
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">

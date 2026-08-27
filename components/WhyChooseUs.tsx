@@ -4,40 +4,62 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check, ShieldCheck, Users, CalendarCheck, Headset } from "lucide-react";
 import {
-  getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
 } from "@/lib/homeCMSData";
 
-export default function WhyChooseUs() {
-  const [data, setData] = useState<HomeCMSContent>(defaultHomeCMSData);
+import { io } from "socket.io-client";
+
+interface WhyChooseUsProps {
+  initialData?: HomeCMSContent;
+}
+
+export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
+  const [data, setData] = useState<HomeCMSContent>(
+    initialData || defaultHomeCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredHomeCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredHomeCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      const delta = payload?.updatedFields || payload?.data;
+      if (delta) {
+        const hasWhyUsKeys = Object.keys(delta).some((k) => k.startsWith("whyUs"));
+        if (hasWhyUsKeys) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
-  const card1Checks = data.whyUsCard1Checks && data.whyUsCard1Checks.length > 0
+  const card1Checks = data?.whyUsCard1Checks && data?.whyUsCard1Checks.length > 0
     ? data.whyUsCard1Checks
     : defaultHomeCMSData.whyUsCard1Checks;
 
-  const card2Checks = data.whyUsCard2Checks && data.whyUsCard2Checks.length > 0
+  const card2Checks = data?.whyUsCard2Checks && data?.whyUsCard2Checks.length > 0
     ? data.whyUsCard2Checks
     : defaultHomeCMSData.whyUsCard2Checks;
 
-  const card3Checks = data.whyUsCard3Checks && data.whyUsCard3Checks.length > 0
+  const card3Checks = data?.whyUsCard3Checks && data?.whyUsCard3Checks.length > 0
     ? data.whyUsCard3Checks
     : defaultHomeCMSData.whyUsCard3Checks;
 
-  const card4Checks = data.whyUsCard4Checks && data.whyUsCard4Checks.length > 0
+  const card4Checks = data?.whyUsCard4Checks && data?.whyUsCard4Checks.length > 0
     ? data.whyUsCard4Checks
     : defaultHomeCMSData.whyUsCard4Checks;
 
@@ -48,16 +70,16 @@ export default function WhyChooseUs() {
         <div className="max-w-3xl mb-10 md:mb-14">
           {/* Badge Pill */}
           <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4 bg-white/60">
-            {data.whyUsBadge || "WHY CHOOSE US"}
+            {data?.whyUsBadge || "WHY CHOOSE US"}
           </span>
 
           {/* Headline */}
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-black text-[#001837] leading-[1.12] tracking-tight uppercase">
-            {data.whyUsTitleLine1}{" "}
-            {data.whyUsTitleHighlight && (
-              <span className="text-[#007eff]">{data.whyUsTitleHighlight}</span>
+            {data?.whyUsTitleLine1}{" "}
+            {data?.whyUsTitleHighlight && (
+              <span className="text-[#007eff]">{data?.whyUsTitleHighlight}</span>
             )}{" "}
-            {data.whyUsTitleLine2}
+            {data?.whyUsTitleLine2}
           </h2>
         </div>
 
@@ -72,7 +94,7 @@ export default function WhyChooseUs() {
                   <Users className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  {data.whyUsCard1Title || "Verified Professional Cleaners"}
+                  {data?.whyUsCard1Title || "Verified Professional Cleaners"}
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
@@ -94,7 +116,7 @@ export default function WhyChooseUs() {
                   <ShieldCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  {data.whyUsCard2Title || "Safe & Eco-Friendly Solutions"}
+                  {data?.whyUsCard2Title || "Safe & Eco-Friendly Solutions"}
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
@@ -116,7 +138,7 @@ export default function WhyChooseUs() {
                   <CalendarCheck className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  {data.whyUsCard3Title || "Flexible Subscriptions & Slots"}
+                  {data?.whyUsCard3Title || "Flexible Subscriptions & Slots"}
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
@@ -138,7 +160,7 @@ export default function WhyChooseUs() {
                   <Headset className="w-6 h-6 stroke-[2]" />
                 </div>
                 <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
-                  {data.whyUsCard4Title || "24/7 Dedicated Support"}
+                  {data?.whyUsCard4Title || "24/7 Dedicated Support"}
                 </h3>
               </div>
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
@@ -158,7 +180,7 @@ export default function WhyChooseUs() {
           <div className="lg:col-span-5 relative w-full flex justify-center">
             <div className="relative w-full max-w-[460px] h-[540px] sm:h-[620px] flex items-center justify-center">
               <Image
-                src={data.whyUsCleanerImage || "/why-choose-cleaner.png"}
+                src={data?.whyUsCleanerImage || "/why-choose-cleaner.png"}
                 alt="Professional Masked Cleaner"
                 fill
                 priority

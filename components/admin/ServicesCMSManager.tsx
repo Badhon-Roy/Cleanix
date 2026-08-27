@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Save,
+  Loader2,
   ExternalLink,
   Sparkles,
   Layers,
@@ -25,24 +26,29 @@ import {
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import {
-  getStoredServicesCMSData,
-  saveServicesCMSData,
+  defaultServicesCMSData,
   ServicesCMSContent,
   HowItWorksStepItem,
 } from "@/lib/servicesCMSData";
+import { fetchServicesCMSAPI, updateServicesCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 export default function ServicesCMSManager() {
   const { register, handleSubmit, reset, control, watch, setValue, getValues } =
     useForm<ServicesCMSContent>({
-      defaultValues: getStoredServicesCMSData(),
+      defaultValues: defaultServicesCMSData,
     });
 
   const formData = watch();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    reset(getStoredServicesCMSData());
+    fetchServicesCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultServicesCMSData, ...res.data });
+      }
+    });
   }, [reset]);
 
   const [dragCard1Index, setDragCard1Index] = useState<number | null>(null);
@@ -62,9 +68,21 @@ export default function ServicesCMSManager() {
     title: string;
   } | null>(null);
 
-  const onSubmit = (data: ServicesCMSContent) => {
-    saveServicesCMSData(data);
-    toast.success("Services Page CMS updated live!");
+  const onSubmit = async (data: ServicesCMSContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updateServicesCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Services Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Services CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating Services CMS:", err);
+      toast.error("Failed to update Services CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Card 1 Checkmark Handlers
@@ -185,7 +203,7 @@ export default function ServicesCMSManager() {
     }
 
     setValue("howItWorksSteps", updated);
-    saveServicesCMSData(getValues());
+    updateServicesCMSAPI(getValues());
     setIsStepModalOpen(false);
   };
 
@@ -199,7 +217,7 @@ export default function ServicesCMSManager() {
     current[targetIndex] = temp;
 
     setValue("howItWorksSteps", current);
-    saveServicesCMSData(getValues());
+    updateServicesCMSAPI(getValues());
   };
 
   const handleConfirmDeleteStep = () => {
@@ -209,7 +227,7 @@ export default function ServicesCMSManager() {
       (s) => s.id !== deleteConfirmTarget.id
     );
     setValue("howItWorksSteps", current);
-    saveServicesCMSData(getValues());
+    updateServicesCMSAPI(getValues());
     toast.error(`Step "${deleteConfirmTarget.title}" deleted.`);
     setDeleteConfirmTarget(null);
   };
@@ -239,11 +257,16 @@ export default function ServicesCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -803,18 +826,33 @@ export default function ServicesCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Services CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Services CMS Live"}</span>
           </button>
         </div>
       </form>
 
       {/* ADD / EDIT STEP CARD MODAL */}
       {isStepModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 relative my-8">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-8 space-y-6 relative my-8 max-h-[85vh] overflow-y-auto"
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-bold">

@@ -78,3 +78,22 @@ export const fetchServiceCatalogOverviewServer = async () => {
     return null;
   }
 };
+
+export const fetchSingleServiceBySlugServer = async (slug: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/services/slug/${slug}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+    if (data?.success && data?.data) {
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error in fetchSingleServiceBySlugServer:", error);
+    return null;
+  }
+};

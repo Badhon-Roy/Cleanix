@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Save,
+  Loader2,
   ExternalLink,
   Sparkles,
   Sliders,
@@ -18,11 +19,11 @@ import {
 import { toast } from "sonner";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import {
-  getStoredHomeCMSData,
-  saveHomeCMSData,
+  defaultHomeCMSData,
   HomeCMSContent,
   FaqItem,
 } from "@/lib/homeCMSData";
+import { fetchHomeCMSAPI, updateHomeCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import DeleteCardConfirmModal from "@/components/admin/DeleteCardConfirmModal";
@@ -125,13 +126,14 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   >(activeTab === "homePage" ? "hero" : (activeTab as any));
 
   const [deleteFaqIdx, setDeleteFaqIdx] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setCurrentSection(activeTab === "homePage" ? "hero" : (activeTab as any));
   }, [activeTab]);
 
   const { register, handleSubmit, reset, control, watch, getValues } = useForm<HomeCMSContent>({
-    defaultValues: getStoredHomeCMSData(),
+    defaultValues: defaultHomeCMSData,
   });
 
   const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({
@@ -140,12 +142,30 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   });
 
   useEffect(() => {
-    reset(getStoredHomeCMSData());
-  }, [reset, currentSection]);
+    // Initial fetch directly from backend API & reset form
+    fetchHomeCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultHomeCMSData, ...res.data });
+      }
+    });
+  }, [reset]);
 
-  const onSubmit = (data: HomeCMSContent) => {
-    saveHomeCMSData(data);
-    toast.success("Home Page CMS updated live!");
+  const onSubmit = async (data: HomeCMSContent) => {
+    setIsSaving(true);
+    try {
+      // Direct update to backend API database
+      const res = await updateHomeCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Home Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Home Page CMS on database");
+      }
+    } catch (err: any) {
+      console.error("Error submitting Home CMS:", err);
+      toast.error("Failed to update Home Page CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddFaq = () => {
@@ -197,11 +217,16 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -1003,10 +1028,15 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Home CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Home CMS Live"}</span>
           </button>
         </div>
       </form>

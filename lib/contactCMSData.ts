@@ -49,28 +49,3 @@ export const defaultContactCMSData: ContactCMSContent = {
   hoursTitle: "Opening Hours",
   hoursText: "Saturday - Thursday\n09 : 00 AM - 10 : 30 PM",
 };
-
-export const CONTACT_CMS_STORAGE_KEY = "cleanix_contact_cms_v2";
-
-export function getStoredContactCMSData(): ContactCMSContent {
-  if (typeof window === "undefined") return defaultContactCMSData;
-  try {
-    const raw = localStorage.getItem(CONTACT_CMS_STORAGE_KEY);
-    if (!raw) return defaultContactCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultContactCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Contact CMS data:", err);
-    return defaultContactCMSData;
-  }
-}
-
-export function saveContactCMSData(data: ContactCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(CONTACT_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_contact_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Contact CMS data:", err);
-  }
-}

@@ -7,6 +7,8 @@ import DhakaCoverageSection from "@/components/DhakaCoverageSection";
 import HowItWorks from "@/components/HowItWorks";
 import PricingSection from "@/components/PricingSection";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchServicesCMSServer } from "@/services/cmsServerService";
+import { fetchActiveServicesServer } from "@/services/serviceCategoryServerService";
 
 export const metadata: Metadata = {
   title: "Our Services | Cleanix - Professional Home & Office Cleaning Solutions",
@@ -21,15 +23,20 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const [servicesData, activeServices] = await Promise.all([
+    fetchServicesCMSServer(),
+    fetchActiveServicesServer(),
+  ]);
+
   return (
     <>
-      <ServicesBanner />
-      <ServicesOverview />
-      <CoreServicesSection />
+      <ServicesBanner initialData={servicesData} />
+      <ServicesOverview initialData={servicesData} />
+      <CoreServicesSection initialData={servicesData} initialServices={activeServices} />
       <BeforeAfterSection />
       <DhakaCoverageSection />
-      <HowItWorks />
+      <HowItWorks initialData={servicesData} />
       <PricingSection />
       <CtaBanner />
     </>

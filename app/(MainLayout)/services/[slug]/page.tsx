@@ -1,24 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { servicesData } from "@/lib/servicesData";
+import { getServiceBySlug } from "@/lib/servicesData";
 import ServiceDetailsHeader from "@/components/services/ServiceDetailsHeader";
 import ServiceDetailsSidebar from "@/components/services/ServiceDetailsSidebar";
 import ServiceDetailsContent from "@/components/services/ServiceDetailsContent";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchSingleServiceBySlugServer } from "@/services/serviceCategoryServerService";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return Object.keys(servicesData).map((slug) => ({
-    slug,
-  }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const service = servicesData[slug];
+  const service = (await fetchSingleServiceBySlugServer(slug)) || getServiceBySlug(slug);
 
   if (!service) {
     return {
@@ -35,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ServiceDetailsPage({ params }: Props) {
   const { slug } = await params;
-  const service = servicesData[slug];
+  const service = (await fetchSingleServiceBySlugServer(slug)) || getServiceBySlug(slug);
 
   if (!service) {
     notFound();

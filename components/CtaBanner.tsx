@@ -4,26 +4,48 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import {
-  getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
 } from "@/lib/homeCMSData";
 
-export default function CtaBanner() {
-  const [cmsData, setCmsData] = useState<HomeCMSContent>(defaultHomeCMSData);
+import { io } from "socket.io-client";
+
+interface CtaBannerProps {
+  initialData?: HomeCMSContent;
+}
+
+export default function CtaBanner({ initialData }: CtaBannerProps) {
+  const [cmsData, setCmsData] = useState<HomeCMSContent>(
+    initialData || defaultHomeCMSData
+  );
 
   useEffect(() => {
-    setCmsData(getStoredHomeCMSData());
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setCmsData(getStoredHomeCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      const delta = payload?.updatedFields || payload?.data;
+      if (delta) {
+        const hasCtaKeys = Object.keys(delta).some((k) => k.startsWith("cta"));
+        if (hasCtaKeys) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white py-12 md:py-16 px-4 sm:px-6 lg:px-8">
@@ -35,16 +57,16 @@ export default function CtaBanner() {
           {/* Left Text Content */}
           <div className="max-w-2xl text-left z-10">
             <span className="bg-white/20 text-white font-bold text-xs uppercase tracking-wider px-4 py-1.5 rounded-full inline-block mb-4 backdrop-blur-md">
-              {cmsData.ctaBadge || "GET IN TOUCH TODAY"}
+              {cmsData?.ctaBadge || "GET IN TOUCH TODAY"}
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-[44px] font-black text-white leading-[1.12] uppercase tracking-tight">
-              {cmsData.ctaTitle || "READY FOR A SPOTLESS & HEALTHY SPACE?"}
+              {cmsData?.ctaTitle || "READY FOR A SPOTLESS & HEALTHY SPACE?"}
             </h2>
             <div
               className="text-white/90 text-sm sm:text-base font-medium mt-3 [&_p]:mb-0"
               dangerouslySetInnerHTML={{
                 __html:
-                  cmsData.ctaSubtitle ||
+                  cmsData?.ctaSubtitle ||
                   "আজই আপনার বাসা বা অফিসের জন্য বিশ্বমানের ক্লিনিং টিম বুক করুন অথবা কয়েক সেকেন্ডে ইনস্ট্যান্ট ফ্রি এস্টিমেট নিন।",
               }}
             />
@@ -53,10 +75,10 @@ export default function CtaBanner() {
           {/* Right Action Button */}
           <div className="z-10 flex-shrink-0">
             <Link
-              href={cmsData.ctaBtnHref || "/contact"}
+              href={cmsData?.ctaBtnHref || "/contact"}
               className="bg-[#001837] hover:bg-[#031024] text-white font-extrabold text-sm sm:text-base pl-7 pr-2.5 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-2xl hover:scale-105"
             >
-              <span>{cmsData.ctaBtnText || "Book Service Now"}</span>
+              <span>{cmsData?.ctaBtnText || "Book Service Now"}</span>
               <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center text-white shadow-sm">
                 <ChevronRight className="w-4 h-4 stroke-[3]" />
               </div>

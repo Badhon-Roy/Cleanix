@@ -1,4 +1,5 @@
 export interface BlogDetail {
+  _id?: string;
   slug: string;
   title: string;
   category: string;
@@ -8,7 +9,7 @@ export interface BlogDetail {
     avatar: string;
   };
   image: string;
-  shortDesc: string;
+  shortDesc?: string;
   introParagraph: string;
   sections: {
     title: string;
@@ -16,8 +17,60 @@ export interface BlogDetail {
   }[];
 }
 
-export const blogsData: Record<string, BlogDetail> = {
-  "how-regular-cleaning-improves-comfort": {
+export const getAuthorInitial = (name?: string): string => {
+  if (!name || !name.trim()) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  const first = parts[0].charAt(0).toUpperCase();
+  const last = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first}${last}`;
+};
+
+export const getAuthorBgColor = (name?: string): string => {
+  const bgColors = [
+    "bg-[#007eff] text-white",
+    "bg-indigo-600 text-white",
+    "bg-purple-600 text-white",
+    "bg-emerald-600 text-white",
+    "bg-rose-600 text-white",
+    "bg-amber-600 text-white",
+    "bg-teal-600 text-white",
+    "bg-cyan-600 text-white",
+    "bg-violet-600 text-white",
+    "bg-blue-600 text-white",
+  ];
+  if (!name) return bgColors[0];
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) {
+    sum += name.charCodeAt(i);
+  }
+  return bgColors[sum % bgColors.length];
+};
+
+export interface BlogCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroTitleLine2: string;
+  heroSubtitle: string;
+  heroImage: string;
+}
+
+export const defaultBlogCMSData: BlogCMSContent = {
+  heroBadge: "CLEANING INSIGHTS & EXPERT TIPS",
+  heroTitleLine1: "EXPLORE OUR LATEST",
+  heroTitleHighlight: "ARTICLES",
+  heroTitleLine2: "& NEWS",
+  heroSubtitle:
+    "বাসা ও অফিস পরিষ্কার রাখা, ইনডোর এয়ার কোয়ালিটি বাড়ানো এবং মুভ-আউট ডিপ ক্লিনিং গাইড সম্পর্কিত আমাদের এক্সপার্ট আর্টিকেলসমূহ পড়ুন।",
+  heroImage:
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+};
+
+export const defaultBlogsList: BlogDetail[] = [
+  {
     slug: "how-regular-cleaning-improves-comfort",
     title: "How Regular Cleaning Improves Comfort (নিয়মিত ক্লিনিং কেন জরুরি)",
     category: "HOME HYGIENE",
@@ -54,8 +107,7 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-
-  "top-10-ways-to-keep-offices-fresh": {
+  {
     slug: "top-10-ways-to-keep-offices-fresh",
     title: "Top 10 Ways to Keep Offices Fresh (অফিস পরিচ্ছন্ন রাখার ১০ টি উপায়)",
     category: "OFFICE WELLNESS",
@@ -85,8 +137,7 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-
-  "top-10-cleaning-tips-for-busy-spaces": {
+  {
     slug: "top-10-cleaning-tips-for-busy-spaces",
     title: "Top 10 Cleaning Tips for Busy Spaces (ব্যস্ত স্থানের দ্রুত ক্লিনিং কৌশল)",
     category: "EXPRESS CLEANING",
@@ -110,8 +161,7 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-
-  "post-renovation-cleaning-guide-2026": {
+  {
     slug: "post-renovation-cleaning-guide-2026",
     title: "Complete Guide to Post-Renovation Cleanup (পোস্ট-কনস্ট্রাকশন গাইড)",
     category: "RENOVATION",
@@ -134,8 +184,7 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-
-  "move-out-cleaning-checklist-for-tenants": {
+  {
     slug: "move-out-cleaning-checklist-for-tenants",
     title: "Move-Out Cleaning Checklist for Full Deposit Refund (মুভ-আউট গাইড)",
     category: "RELOCATION",
@@ -158,8 +207,7 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-
-  "eco-friendly-sanitization-techniques": {
+  {
     slug: "eco-friendly-sanitization-techniques",
     title: "Eco-Friendly Sanitization & Safe Cleaners (ইকো-ফ্রেন্ডলি স্যানিটাইজিং)",
     category: "GREEN CLEANING",
@@ -182,4 +230,4 @@ export const blogsData: Record<string, BlogDetail> = {
       },
     ],
   },
-};
+];

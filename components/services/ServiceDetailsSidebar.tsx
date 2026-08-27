@@ -1,20 +1,58 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Phone, ShieldCheck } from "lucide-react";
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
+import { io } from "socket.io-client";
 
 interface Props {
   currentSlug: string;
 }
 
 export default function ServiceDetailsSidebar({ currentSlug }: Props) {
-  const allServicesList = [
-    { name: "Residential Deep Cleaning", slug: "residential-deep-cleaning" },
-    { name: "Commercial Office Cleaning", slug: "commercial-office-cleaning" },
-    { name: "Post-Construction Cleaning", slug: "post-construction-cleaning" },
-    { name: "Move-Out Cleaning", slug: "move-out-cleaning" },
-  ];
+  const [allServicesList, setAllServicesList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadServices = async () => {
+    try {
+      const res = await fetchActiveServicesAPI();
+      if (res?.success && Array.isArray(res?.data)) {
+        setAllServicesList(res.data);
+      }
+    } catch (e) {
+      console.error("Error loading services in sidebar:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadServices();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("service_catalog_updated", () => {
+      loadServices();
+    });
+
+    const handleUpdate = () => {
+      loadServices();
+    };
+
+    window.addEventListener("cleanix_services_updated", handleUpdate);
+
+    return () => {
+      window.removeEventListener("cleanix_services_updated", handleUpdate);
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <aside className="w-full space-y-8">
@@ -27,26 +65,37 @@ export default function ServiceDetailsSidebar({ currentSlug }: Props) {
           </h3>
         </div>
 
-        {/* Services List with Line Dividers & Upward-Right Blue Arrows */}
+        {/* Services List with Line Dividers & Skeleton Loading */}
         <div className="divide-y divide-slate-200/80">
-          {allServicesList.map((item) => {
-            const isActive = item.slug === currentSlug;
+          {isLoading ? (
+            <div className="p-5 space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-4 py-2">
+                  <div className="h-5 bg-slate-300/70 animate-pulse rounded-lg w-3/4" />
+                  <div className="w-5 h-5 bg-slate-300/70 animate-pulse rounded-full flex-shrink-0" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            allServicesList.map((item) => {
+              const isActive = item.slug === currentSlug;
 
-            return (
-              <Link
-                key={item.slug}
-                href={`/services/${item.slug}`}
-                className={`w-full px-6 py-4 font-bold text-sm sm:text-[15px] flex items-center justify-between transition-colors ${
-                  isActive
-                    ? "text-[#007eff] bg-blue-50/50"
-                    : "text-slate-700 hover:text-[#007eff]"
-                }`}
-              >
-                <span>{item.name}</span>
-                <ArrowUpRight className="w-4.5 h-4.5 text-[#007eff] stroke-[2.5]" />
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={item.slug}
+                  href={`/services/${item.slug}`}
+                  className={`w-full px-6 py-4 font-bold text-sm sm:text-[15px] flex items-center justify-between transition-colors ${
+                    isActive
+                      ? "text-[#007eff] bg-blue-50/50"
+                      : "text-slate-700 hover:text-[#007eff]"
+                  }`}
+                >
+                  <span>{item.title || item.name}</span>
+                  <ArrowUpRight className="w-4.5 h-4.5 text-[#007eff] stroke-[2.5]" />
+                </Link>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -70,7 +119,8 @@ export default function ServiceDetailsSidebar({ currentSlug }: Props) {
           </h3>
 
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal mb-8">
-            Tell us about your space, schedule, and priorities. We&apos;ll recommend the right cleaning service and timing.
+            Tell us about your space, schedule, and priorities. We&apos;ll
+            recommend the right cleaning service and timing.
           </p>
         </div>
 

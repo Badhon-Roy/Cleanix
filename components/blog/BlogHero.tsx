@@ -1,11 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ChevronRight, Newspaper } from "lucide-react";
+import { Newspaper } from "lucide-react";
+import { BlogCMSContent, defaultBlogCMSData } from "@/lib/blogsData";
+import { io } from "socket.io-client";
 
-export default function BlogHero() {
+interface BlogHeroProps {
+  initialData?: BlogCMSContent;
+}
+
+export default function BlogHero({ initialData }: BlogHeroProps) {
+  const [data, setData] = useState<BlogCMSContent>(
+    initialData || defaultBlogCMSData
+  );
+
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "blog" && payload?.updatedFields) {
+        setData((prev) => ({ ...prev, ...payload.updatedFields }));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [initialData]);
+
   return (
     <section className="relative w-full min-h-[460px] md:min-h-[520px] bg-[#001837] text-white pt-32 pb-20 md:pt-40 md:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden border-b border-white/10 flex items-center justify-center -mt-[102px]">
       {/* Background Image Overlay */}
@@ -20,10 +53,14 @@ export default function BlogHero() {
           }}
         >
           <Image
-            src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
+            src={
+              data?.heroImage ||
+              "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
+            }
             alt="Cleanix Cleaning Blog Insights"
             fill
             priority
+            unoptimized
             className="object-cover object-center opacity-65"
             sizes="(max-width: 1024px) 100vw, 75vw"
           />
@@ -41,24 +78,30 @@ export default function BlogHero() {
       {/* Main Content */}
       <div className="relative z-20 w-full container mx-auto px-4 sm:px-6 lg:px-12 pt-10">
         <div className="max-w-3xl text-left">
-
           {/* Subtitle Badge Pill */}
           <div className="flex items-center gap-2.5 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-2 mb-6 shadow-lg max-w-max">
             <Newspaper className="w-4 h-4 text-[#007eff]" />
             <span className="text-white text-xs md:text-sm font-bold tracking-wider uppercase">
-              CLEANING INSIGHTS &amp; EXPERT TIPS
+              {data?.heroBadge || "CLEANING INSIGHTS & EXPERT TIPS"}
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white leading-[1.12] tracking-tight mb-6 uppercase drop-shadow-md">
-            EXPLORE OUR LATEST <span className="text-[#007eff]">ARTICLES</span> &amp; NEWS
+            {data?.heroTitleLine1}{" "}
+            {data?.heroTitleHighlight && (
+              <span className="text-[#007eff]">{data?.heroTitleHighlight}</span>
+            )}{" "}
+            {data?.heroTitleLine2}
           </h1>
 
           {/* Description */}
-          <p className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl text-shadow-sm">
-            বাসা ও অফিস পরিষ্কার রাখা, ইনডোর এয়ার কোয়ালিটি বাড়ানো এবং মুভ-আউট ডিপ ক্লিনিং গাইড সম্পর্কিত আমাদের এক্সপার্ট আর্টিকেলসমূহ পড়ুন।
-          </p>
+          {data?.heroSubtitle && (
+            <div
+              className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl text-shadow-sm [&_p]:mb-2"
+              dangerouslySetInnerHTML={{ __html: data.heroSubtitle }}
+            />
+          )}
         </div>
       </div>
     </section>

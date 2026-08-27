@@ -1,30 +1,48 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Save, ExternalLink, Sparkles, Navigation, MapPin } from "lucide-react";
+import { Save, Loader2, ExternalLink, Sparkles, Navigation, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import {
-  getStoredCoverageCMSData,
-  saveCoverageCMSData,
+  defaultCoverageCMSData,
   CoverageCMSContent,
 } from "@/lib/coverageCMSData";
+import { fetchCoverageCMSAPI, updateCoverageCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 export default function CoverageCMSManager() {
   const { register, handleSubmit, reset, control } = useForm<CoverageCMSContent>({
-    defaultValues: getStoredCoverageCMSData(),
+    defaultValues: defaultCoverageCMSData,
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    reset(getStoredCoverageCMSData());
+    fetchCoverageCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultCoverageCMSData, ...res.data });
+      }
+    });
   }, [reset]);
 
-  const onSubmit = (data: CoverageCMSContent) => {
-    saveCoverageCMSData(data);
-    toast.success("Coverage Page CMS updated live!");
+  const onSubmit = async (data: CoverageCMSContent) => {
+    setIsSaving(true);
+    try {
+      const res = await updateCoverageCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Coverage Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Coverage CMS");
+      }
+    } catch (err: any) {
+      console.error("Error updating Coverage CMS:", err);
+      toast.error("Failed to update Coverage CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -60,11 +78,16 @@ export default function CoverageCMSManager() {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -238,10 +261,15 @@ export default function CoverageCMSManager() {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Coverage CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Coverage CMS Live"}</span>
           </button>
         </div>
       </form>

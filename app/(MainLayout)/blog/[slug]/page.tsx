@@ -1,22 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { blogsData } from "@/lib/blogsData";
 import BlogDetailsContent from "@/components/blog/BlogDetailsContent";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchBlogBySlugServer } from "@/services/blogServerService";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return Object.keys(blogsData).map((slug) => ({
-    slug,
-  }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const blog = blogsData[slug];
+  const blog = await fetchBlogBySlugServer(slug);
 
   if (!blog) {
     return {
@@ -33,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogDetailsPage({ params }: Props) {
   const { slug } = await params;
-  const blog = blogsData[slug];
+  const blog = await fetchBlogBySlugServer(slug);
 
   if (!blog) {
     notFound();

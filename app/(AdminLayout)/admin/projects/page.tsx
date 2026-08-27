@@ -22,15 +22,41 @@ import {
   Calendar,
   User,
   Image as ImageIcon,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { io } from "socket.io-client";
+import { useForm, Controller } from "react-hook-form";
+import { ProjectDetail } from "@/lib/projectsData";
+import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import {
-  ProjectDetail,
-  getStoredProjects,
-  addProject,
-  updateProject,
-  deleteProject,
-} from "@/lib/projectsData";
+  fetchProjectsAPI,
+  createProjectAPI,
+  updateProjectAPI,
+  deleteProjectAPI,
+} from "@/services/projectService";
+
+export interface ProjectFormData {
+  slug: string;
+  title: string;
+  category: string;
+  categoryFull: string;
+  client: string;
+  projectValue: string;
+  startDate: string;
+  endDate: string;
+  heroImage: string;
+  benefitImage: string;
+  introParagraph: string;
+  section2Title: string;
+  section2Paragraph: string;
+  benefitsTitle: string;
+  benefitsPointsStr: string;
+  section4Title: string;
+  section4Paragraph: string;
+  status: "PUBLISHED" | "DRAFT";
+}
 
 export default function AdminProjectsManagementPage() {
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
@@ -40,167 +66,225 @@ export default function AdminProjectsManagementPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Form State
-  const [formSlug, setFormSlug] = useState("");
-  const [formTitle, setFormTitle] = useState("");
-  const [formCategory, setFormCategory] = useState("RESIDENTIAL");
-  const [formCategoryFull, setFormCategoryFull] = useState("");
-  const [formClient, setFormClient] = useState("");
-  const [formHeroImage, setFormHeroImage] = useState("");
-  const [formBenefitImage, setFormBenefitImage] = useState("");
-  const [formStartDate, setFormStartDate] = useState("");
-  const [formEndDate, setFormEndDate] = useState("");
-  const [formProjectValue, setFormProjectValue] = useState("");
-  const [formIntroParagraph, setFormIntroParagraph] = useState("");
-  const [formSection2Title, setFormSection2Title] = useState("");
-  const [formSection2Paragraph, setFormSection2Paragraph] = useState("");
-  const [formBenefitsTitle, setFormBenefitsTitle] = useState("");
-  const [formBenefitsPointsStr, setFormBenefitsPointsStr] = useState("");
-  const [formSection4Title, setFormSection4Title] = useState("");
-  const [formSection4Paragraph, setFormSection4Paragraph] = useState("");
-  const [formStatus, setFormStatus] = useState<"PUBLISHED" | "DRAFT">("PUBLISHED");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    control,
+    formState: { errors },
+  } = useForm<ProjectFormData>({
+    defaultValues: {
+      slug: "",
+      title: "",
+      category: "RESIDENTIAL",
+      categoryFull: "Residential Deep Cleaning / Care",
+      client: "",
+      projectValue: "৳20,000 BDT",
+      startDate: "10 February, 2026",
+      endDate: "12 February, 2026",
+      heroImage:
+        "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+      benefitImage:
+        "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630",
+      introParagraph: "",
+      section2Title: "COMPLETE DEEP RESET FOR PREMISES",
+      section2Paragraph: "",
+      benefitsTitle: "PROJECT BENEFITS (প্রজেক্টের বিশেষ সুবিধাসমূহ)",
+      benefitsPointsStr:
+        "Full Room-by-Room Deep Clean, High-Touch Disinfection, Certified Eco Disinfectants, Supervisor Quality Audit",
+      section4Title: "SPOTLESS RESULT & CLIENT SATISFACTION",
+      section4Paragraph: "",
+      status: "PUBLISHED",
+    },
+  });
 
   const loadData = () => {
-    setProjects(getStoredProjects());
+    fetchProjectsAPI().then((res) => {
+      if (res && res.success && Array.isArray(res.data)) {
+        setProjects(res.data);
+      } else {
+        setProjects([]);
+      }
+    });
   };
 
   useEffect(() => {
     loadData();
 
-    const handleUpdate = () => {
-      loadData();
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_projects_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "projects") {
+        loadData();
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_projects_updated", handleUpdate);
+      socket.disconnect();
     };
   }, []);
 
   const handleOpenAddModal = () => {
     setEditingSlug(null);
-    setFormSlug("");
-    setFormTitle("");
-    setFormCategory("RESIDENTIAL");
-    setFormCategoryFull("Residential Deep Cleaning / Care");
-    setFormClient("");
-    setFormHeroImage(
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
-    );
-    setFormBenefitImage(
-      "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630"
-    );
-    setFormStartDate("10 February, 2026");
-    setFormEndDate("12 February, 2026");
-    setFormProjectValue("৳20,000 BDT");
-    setFormIntroParagraph("");
-    setFormSection2Title("COMPLETE DEEP RESET FOR PREMISES");
-    setFormSection2Paragraph("");
-    setFormBenefitsTitle("PROJECT BENEFITS (প্রজেক্টের বিশেষ সুবিধাসমূহ)");
-    setFormBenefitsPointsStr(
-      "Full Room-by-Room Deep Clean, High-Touch Disinfection, Certified Eco Disinfectants, Supervisor Quality Audit"
-    );
-    setFormSection4Title("SPOTLESS RESULT & CLIENT SATISFACTION");
-    setFormSection4Paragraph("");
-    setFormStatus("PUBLISHED");
+    reset({
+      slug: "",
+      title: "",
+      category: "RESIDENTIAL",
+      categoryFull: "Residential Deep Cleaning / Care",
+      client: "",
+      heroImage:
+        "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+      benefitImage:
+        "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630",
+      startDate: "10 February, 2026",
+      endDate: "12 February, 2026",
+      projectValue: "৳20,000 BDT",
+      introParagraph: "",
+      section2Title: "COMPLETE DEEP RESET FOR PREMISES",
+      section2Paragraph: "",
+      benefitsTitle: "PROJECT BENEFITS (প্রজেক্টের বিশেষ সুবিধাসমূহ)",
+      benefitsPointsStr:
+        "Full Room-by-Room Deep Clean, High-Touch Disinfection, Certified Eco Disinfectants, Supervisor Quality Audit",
+      section4Title: "SPOTLESS RESULT & CLIENT SATISFACTION",
+      section4Paragraph: "",
+      status: "PUBLISHED",
+    });
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (item: ProjectDetail) => {
     setEditingSlug(item.slug);
-    setFormSlug(item.slug);
-    setFormTitle(item.title);
-    setFormCategory(item.category);
-    setFormCategoryFull(item.categoryFull);
-    setFormClient(item.client);
-    setFormHeroImage(item.heroImage);
-    setFormBenefitImage(item.benefitImage);
-    setFormStartDate(item.startDate);
-    setFormEndDate(item.endDate);
-    setFormProjectValue(item.projectValue);
-    setFormIntroParagraph(item.introParagraph);
-    setFormSection2Title(item.section2Title);
-    setFormSection2Paragraph(item.section2Paragraph);
-    setFormBenefitsTitle(item.benefitsTitle);
-    setFormBenefitsPointsStr(
-      Array.isArray(item.benefitsPoints) ? item.benefitsPoints.join(", ") : ""
-    );
-    setFormSection4Title(item.section4Title);
-    setFormSection4Paragraph(item.section4Paragraph);
-    setFormStatus(item.status || "PUBLISHED");
+    reset({
+      slug: item.slug,
+      title: item.title,
+      category: item.category,
+      categoryFull: item.categoryFull,
+      client: item.client,
+      heroImage: item.heroImage,
+      benefitImage: item.benefitImage,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      projectValue: item.projectValue,
+      introParagraph: item.introParagraph,
+      section2Title: item.section2Title || "",
+      section2Paragraph: item.section2Paragraph || "",
+      benefitsTitle: item.benefitsTitle || "",
+      benefitsPointsStr: Array.isArray(item.benefitsPoints)
+        ? item.benefitsPoints.join(", ")
+        : "",
+      section4Title: item.section4Title || "",
+      section4Paragraph: item.section4Paragraph || "",
+      status: item.status || "PUBLISHED",
+    });
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formTitle.trim() || !formIntroParagraph.trim()) {
-      toast.error("Please fill in Project Title and Intro Paragraph.");
-      return;
-    }
+  const onSubmitForm = async (formData: ProjectFormData) => {
+    setIsSaving(true);
 
     const computedSlug =
-      formSlug.trim() ||
-      formTitle
+      formData.slug.trim() ||
+      formData.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+        .replace(/(^-|-$)/g, "") ||
+      `project-${Date.now()}`;
 
-    const benefitsPoints = formBenefitsPointsStr
+    const benefitsPoints = (formData.benefitsPointsStr || "")
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
     const projectObj: ProjectDetail = {
       slug: computedSlug,
-      title: formTitle.toUpperCase(),
-      category: formCategory.toUpperCase(),
-      categoryFull: formCategoryFull,
-      client: formClient,
-      heroImage: formHeroImage,
-      benefitImage: formBenefitImage,
-      startDate: formStartDate,
-      endDate: formEndDate,
-      projectValue: formProjectValue,
-      introParagraph: formIntroParagraph,
-      section2Title: formSection2Title,
-      section2Paragraph: formSection2Paragraph,
-      benefitsTitle: formBenefitsTitle,
+      title: formData.title.trim().toUpperCase(),
+      category: formData.category.trim().toUpperCase(),
+      categoryFull: formData.categoryFull.trim(),
+      client: formData.client.trim(),
+      heroImage: formData.heroImage.trim(),
+      benefitImage: formData.benefitImage.trim(),
+      startDate: formData.startDate.trim(),
+      endDate: formData.endDate.trim(),
+      projectValue: formData.projectValue.trim(),
+      introParagraph: formData.introParagraph.trim(),
+      section2Title: formData.section2Title.trim(),
+      section2Paragraph: formData.section2Paragraph.trim(),
+      benefitsTitle: formData.benefitsTitle.trim(),
       benefitsPoints: benefitsPoints.length > 0 ? benefitsPoints : ["Full Deep Cleaning"],
-      section4Title: formSection4Title,
-      section4Paragraph: formSection4Paragraph,
-      status: formStatus,
+      section4Title: formData.section4Title.trim(),
+      section4Paragraph: formData.section4Paragraph.trim(),
+      status: formData.status,
     };
 
-    if (editingSlug) {
-      const updated = updateProject(editingSlug, projectObj);
-      setProjects(updated);
-      toast.success(`Project "${formTitle}" updated successfully!`);
-    } else {
-      const updated = addProject(projectObj);
-      setProjects(updated);
-      toast.success(`New Project "${formTitle}" published successfully!`);
+    try {
+      if (editingSlug) {
+        const res = await updateProjectAPI(editingSlug, projectObj);
+        if (res && res.success) {
+          toast.success(`Project "${formData.title}" updated successfully live!`);
+          loadData();
+          setIsModalOpen(false);
+        } else {
+          toast.error(res?.message || "Failed to update project");
+        }
+      } else {
+        const res = await createProjectAPI(projectObj);
+        if (res && res.success) {
+          toast.success(`New Project "${formData.title}" published successfully live!`);
+          loadData();
+          setIsModalOpen(false);
+        } else {
+          toast.error(res?.message || "Failed to publish project");
+        }
+      }
+    } catch (err: any) {
+      console.error("Error saving project:", err);
+      toast.error("Failed to save project");
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleToggleStatus = (item: ProjectDetail) => {
+  const handleToggleStatus = async (item: ProjectDetail) => {
     const nextStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-    const updated = updateProject(item.slug, { status: nextStatus });
-    setProjects(updated);
-    toast.info(`Project "${item.title}" status set to ${nextStatus}`);
+    try {
+      const res = await updateProjectAPI(item.slug, { status: nextStatus });
+      if (res && res.success) {
+        toast.info(`Project "${item.title}" status set to ${nextStatus}`);
+        setProjects((prev) =>
+          prev.map((p) => (p.slug === item.slug ? { ...p, status: nextStatus } : p))
+        );
+      }
+    } catch (err) {
+      console.error("Error toggling project status:", err);
+    }
   };
 
-  const handleDelete = (slug: string, title: string) => {
+  const handleDelete = async (slug: string, title: string) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete project case study "${title}"?`
     );
     if (confirmDelete) {
-      const updated = deleteProject(slug);
-      setProjects(updated);
-      toast.error(`Project "${title}" deleted.`);
+      try {
+        const res = await deleteProjectAPI(slug);
+        if (res && res.success) {
+          toast.success(`Project "${title}" deleted live from database.`);
+          setProjects((prev) => prev.filter((p) => p.slug !== slug));
+        } else {
+          toast.error(res?.message || "Failed to delete project");
+        }
+      } catch (err) {
+        console.error("Error deleting project:", err);
+        toast.error("Failed to delete project");
+      }
     }
   };
 
@@ -454,8 +538,18 @@ export default function AdminProjectsManagementPage() {
 
       {/* ADD / EDIT PROJECT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-3xl w-full p-6 sm:p-8 space-y-6 relative my-8 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
+          data-lenis-prevent="true"
+          data-lenis-prevent-wheel="true"
+          data-lenis-prevent-touch="true"
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-3xl w-full p-6 sm:p-8 space-y-6 relative my-8 max-h-[85vh] overflow-y-auto"
+            data-lenis-prevent="true"
+            data-lenis-prevent-wheel="true"
+            data-lenis-prevent-touch="true"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 sticky top-0 bg-white z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center font-extrabold">
@@ -480,7 +574,7 @@ export default function AdminProjectsManagementPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 text-xs sm:text-sm">
+            <form noValidate onSubmit={handleSubmit(onSubmitForm)} className="space-y-5 text-xs sm:text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="font-extrabold text-slate-800 block">
@@ -488,12 +582,29 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. GULSHAN 2 DUPLEX VILLA FULL DEEP CLEAN"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
+                    {...register("title", {
+                      required: "Project title is required",
+                      onChange: (e) => {
+                        if (!editingSlug) {
+                          const val = e.target.value;
+                          const generatedSlug = val
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "-")
+                            .replace(/(^-|-$)/g, "");
+                          setValue("slug", generatedSlug);
+                        }
+                      },
+                    })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:bg-white ${
+                      errors.title ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.title && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.title.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -502,12 +613,17 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. RESIDENTIAL"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:border-[#007eff]"
+                    {...register("category", { required: "Category tag is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold uppercase focus:outline-none focus:bg-white ${
+                      errors.category ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.category && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.category.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -516,12 +632,17 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. Residential Turnover / Deep Cleaning"
-                    value={formCategoryFull}
-                    onChange={(e) => setFormCategoryFull(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    {...register("categoryFull", { required: "Full category name is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white ${
+                      errors.categoryFull ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.categoryFull && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.categoryFull.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -530,12 +651,17 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. Chowdhury Residence (Gulshan 2)"
-                    value={formClient}
-                    onChange={(e) => setFormClient(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    {...register("client", { required: "Client name is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white ${
+                      errors.client ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.client && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.client.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -544,12 +670,17 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. ৳18,500 BDT"
-                    value={formProjectValue}
-                    onChange={(e) => setFormProjectValue(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    {...register("projectValue", { required: "Project value is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white ${
+                      errors.projectValue ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.projectValue && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.projectValue.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -558,12 +689,17 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. 05 February, 2026"
-                    value={formStartDate}
-                    onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    {...register("startDate", { required: "Start date is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white ${
+                      errors.startDate ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
                   />
+                  {errors.startDate && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.startDate.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -572,39 +708,56 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. 07 February, 2026"
-                    value={formEndDate}
-                    onChange={(e) => setFormEndDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
+                    {...register("endDate", { required: "Completion date is required" })}
+                    className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:bg-white ${
+                      errors.endDate ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                    }`}
+                  />
+                  {errors.endDate && (
+                    <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.endDate.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Controller
+                    name="heroImage"
+                    control={control}
+                    rules={{ required: "Hero cover background image is required" }}
+                    render={({ field }) => (
+                      <div>
+                        <ImageUploadPreview
+                          label="Hero Cover Background Image:"
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          recommendedSize="Recommended 1600x900 WebP/JPG format"
+                          aspectRatio="banner"
+                        />
+                        {errors.heroImage && (
+                          <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.heroImage.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   />
                 </div>
 
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-extrabold text-slate-800 block">
-                    Hero Cover Image URL:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. https://images.unsplash.com/..."
-                    value={formHeroImage}
-                    onChange={(e) => setFormHeroImage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-extrabold text-slate-800 block">
-                    Benefit / Secondary Image URL:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. https://framerusercontent.com/..."
-                    value={formBenefitImage}
-                    onChange={(e) => setFormBenefitImage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                <div className="sm:col-span-2">
+                  <Controller
+                    name="benefitImage"
+                    control={control}
+                    render={({ field }) => (
+                      <ImageUploadPreview
+                        label="Benefit / Secondary Image:"
+                        value={field.value}
+                        onChange={(val) => field.onChange(val)}
+                        recommendedSize="Recommended 600x600 WebP/PNG format"
+                        aspectRatio="banner"
+                      />
+                    )}
                   />
                 </div>
               </div>
@@ -615,12 +768,17 @@ export default function AdminProjectsManagementPage() {
                 </label>
                 <textarea
                   rows={3}
-                  required
                   placeholder="e.g. গুলশান ২ এর ৪,৫০০ স্কয়ার ফিট ডুপ্লেক্স ভিলার জন্য কাস্টমাইজড ডিপ ক্লিনিং..."
-                  value={formIntroParagraph}
-                  onChange={(e) => setFormIntroParagraph(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                  {...register("introParagraph", { required: "Intro paragraph is required" })}
+                  className={`w-full bg-slate-50 border rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:bg-white ${
+                    errors.introParagraph ? "border-red-400 bg-red-50/40" : "border-slate-200 focus:border-[#007eff]"
+                  }`}
                 />
+                {errors.introParagraph && (
+                  <p className="text-xs text-red-600 font-bold flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {errors.introParagraph.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -630,10 +788,8 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="e.g. COMPLETE FRESH RESET FOR LUXURY HOMES"
-                    value={formSection2Title}
-                    onChange={(e) => setFormSection2Title(e.target.value)}
+                    {...register("section2Title")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-bold focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
@@ -644,10 +800,8 @@ export default function AdminProjectsManagementPage() {
                   </label>
                   <textarea
                     rows={2}
-                    required
                     placeholder="e.g. ব্যস্ততার কারণে নিয়মিত ঝাড়ু-মোছায় জমে থাকা জেদি ধুলো..."
-                    value={formSection2Paragraph}
-                    onChange={(e) => setFormSection2Paragraph(e.target.value)}
+                    {...register("section2Paragraph")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                   />
                 </div>
@@ -659,10 +813,8 @@ export default function AdminProjectsManagementPage() {
                 </label>
                 <textarea
                   rows={2}
-                  required
                   placeholder="e.g. Full Villa Room-by-Room Deep Clean, Kitchen Hood Degreasing, Anti-Bacterial Sanitizing"
-                  value={formBenefitsPointsStr}
-                  onChange={(e) => setFormBenefitsPointsStr(e.target.value)}
+                  {...register("benefitsPointsStr")}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
                 />
               </div>
@@ -672,8 +824,7 @@ export default function AdminProjectsManagementPage() {
                   Publication Status:
                 </label>
                 <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value as "PUBLISHED" | "DRAFT")}
+                  {...register("status")}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-slate-900 font-extrabold focus:outline-none focus:border-[#007eff]"
                 >
                   <option value="PUBLISHED">PUBLISHED (Visible on Website)</option>
@@ -691,10 +842,21 @@ export default function AdminProjectsManagementPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{editingSlug ? "Save Changes" : "Publish Project"}</span>
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isSaving
+                      ? "Saving..."
+                      : editingSlug
+                      ? "Save Changes"
+                      : "Publish Project"}
+                  </span>
                 </button>
               </div>
             </form>

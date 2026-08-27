@@ -21,13 +21,13 @@ export default function ProjectDetailsHeader({ project }: Props) {
         <div className="flex items-center gap-2 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-1.5 mb-4 shadow-lg max-w-max">
           <Sparkles className="w-4 h-4 text-[#007eff]" />
           <span className="text-white text-xs font-bold tracking-wider uppercase">
-            {project.categoryFull}
+            {project?.categoryFull || project?.category}
           </span>
         </div>
 
         {/* Main Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight uppercase tracking-tight max-w-5xl">
-          {project.title}
+          {project?.title}
         </h1>
       </div>
     </section>

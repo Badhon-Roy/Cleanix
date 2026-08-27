@@ -20,7 +20,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
             Client :
           </span>
           <span className="text-base sm:text-lg font-black text-[#001837] block">
-            {project.client}
+            {project?.client}
           </span>
         </div>
 
@@ -30,7 +30,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
             Category :
           </span>
           <span className="text-base sm:text-lg font-black text-[#001837] block">
-            {project.categoryFull}
+            {project?.categoryFull || project?.category}
           </span>
         </div>
 
@@ -40,7 +40,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
             Starting Date :
           </span>
           <span className="text-base sm:text-lg font-black text-[#001837] block">
-            {project.startDate}
+            {project?.startDate}
           </span>
         </div>
 
@@ -50,7 +50,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
             End Date :
           </span>
           <span className="text-base sm:text-lg font-black text-[#001837] block">
-            {project.endDate}
+            {project?.endDate}
           </span>
         </div>
 
@@ -60,7 +60,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
             Project Value :
           </span>
           <span className="text-2xl font-black text-[#007eff] block">
-            {project.projectValue}
+            {project?.projectValue}
           </span>
         </div>
       </div>

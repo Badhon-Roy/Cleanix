@@ -48,10 +48,28 @@ export const mapCoverageArea = (c: any): ICoverageArea => ({
 });
 
 // Client-side API Calls
-export const fetchAllCoveragesAPI = async (): Promise<ICoverageArea[]> => {
+export const fetchAllCoveragesAPI = async (params?: {
+  searchTerm?: string;
+  district?: string;
+  isActive?: boolean | string;
+  sortBy?: string;
+  sortOrder?: string;
+}): Promise<ICoverageArea[]> => {
   try {
     const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/coverage`, {
+    const queryParams = new URLSearchParams();
+
+    if (params?.searchTerm) queryParams.append("searchTerm", params.searchTerm);
+    if (params?.district) queryParams.append("district", params.district);
+    if (params?.isActive !== undefined && params?.isActive !== "")
+      queryParams.append("isActive", String(params.isActive));
+    if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+    if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+
+    const queryString = queryParams.toString();
+    const url = `${baseUrl}/coverage${queryString ? `?${queryString}` : ""}`;
+
+    const res = await fetch(url, {
       method: "GET",
       headers: getHeaders(),
       cache: "no-store",

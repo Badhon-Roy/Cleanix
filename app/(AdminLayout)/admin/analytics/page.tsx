@@ -32,7 +32,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { getStoredCoverageAreas, CoverageAreaItem } from "@/lib/coverageData";
+import { ICoverageArea, fetchAllCoveragesAPI } from "@/services/coverageService";
 
 // 1. Monthly Revenue & Profit Trend Data
 const monthlyTrendData = [
@@ -168,19 +168,12 @@ const recentLedger = [
 export default function AdminAnalyticsPage() {
   const [timeFilter, setTimeFilter] = useState("6M");
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
-  const [coverageAreas, setCoverageAreas] = useState<CoverageAreaItem[]>([]);
+  const [coverageAreas, setCoverageAreas] = useState<ICoverageArea[]>([]);
 
   useEffect(() => {
-    setCoverageAreas(getStoredCoverageAreas());
-
-    const handleCoverageUpdate = () => {
-      setCoverageAreas(getStoredCoverageAreas());
-    };
-
-    window.addEventListener("cleanix_coverage_areas_updated", handleCoverageUpdate);
-    return () => {
-      window.removeEventListener("cleanix_coverage_areas_updated", handleCoverageUpdate);
-    };
+    fetchAllCoveragesAPI().then((data) => {
+      if (Array.isArray(data)) setCoverageAreas(data);
+    });
   }, []);
 
   // Compute dynamic chart data from stored coverage areas
@@ -189,12 +182,13 @@ export default function AdminAnalyticsPage() {
     const revenue = baseRevenues[index % baseRevenues.length] || (20000 + ((index * 3500) % 25000));
 
     // Short clean label for X Axis
-    const cleanWord = item.area.split(" ")[0].split("&")[0].replace(/[^A-Za-z0-9]/g, "");
-    const zoneName = cleanWord.length > 0 ? cleanWord.toUpperCase() : item.area.toUpperCase();
+    const name = item?.zoneName || "Zone";
+    const cleanWord = name.split(" ")[0].split("&")[0].replace(/[^A-Za-z0-9]/g, "");
+    const zoneName = cleanWord.length > 0 ? cleanWord.toUpperCase() : name.toUpperCase();
 
     return {
       zone: zoneName,
-      fullArea: item.area,
+      fullArea: name,
       revenue,
       isPeak: false,
       growth: "+17.8%",
