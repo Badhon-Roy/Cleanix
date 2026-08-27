@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Save,
+  Loader2,
   ExternalLink,
   Sparkles,
   Sliders,
@@ -216,11 +217,16 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
 
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSubmit(onSubmit)}
-            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2 rounded-2xl font-bold text-xs bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>Save All Live</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save All Live"}</span>
           </button>
         </div>
       </div>
@@ -1022,10 +1028,15 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
         <div className="flex justify-end pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 text-white transition-all cursor-pointer flex items-center gap-2"
+            disabled={isSaving}
+            className="px-8 py-3 rounded-2xl font-bold text-sm bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all cursor-pointer flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            <span>Save Home CMS Live</span>
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save Home CMS Live"}</span>
           </button>
         </div>
       </form>

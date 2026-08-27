@@ -43,3 +43,37 @@ export const updateHomeCMSAPI = async (payload: any) => {
     };
   }
 };
+
+export const fetchAboutCMSAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/about`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching About CMS data from backend:", error);
+    return { success: false, data: null };
+  }
+};
+
+export const updateAboutCMSAPI = async (payload: any) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/about`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating About CMS content:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to update About CMS content",
+    };
+  }
+};

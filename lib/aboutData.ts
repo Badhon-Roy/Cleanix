@@ -189,30 +189,4 @@ export const initialAboutData: AboutContent = {
   ],
 };
 
-const STORAGE_KEY = "cleanix_about_data_v8";
-
-export function getStoredAboutData(): AboutContent {
-  if (typeof window === "undefined") return initialAboutData;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialAboutData));
-      return initialAboutData;
-    }
-    const parsed = JSON.parse(raw);
-    return { ...initialAboutData, ...parsed };
-  } catch (e) {
-    console.error("Failed to load about content from localStorage:", e);
-    return initialAboutData;
-  }
-}
-
-export function saveAboutData(data: AboutContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new Event("cleanix_about_updated"));
-  } catch (e) {
-    console.error("Failed to save about content to localStorage:", e);
-  }
-}
+export const defaultAboutData = initialAboutData;

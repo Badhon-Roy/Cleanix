@@ -3,30 +3,51 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
-import { getStoredAboutData, AboutContent } from "@/lib/aboutData";
+import { defaultAboutData, AboutContent } from "@/lib/aboutData";
+import { io } from "socket.io-client";
 
-export default function AboutHero() {
-  const [data, setData] = useState<AboutContent>(getStoredAboutData());
+interface AboutHeroProps {
+  initialData?: AboutContent;
+}
+
+export default function AboutHero({ initialData }: AboutHeroProps) {
+  const [data, setData] = useState<AboutContent>(
+    initialData || defaultAboutData
+  );
 
   useEffect(() => {
-    setData(getStoredAboutData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredAboutData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_about_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "about" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_about_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="relative w-full min-h-[460px] md:min-h-[500px] bg-[#001837] text-white pt-32 pb-16 md:pt-40 md:pb-20 px-4 sm:px-6 lg:px-12 overflow-hidden border-b border-white/10 flex items-center justify-center -mt-[102px]">
       {/* Background Image Layer */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
         <Image
-          src={data.heroImage || "/hero-cleaner.png"}
+          src={data?.heroImage || "/hero-cleaner.png"}
           alt="Cleanix Professional Cleaner"
           fill
           priority
@@ -47,21 +68,21 @@ export default function AboutHero() {
           <div className="flex justify-center mb-5">
             <div className="inline-flex items-center gap-2 border border-[#007eff]/50 bg-[#001837]/80 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 backdrop-blur-md shadow-lg">
               <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-              <span>{data.heroBadge || "ABOUT CLEANIX"}</span>
+              <span>{data?.heroBadge || "ABOUT CLEANIX"}</span>
             </div>
           </div>
 
           {/* High-Impact Headline */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.12] uppercase mb-5 drop-shadow-xl text-white">
-            {data.heroTitleLine1 || "REDEFINING CLEANLINESS WITH"}{" "}
+            {data?.heroTitleLine1 || "REDEFINING CLEANLINESS WITH"}{" "}
             <span className="text-[#007eff] drop-shadow-[0_0_20px_rgba(0,126,255,0.8)]">
-              {data.heroTitleHighlight || "TECHNOLOGY"}
+              {data?.heroTitleHighlight || "TECHNOLOGY"}
             </span>
           </h1>
 
           {/* Subtitle Paragraph */}
           <p className="text-slate-100 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto drop-shadow-md">
-            {data.heroSubtitle}
+            {data?.heroSubtitle}
           </p>
         </div>
       </div>
