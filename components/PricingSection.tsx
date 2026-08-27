@@ -50,7 +50,7 @@ export default function PricingSection({ initialData }: PricingSectionProps) {
       <div className="container mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
           {/* Left Column: Badge, Title & Cleaning Bucket Asset */}
-          <div className="lg:col-span-4 flex flex-col justify-between h-full">
+          <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-24">
             <div>
               {/* Badge Pill */}
               <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-4 bg-white/60">

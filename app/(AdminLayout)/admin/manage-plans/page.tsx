@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Sliders,
@@ -10,9 +10,19 @@ import {
   Edit3,
   ArrowLeft,
   Layers,
+  Loader2,
 } from "lucide-react";
 import EditPackageModal, { PackageData } from "@/components/admin/EditPackageModal";
 import DeleteCardConfirmModal from "@/components/admin/DeleteCardConfirmModal";
+import {
+  IPlan,
+  fetchAllPlansAPI,
+  createPlanAPI,
+  updatePlanAPI,
+  deletePlanAPI,
+} from "@/services/planService";
+import { toast } from "sonner";
+import { io, Socket } from "socket.io-client";
 
 export function PricingStarIcon() {
   return (
@@ -25,87 +35,141 @@ export function PricingStarIcon() {
 }
 
 export default function ManagePlansPage() {
+  const [packagesList, setPackagesList] = useState<IPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedPackageForEdit, setSelectedPackageForEdit] = useState<PackageData | null>(null);
   const [packageToDelete, setPackageToDelete] = useState<PackageData | null>(null);
+  const [isNewPlan, setIsNewPlan] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
-  // Package Catalog List
-  const [packagesList, setPackagesList] = useState<PackageData[]>([
-    {
-      id: "BASIC",
-      title: "BASIC",
-      price: "৳6,000",
-      visits: "2 Visits / Month (Bi-Weekly)",
-      description: "ছোট বাসা বা ছোট স্টার্টআপ অফিস",
-      category: "SUBSCRIPTION",
-      active: true,
-      isPopular: false,
-      features: [
-        "মাসে ২ বার রুটিন হোম ক্লিনিং",
-        "ফ্লোর মোছা, ভ্যাকুয়াম ও ডাস্টিং",
-        "রান্নাঘর ও বাথরুম ডিপ রিফ্রেশ",
-        "অনলাইন সাপোর্ট ও ইনভয়েস",
-        "রিয়েল-টাইম ট্র্যাকিং অ্যালার্ট",
-      ],
-    },
-    {
-      id: "STANDARD",
-      title: "STANDARD",
-      price: "৳14,000",
-      visits: "4 Visits / Month (Weekly 1 Visit)",
-      description: "মাঝারি পরিবার ও কমার্শিয়াল শোরুমের পছন্দ",
-      category: "SUBSCRIPTION",
-      active: true,
-      isPopular: true,
-      features: [
-        "মাসে ৪ বার (সাপ্তাহিক ১ বার) ডিপ ক্লিন",
-        "অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজেশন",
-        "সোফা, কার্পেট ও মেট্রেস ড্রায়ার",
-        "গ্লাস ও উইন্ডো স্যানিটাইজিং",
-        "২৪/৭ ডেডিকেটেড ফোন ও চ্যাট",
-      ],
-    },
-    {
-      id: "PREMIUM",
-      title: "PREMIUM",
-      price: "৳30,000",
-      visits: "8 Visits / Month (Bi-Weekly 2 Visits)",
-      description: "বড় কর্পোরেট অফিস ও ডুপ্লেক্স ভিলা",
-      category: "SUBSCRIPTION",
-      active: true,
-      isPopular: false,
-      features: [
-        "মাসে ৮ বার মাস্টার ক্লিনিং",
-        "হসপিটাল-গ্রেড স্টিম স্যানিটাইজ",
-        "ওভেন, ফ্রিজ ও কিচেন চিমনি কেয়ার",
-        "ভিআইপি কনসিয়ার্জ ও লাইভ জিপিএস",
-        "সাপ্তাহিক কোয়ালিটি রিপোর্ট",
-      ],
-    },
-  ]);
+  const loadPlans = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchAllPlansAPI();
+      setPackagesList(data);
+    } catch (err) {
+      console.error("Error loading plans:", err);
+      toast.error("Failed to load pricing plans");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleSaveEditedPackage = (updatedPkg: PackageData) => {
-    setPackagesList((prev) => {
-      const exists = prev.some((p) => p.id === updatedPkg.id);
-      if (exists) {
-        return prev.map((p) => (p.id === updatedPkg.id ? updatedPkg : p));
-      }
-      return [...prev, updatedPkg];
+  useEffect(() => {
+    loadPlans();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
     });
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("✅ [manage-plans] Socket connected:", socket.id);
+    });
+
+    socket.on("plan_updated", () => {
+      loadPlans();
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔌 [manage-plans] Socket disconnected");
+    });
+
+    return () => {
+      socket.off("plan_updated");
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [loadPlans]);
+
+  const handleSaveEditedPackage = async (updatedPkg: PackageData) => {
+    try {
+      if (isNewPlan) {
+        const res = await createPlanAPI({
+          id: updatedPkg.id,
+          title: updatedPkg.title,
+          price: updatedPkg.price,
+          subtitleBn: updatedPkg.description,
+          category: updatedPkg.category || "SUBSCRIPTION",
+          active: updatedPkg.active,
+          isPopular: updatedPkg.isPopular,
+          features: updatedPkg.features,
+        });
+        if (res && res.success) {
+          toast.success("New pricing plan created successfully!");
+          loadPlans();
+        } else {
+          toast.error(res?.message || "Failed to create plan");
+        }
+      } else {
+        const targetId = (updatedPkg as any)._id || updatedPkg.id;
+        const res = await updatePlanAPI(targetId, {
+          title: updatedPkg.title,
+          price: updatedPkg.price,
+          subtitleBn: updatedPkg.description,
+          active: updatedPkg.active,
+          isPopular: updatedPkg.isPopular,
+          features: updatedPkg.features,
+        });
+        if (res && res.success) {
+          toast.success("Pricing plan updated successfully!");
+          loadPlans();
+        } else {
+          toast.error(res?.message || "Failed to update plan");
+        }
+      }
+    } catch (err) {
+      console.error("Error saving plan:", err);
+      toast.error("Error saving plan");
+    } finally {
+      setSelectedPackageForEdit(null);
+      setIsNewPlan(false);
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!packageToDelete) return;
-    setPackagesList((prev) => prev.filter((p) => p.id !== packageToDelete.id));
-    setPackageToDelete(null);
+    try {
+      const targetId = (packageToDelete as any)._id || packageToDelete.id;
+      const res = await deletePlanAPI(targetId);
+      if (res && res.success) {
+        toast.success("Pricing plan deleted successfully.");
+        loadPlans();
+      } else {
+        toast.error(res?.message || "Failed to delete plan");
+      }
+    } catch (err) {
+      console.error("Error deleting plan:", err);
+      toast.error("Error deleting plan");
+    } finally {
+      setPackageToDelete(null);
+    }
   };
 
-  const togglePackageActive = (id: string) => {
-    setPackagesList((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p))
-    );
+  const togglePackageActive = async (plan: IPlan) => {
+    try {
+      const targetId = plan._id || plan.id;
+      const res = await updatePlanAPI(targetId, { active: !plan.active });
+      if (res && res.success) {
+        toast.success(`Plan ${plan.title} is now ${!plan.active ? "ACTIVE" : "HIDDEN"}`);
+        setPackagesList((prev) =>
+          prev.map((p) => (p.id === plan.id || p._id === targetId ? { ...p, active: !p.active } : p))
+        );
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (err) {
+      toast.error("Error updating status");
+    }
   };
 
   const handleAddNewPackage = () => {
+    setIsNewPlan(true);
     const newPkg: PackageData = {
       id: `PKG-${Date.now()}`,
       title: "CUSTOM PLAN",
@@ -190,7 +254,7 @@ export default function ManagePlansPage() {
                 {/* Active Status Badge / Toggle */}
                 <button
                   type="button"
-                  onClick={() => togglePackageActive(plan.id)}
+                  onClick={() => togglePackageActive(plan)}
                   className={`absolute top-7 right-7 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border cursor-pointer transition-colors ${
                     plan.active
                       ? "bg-emerald-50 text-emerald-700 border-emerald-300"
@@ -212,7 +276,7 @@ export default function ManagePlansPage() {
                       isPopular ? "text-[#007eff]" : "text-slate-500"
                     }`}
                   >
-                    {plan.description}
+                    {plan.subtitleBn}
                   </p>
 
                   {/* Price */}
@@ -221,7 +285,7 @@ export default function ManagePlansPage() {
                       {plan.price}
                     </span>
                     <span className="text-slate-500 font-bold text-xs sm:text-sm ml-1">
-                      / মাস (Monthly)
+                      {plan.pricePeriodBn || "/ মাস (Monthly)"}
                     </span>
                   </div>
 
@@ -242,7 +306,20 @@ export default function ManagePlansPage() {
                 <div className="pt-6 mt-6 border-t border-slate-100 flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setSelectedPackageForEdit(plan)}
+                    onClick={() => {
+                      setIsNewPlan(false);
+                      setSelectedPackageForEdit({
+                        id: plan.id,
+                        title: plan.title,
+                        price: plan.price,
+                        description: plan.subtitleBn || "",
+                        category: plan.category || "SUBSCRIPTION",
+                        active: plan.active,
+                        isPopular: plan.isPopular,
+                        features: plan.features,
+                        _id: plan._id,
+                      } as any);
+                    }}
                     className="flex-1 font-semibold text-xs sm:text-sm py-3 px-5 rounded-full bg-[#007eff] hover:bg-[#0066ee] text-white border border-blue-400 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] cursor-pointer shadow-sm"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -251,7 +328,19 @@ export default function ManagePlansPage() {
 
                   <button
                     type="button"
-                    onClick={() => setPackageToDelete(plan)}
+                    onClick={() =>
+                      setPackageToDelete({
+                        id: plan.id,
+                        title: plan.title,
+                        price: plan.price,
+                        description: plan.subtitleBn || "",
+                        category: plan.category || "SUBSCRIPTION",
+                        active: plan.active,
+                        isPopular: plan.isPopular,
+                        features: plan.features,
+                        _id: plan._id,
+                      } as any)
+                    }
                     className="p-3 rounded-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                     title="Delete Package Card"
                   >

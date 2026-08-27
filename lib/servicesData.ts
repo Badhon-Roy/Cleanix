@@ -365,21 +365,10 @@ export const servicesData: Record<string, ServiceDetail> = initialServicesList.r
   {} as Record<string, ServiceDetail>
 );
 
-const STORAGE_KEY = "cleanix_services_catalog_v2";
+let inMemoryServicesStore: ServiceDetail[] = initialServicesList;
 
 export function getStoredServices(): ServiceDetail[] {
-  if (typeof window === "undefined") return initialServicesList;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialServicesList));
-      return initialServicesList;
-    }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Failed to load services from localStorage:", e);
-    return initialServicesList;
-  }
+  return inMemoryServicesStore;
 }
 
 export function getServiceBySlug(slug: string): ServiceDetail | undefined {
@@ -388,19 +377,9 @@ export function getServiceBySlug(slug: string): ServiceDetail | undefined {
 }
 
 export function saveServices(services: ServiceDetail[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
+  inMemoryServicesStore = services;
+  if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("cleanix_services_updated"));
-    try {
-      if ("BroadcastChannel" in window) {
-        const channel = new BroadcastChannel("cleanix_services_channel");
-        channel.postMessage({ type: "SERVICES_UPDATED", timestamp: Date.now() });
-        channel.close();
-      }
-    } catch {}
-  } catch (e) {
-    console.error("Failed to save services to localStorage:", e);
   }
 }
 
