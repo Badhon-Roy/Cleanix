@@ -11,23 +11,26 @@ import FaqSection from "@/components/FaqSection";
 import BlogSection from "@/components/BlogSection";
 import ImpactSection from "@/components/ImpactSection";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchHomeCMSServer } from "@/services/cmsServerService";
 
-export default function Home() {
+export default async function Home() {
+  const cmsData = await fetchHomeCMSServer();
+
   return (
     <>
-      <HeroBanner />
+      <HeroBanner initialData={cmsData} />
       <AboutSection />
       <TrustedClients />
-      <ImpactSection />
-      <WhyChooseUs />
-      <OurServices />
+      <ImpactSection initialData={cmsData} />
+      <WhyChooseUs initialData={cmsData} />
+      <OurServices initialData={cmsData} />
       <ProjectsSection />
       <PricingSection />
       <HowItWorks />
       <TestimonialsSection />
-      <FaqSection />
+      <FaqSection initialData={cmsData} />
       <BlogSection />
-      <CtaBanner />
+      <CtaBanner initialData={cmsData} />
     </>
   );
 }

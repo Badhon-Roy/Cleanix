@@ -18,11 +18,11 @@ import {
 import { toast } from "sonner";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import {
-  getStoredHomeCMSData,
-  saveHomeCMSData,
+  defaultHomeCMSData,
   HomeCMSContent,
   FaqItem,
 } from "@/lib/homeCMSData";
+import { fetchHomeCMSAPI, updateHomeCMSAPI } from "@/services/cmsService";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 import DeleteCardConfirmModal from "@/components/admin/DeleteCardConfirmModal";
@@ -125,13 +125,14 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   >(activeTab === "homePage" ? "hero" : (activeTab as any));
 
   const [deleteFaqIdx, setDeleteFaqIdx] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setCurrentSection(activeTab === "homePage" ? "hero" : (activeTab as any));
   }, [activeTab]);
 
   const { register, handleSubmit, reset, control, watch, getValues } = useForm<HomeCMSContent>({
-    defaultValues: getStoredHomeCMSData(),
+    defaultValues: defaultHomeCMSData,
   });
 
   const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({
@@ -140,12 +141,30 @@ export default function HomeCMSManager({ activeTab }: HomeCMSManagerProps) {
   });
 
   useEffect(() => {
-    reset(getStoredHomeCMSData());
-  }, [reset, currentSection]);
+    // Initial fetch directly from backend API & reset form
+    fetchHomeCMSAPI().then((res) => {
+      if (res && res.success && res.data) {
+        reset({ ...defaultHomeCMSData, ...res.data });
+      }
+    });
+  }, [reset]);
 
-  const onSubmit = (data: HomeCMSContent) => {
-    saveHomeCMSData(data);
-    toast.success("Home Page CMS updated live!");
+  const onSubmit = async (data: HomeCMSContent) => {
+    setIsSaving(true);
+    try {
+      // Direct update to backend API database
+      const res = await updateHomeCMSAPI(data);
+      if (res && res.success) {
+        toast.success("Home Page CMS updated live on MongoDB database!");
+      } else {
+        toast.error(res?.message || "Failed to update Home Page CMS on database");
+      }
+    } catch (err: any) {
+      console.error("Error submitting Home CMS:", err);
+      toast.error("Failed to update Home Page CMS");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddFaq = () => {

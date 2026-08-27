@@ -179,27 +179,3 @@ export const defaultHomeCMSData: HomeCMSContent = {
   ],
 };
 
-export const HOME_CMS_STORAGE_KEY = "cleanix_home_cms_v8";
-
-export function getStoredHomeCMSData(): HomeCMSContent {
-  if (typeof window === "undefined") return defaultHomeCMSData;
-  try {
-    const raw = localStorage.getItem(HOME_CMS_STORAGE_KEY);
-    if (!raw) return defaultHomeCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultHomeCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Home CMS data:", err);
-    return defaultHomeCMSData;
-  }
-}
-
-export function saveHomeCMSData(data: HomeCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(HOME_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_home_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Home CMS data:", err);
-  }
-}

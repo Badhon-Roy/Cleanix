@@ -3,42 +3,64 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import {
-  getStoredHomeCMSData,
   defaultHomeCMSData,
   HomeCMSContent,
 } from "@/lib/homeCMSData";
 
-export default function ImpactSection() {
-  const [data, setData] = useState<HomeCMSContent>(defaultHomeCMSData);
+import { io } from "socket.io-client";
+
+interface ImpactSectionProps {
+  initialData?: HomeCMSContent;
+}
+
+export default function ImpactSection({ initialData }: ImpactSectionProps) {
+  const [data, setData] = useState<HomeCMSContent>(
+    initialData || defaultHomeCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredHomeCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredHomeCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_home_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      const delta = payload?.updatedFields || payload?.data;
+      if (delta) {
+        const hasImpactKeys = Object.keys(delta).some((k) => k.startsWith("impact"));
+        if (hasImpactKeys) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_home_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   const statsList = [
     {
       id: 1,
-      value: data.impactStat1Value || "2,500+",
-      label: data.impactStat1Label || "ক্লিন করা বাসা ও অফিস",
+      value: data?.impactStat1Value || "2,500+",
+      label: data?.impactStat1Label || "ক্লিন করা বাসা ও অফিস",
     },
     {
       id: 2,
-      value: data.impactStat2Value || "150+",
-      label: data.impactStat2Label || "ভেরিফাইড প্রফেশনাল ক্লিনার",
+      value: data?.impactStat2Value || "150+",
+      label: data?.impactStat2Label || "ভেরিফাইড প্রফেশনাল ক্লিনার",
     },
     {
       id: 3,
-      value: data.impactStat3Value || "99.2%",
-      label: data.impactStat3Label || "সন্তোষজনক কাস্টমার রেটিং",
+      value: data?.impactStat3Value || "99.2%",
+      label: data?.impactStat3Label || "সন্তোষজনক কাস্টমার রেটিং",
     },
   ];
 
@@ -51,22 +73,22 @@ export default function ImpactSection() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-slate-500 font-bold text-xs tracking-wider uppercase mb-3">
               <span className="w-2 h-2 rounded-full bg-[#007eff] inline-block" />
-              <span>{data.impactBadge || "OUR IMPACT & NUMBERS"}</span>
+              <span>{data?.impactBadge || "OUR IMPACT & NUMBERS"}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-black text-[#001837] leading-[1.15] tracking-tight uppercase">
-              {data.impactTitleLine1}{" "}
-              {data.impactTitleHighlight && (
-                <span className="text-[#007eff]">{data.impactTitleHighlight}</span>
+              {data?.impactTitleLine1}{" "}
+              {data?.impactTitleHighlight && (
+                <span className="text-[#007eff]">{data?.impactTitleHighlight}</span>
               )}
             </h2>
           </div>
 
           {/* Subtitle Description (Right) */}
-          {data.impactSubtitle && (
+          {data?.impactSubtitle && (
             <div className="lg:max-w-md">
               <div
                 className="text-slate-600 text-sm sm:text-base leading-relaxed [&_p]:mb-2"
-                dangerouslySetInnerHTML={{ __html: data.impactSubtitle }}
+                dangerouslySetInnerHTML={{ __html: data?.impactSubtitle }}
               />
             </div>
           )}
@@ -78,7 +100,7 @@ export default function ImpactSection() {
           <div className="lg:col-span-4 relative w-full min-h-[320px] sm:min-h-[360px] lg:min-h-[380px] h-full rounded-3xl overflow-hidden shadow-xs border border-slate-100">
             <Image
               src={
-                data.impactLeftImage ||
+                data?.impactLeftImage ||
                 "https://framerusercontent.com/images/7kuxPVTjMLe1PbETJGXV0BIBB6s.png?scale-down-to=512&width=901&height=826"
               }
               alt="Modern Property Exterior 1"
@@ -111,7 +133,7 @@ export default function ImpactSection() {
           <div className="lg:col-span-4 relative w-full min-h-[320px] sm:min-h-[360px] lg:min-h-[380px] h-full rounded-3xl overflow-hidden shadow-xs border border-slate-100">
             <Image
               src={
-                data.impactRightImage ||
+                data?.impactRightImage ||
                 "https://framerusercontent.com/images/RakXiRCu0eigdFvdHDqHa9us9PQ.png?width=855&height=858"
               }
               alt="Modern Property Exterior 2"
