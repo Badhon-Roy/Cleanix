@@ -4,6 +4,7 @@ import { ServicesCMSContent, defaultServicesCMSData } from "@/lib/servicesCMSDat
 import { ProjectsCMSContent, defaultProjectsCMSData } from "@/lib/projectsCMSData";
 import { PricingCMSContent, defaultPricingCMSData } from "@/lib/pricingCMSData";
 import { CoverageCMSContent, defaultCoverageCMSData } from "@/lib/coverageCMSData";
+import { ContactCMSContent, defaultContactCMSData } from "@/lib/contactCMSData";
 
 const getBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
 
@@ -113,4 +114,22 @@ export const fetchCoverageCMSServer = async (): Promise<CoverageCMSContent> => {
     console.error("Error fetching Coverage CMS on server side:", error);
   }
   return defaultCoverageCMSData;
+};
+
+export const fetchContactCMSServer = async (): Promise<ContactCMSContent> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/contact`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.success && json?.data) {
+        return { ...defaultContactCMSData, ...json.data };
+      }
+    }
+  } catch (error: any) {
+    console.error("Error fetching Contact CMS on server side:", error);
+  }
+  return defaultContactCMSData;
 };

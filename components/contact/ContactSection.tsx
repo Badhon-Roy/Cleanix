@@ -8,10 +8,10 @@ import { MapPin, Headphones, Clock, Send, Sparkles, CheckCircle2 } from "lucide-
 import { addContactMessage } from "@/lib/contactMessagesData";
 import { toast } from "sonner";
 import {
-  getStoredContactCMSData,
   defaultContactCMSData,
   ContactCMSContent,
 } from "@/lib/contactCMSData";
+import { io } from "socket.io-client";
 
 interface ContactFormInputs {
   name: string;
@@ -20,22 +20,42 @@ interface ContactFormInputs {
   message: string;
 }
 
-export default function ContactSection() {
+interface ContactSectionProps {
+  initialData?: ContactCMSContent;
+}
+
+export default function ContactSection({ initialData }: ContactSectionProps) {
   const [submitted, setSubmitted] = useState(false);
-  const [cmsData, setCmsData] = useState<ContactCMSContent>(defaultContactCMSData);
+  const [cmsData, setCmsData] = useState<ContactCMSContent>(
+    initialData || defaultContactCMSData
+  );
 
   useEffect(() => {
-    setCmsData(getStoredContactCMSData());
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setCmsData(getStoredContactCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_contact_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "contact" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_contact_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   const {
     register,
@@ -76,7 +96,7 @@ export default function ContactSection() {
           <div className="lg:col-span-6 relative w-full h-[460px] sm:h-[540px] md:h-[580px] flex items-center justify-center group">
             <Image
               src={
-                cmsData.formCleanerImage ||
+                cmsData?.formCleanerImage ||
                 "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630"
               }
               alt="Ready to Ship Smarter Contact Our Team"
@@ -97,18 +117,18 @@ export default function ContactSection() {
               {/* Pill Badge */}
               <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-1.5 mb-6 bg-blue-50/10 backdrop-blur-md">
                 <Sparkles className="w-3.5 h-3.5 text-[#007eff]" />
-                <span>{cmsData.formBadge || "CONTACT REQUEST"}</span>
+                <span>{cmsData?.formBadge || "CONTACT REQUEST"}</span>
               </div>
 
               {/* Main Headline */}
               <h2 className="text-3xl sm:text-4xl font-black uppercase text-white tracking-tight leading-[1.12] mb-8">
-                {cmsData.formTitleLine1} <br />
-                {cmsData.formTitleLine2}{" "}
-                {cmsData.formTitleHighlight && (
-                  <span className="text-[#007eff]">{cmsData.formTitleHighlight}</span>
+                {cmsData?.formTitleLine1} <br />
+                {cmsData?.formTitleLine2}{" "}
+                {cmsData?.formTitleHighlight && (
+                  <span className="text-[#007eff]">{cmsData?.formTitleHighlight}</span>
                 )}{" "}
                 <br />
-                {cmsData.formTitleLine3}
+                {cmsData?.formTitleLine3}
               </h2>
 
               {submitted ? (
@@ -254,10 +274,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                {cmsData.locationTitle || "Location"}
+                {cmsData?.locationTitle || "Location"}
               </h3>
               <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
-                {cmsData.locationText}
+                {cmsData?.locationText}
               </p>
             </div>
           </div>
@@ -269,10 +289,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                {cmsData.supportTitle || "Support Clients"}
+                {cmsData?.supportTitle || "Support Clients"}
               </h3>
               <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
-                {cmsData.supportText}
+                {cmsData?.supportText}
               </p>
             </div>
           </div>
@@ -284,10 +304,10 @@ export default function ContactSection() {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white mb-1.5">
-                {cmsData.hoursTitle || "Opening Hours"}
+                {cmsData?.hoursTitle || "Opening Hours"}
               </h3>
               <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-line">
-                {cmsData.hoursText}
+                {cmsData?.hoursText}
               </p>
             </div>
           </div>

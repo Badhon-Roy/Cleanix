@@ -4,6 +4,7 @@ import ContactSection from "@/components/contact/ContactSection";
 import MapSection from "@/components/contact/MapSection";
 import FaqSection from "@/components/FaqSection";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchContactCMSServer } from "@/services/cmsServerService";
 
 export const metadata: Metadata = {
   title: "Contact Us & Book a Cleaning Service | Cleanix Dhaka",
@@ -18,11 +19,13 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contactData = await fetchContactCMSServer();
+
   return (
     <>
-      <ContactHero />
-      <ContactSection />
+      <ContactHero initialData={contactData} />
+      <ContactSection initialData={contactData} />
       <MapSection />
     </>
   );

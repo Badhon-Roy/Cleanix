@@ -213,3 +213,37 @@ export const updateCoverageCMSAPI = async (payload: any) => {
     };
   }
 };
+
+export const fetchContactCMSAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/contact`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching Contact CMS data from backend:", error);
+    return { success: false, data: null };
+  }
+};
+
+export const updateContactCMSAPI = async (payload: any) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/contact`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating Contact CMS content:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to update Contact CMS content",
+    };
+  }
+};
