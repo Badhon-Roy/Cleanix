@@ -4,6 +4,7 @@ import PricingSection from "@/components/PricingSection";
 import EstimateCalculator from "@/components/EstimateCalculator";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchPricingCMSServer } from "@/services/cmsServerService";
 
 export const metadata: Metadata = {
   title: "Pricing Plans & Instant Estimate Calculator | Cleanix Bangladesh",
@@ -18,11 +19,13 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const pricingData = await fetchPricingCMSServer();
+
   return (
     <>
-      <PricingHero />
-      <PricingSection />
+      <PricingHero initialData={pricingData} />
+      <PricingSection initialData={pricingData} />
       <EstimateCalculator />
       <TestimonialsSection />
       <CtaBanner />
