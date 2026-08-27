@@ -13,14 +13,14 @@ export default function ProjectDetailsContent({ project }: Props) {
   return (
     <article className="w-full space-y-10 text-[#001837]">
       {/* 1. Top Featured Hero Image */}
-      <div className="relative w-full h-[360px] sm:h-[440px] md:h-[480px] rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 bg-slate-100">
+      <div className="relative w-full h-[360px] sm:h-[440px] md:h-[480px] rounded-3xl overflow-hidden">
         <Image
           src={project?.heroImage || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"}
           alt={project?.title || "Project Image"}
           fill
           unoptimized
           priority
-          className="object-cover object-center"
+          className="object-contain object-center"
           sizes="(max-width: 1024px) 100vw, 66vw"
         />
       </div>

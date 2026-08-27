@@ -43,6 +43,7 @@ import PricingCMSManager from "@/components/admin/PricingCMSManager";
 import CoverageCMSManager from "@/components/admin/CoverageCMSManager";
 import ContactCMSManager from "@/components/admin/ContactCMSManager";
 import HomeCMSManager from "@/components/admin/HomeCMSManager";
+import GalleryCMSManager from "@/components/admin/GalleryCMSManager";
 
 export default function AdminContentCMSPage() {
   const [activeSectionTab, setActiveSectionTab] = useState("homePage");
@@ -134,7 +135,7 @@ export default function AdminContentCMSPage() {
               <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
                 <FileText className="w-6 h-6 stroke-[2.5]" />
               </div>
-              Dynamic Content & Blog CMS Manager
+              Dynamic Content & CMS Manager
             </h1>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#007eff] border border-blue-200">
               ⚡ LIVE WEBSITE CMS
@@ -184,6 +185,7 @@ export default function AdminContentCMSPage() {
               { id: "coveragePage", label: "Coverage Page CMS", icon: Navigation },
               { id: "contactPage", label: "Contact Page CMS", icon: PhoneCall },
               { id: "blogs", label: "Blog Posts CMS", icon: BookOpen },
+              { id: "gallery", label: "Our Gallery CMS", icon: Sparkles },
             ].map((tab) => {
               const IconComp = tab.icon;
               const isActive = activeSectionTab === tab.id;
@@ -357,6 +359,9 @@ export default function AdminContentCMSPage() {
 
         {/* TAB 7: CONTACT PAGE CMS */}
         {activeSectionTab === "contactPage" && <ContactCMSManager />}
+
+        {/* TAB 8: OUR GALLERY CMS */}
+        {activeSectionTab === "gallery" && <GalleryCMSManager />}
 
         {/* TAB 1: HOME PAGE CMS */}
         {activeSectionTab === "homePage" && <HomeCMSManager activeTab="homePage" />}
