@@ -5,26 +5,46 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, ChevronRight } from "lucide-react";
 import {
-  getStoredProjectsCMSData,
   defaultProjectsCMSData,
   ProjectsCMSContent,
 } from "@/lib/projectsCMSData";
+import { io } from "socket.io-client";
 
-export default function ProjectsOverview() {
-  const [data, setData] = useState<ProjectsCMSContent>(defaultProjectsCMSData);
+interface ProjectsOverviewProps {
+  initialData?: ProjectsCMSContent;
+}
+
+export default function ProjectsOverview({ initialData }: ProjectsOverviewProps) {
+  const [data, setData] = useState<ProjectsCMSContent>(
+    initialData || defaultProjectsCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredProjectsCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredProjectsCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_projects_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "projects" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_projects_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="w-full bg-white text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-12 border-b border-slate-100">
@@ -34,7 +54,7 @@ export default function ProjectsOverview() {
           <div className="lg:col-span-6 relative w-full h-[460px] sm:h-[540px] md:h-[580px] flex items-center justify-center group">
             <Image
               src={
-                data.overviewFeatureImage ||
+                data?.overviewFeatureImage ||
                 "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630"
               }
               alt="Delivering Cleaner Healthier Spaces Professional Care"
@@ -51,22 +71,22 @@ export default function ProjectsOverview() {
             {/* Pill Badge */}
             <div>
               <span className="inline-block border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-blue-50/50">
-                {data.overviewBadge || "1,200+ COMPLETED PROJECTS IN DHAKA"}
+                {data?.overviewBadge || "1,200+ COMPLETED PROJECTS IN DHAKA"}
               </span>
             </div>
 
             {/* Main Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12] mb-6">
-              {data.overviewTitleLine1} <br />
-              {data.overviewTitleLine2}{" "}
-              {data.overviewTitleHighlight && (
-                <span className="text-[#007eff]">{data.overviewTitleHighlight}</span>
+              {data?.overviewTitleLine1} <br />
+              {data?.overviewTitleLine2}{" "}
+              {data?.overviewTitleHighlight && (
+                <span className="text-[#007eff]">{data?.overviewTitleHighlight}</span>
               )}{" "}
-              {data.overviewTitleLine3}
+              {data?.overviewTitleLine3}
             </h2>
 
             {/* Single Description Paragraph / HTML Content */}
-            {data.overviewDesc && (
+            {data?.overviewDesc && (
               <div
                 className="text-slate-600 text-sm sm:text-base leading-relaxed mb-8 font-normal [&_p]:mb-3 [&_b]:text-[#001837] [&_b]:font-bold"
                 dangerouslySetInnerHTML={{ __html: data.overviewDesc }}
@@ -75,7 +95,7 @@ export default function ProjectsOverview() {
 
             {/* Dynamic Feature Checklist Items Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-              {(data.overviewChecks || []).map((checkItem, idx) => (
+              {(data?.overviewChecks || []).map((checkItem, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 shadow-xs">
                     <Check className="w-3.5 h-3.5 text-white stroke-[3]" />

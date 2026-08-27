@@ -111,3 +111,37 @@ export const updateServicesCMSAPI = async (payload: any) => {
     };
   }
 };
+
+export const fetchProjectsCMSAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/projects`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching Projects CMS data from backend:", error);
+    return { success: false, data: null };
+  }
+};
+
+export const updateProjectsCMSAPI = async (payload: any) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/projects`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating Projects CMS content:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to update Projects CMS content",
+    };
+  }
+};

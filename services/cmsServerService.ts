@@ -1,6 +1,7 @@
 import { HomeCMSContent, defaultHomeCMSData } from "@/lib/homeCMSData";
 import { AboutContent, defaultAboutData } from "@/lib/aboutData";
 import { ServicesCMSContent, defaultServicesCMSData } from "@/lib/servicesCMSData";
+import { ProjectsCMSContent, defaultProjectsCMSData } from "@/lib/projectsCMSData";
 
 const getBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
 
@@ -56,4 +57,22 @@ export const fetchServicesCMSServer = async (): Promise<ServicesCMSContent> => {
     console.error("Error fetching Services CMS on server side:", error);
   }
   return defaultServicesCMSData;
+};
+
+export const fetchProjectsCMSServer = async (): Promise<ProjectsCMSContent> => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/projects`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.success && json?.data) {
+        return { ...defaultProjectsCMSData, ...json.data };
+      }
+    }
+  } catch (error: any) {
+    console.error("Error fetching Projects CMS on server side:", error);
+  }
+  return defaultProjectsCMSData;
 };

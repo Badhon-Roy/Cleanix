@@ -46,28 +46,3 @@ export const defaultProjectsCMSData: ProjectsCMSContent = {
     "Real-Time SMS & GPS Tracking",
   ],
 };
-
-export const PROJECTS_CMS_STORAGE_KEY = "cleanix_projects_cms_v2";
-
-export function getStoredProjectsCMSData(): ProjectsCMSContent {
-  if (typeof window === "undefined") return defaultProjectsCMSData;
-  try {
-    const raw = localStorage.getItem(PROJECTS_CMS_STORAGE_KEY);
-    if (!raw) return defaultProjectsCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultProjectsCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Projects CMS data:", err);
-    return defaultProjectsCMSData;
-  }
-}
-
-export function saveProjectsCMSData(data: ProjectsCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(PROJECTS_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_projects_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Projects CMS data:", err);
-  }
-}
