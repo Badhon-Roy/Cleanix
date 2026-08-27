@@ -35,6 +35,7 @@ export default function BlogModal({
   onSave,
 }: BlogModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -170,8 +171,6 @@ export default function BlogModal({
   };
 
   if (!isOpen || !mounted) return null;
-
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
