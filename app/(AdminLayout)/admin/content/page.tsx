@@ -31,7 +31,7 @@ import {
   DollarSign,
   Home as HomeIcon,
 } from "lucide-react";
-import { defaultBlogsList, BlogDetail } from "@/lib/blogsData";
+import { defaultBlogsList, BlogDetail, getAuthorInitial, getAuthorBgColor } from "@/lib/blogsData";
 import { fetchBlogsAPI, deleteBlogAPI } from "@/services/blogService";
 import { toast } from "sonner";
 import { io } from "socket.io-client";
@@ -274,16 +274,26 @@ export default function AdminContentCMSPage() {
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 text-xs text-slate-600 font-semibold border-t border-slate-100">
-                      <div className="relative w-6 h-6 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
-                        <Image
-                          src={blog.author.avatar}
-                          alt={blog.author.name}
-                          fill
-                          unoptimized
-                          className="object-cover"
-                        />
+                      <div className="relative w-6 h-6 rounded-full overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                        {blog.author?.avatar && blog.author.avatar.trim() !== "" ? (
+                          <Image
+                            src={blog.author.avatar}
+                            alt={blog.author.name}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full flex items-center justify-center font-bold text-[10px] ${getAuthorBgColor(
+                              blog.author?.name
+                            )}`}
+                          >
+                            {getAuthorInitial(blog.author?.name)}
+                          </div>
+                        )}
                       </div>
-                      <span className="truncate">{blog.author.name}</span>
+                      <span className="truncate">{blog.author?.name}</span>
                     </div>
                   </div>
 

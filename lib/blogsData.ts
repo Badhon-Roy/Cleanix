@@ -17,6 +17,38 @@ export interface BlogDetail {
   }[];
 }
 
+export const getAuthorInitial = (name?: string): string => {
+  if (!name || !name.trim()) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  const first = parts[0].charAt(0).toUpperCase();
+  const last = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first}${last}`;
+};
+
+export const getAuthorBgColor = (name?: string): string => {
+  const bgColors = [
+    "bg-[#007eff] text-white",
+    "bg-indigo-600 text-white",
+    "bg-purple-600 text-white",
+    "bg-emerald-600 text-white",
+    "bg-rose-600 text-white",
+    "bg-amber-600 text-white",
+    "bg-teal-600 text-white",
+    "bg-cyan-600 text-white",
+    "bg-violet-600 text-white",
+    "bg-blue-600 text-white",
+  ];
+  if (!name) return bgColors[0];
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) {
+    sum += name.charCodeAt(i);
+  }
+  return bgColors[sum % bgColors.length];
+};
+
 export interface BlogCMSContent {
   heroBadge: string;
   heroTitleLine1: string;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BlogDetail, defaultBlogsList } from "@/lib/blogsData";
+import { BlogDetail, defaultBlogsList, getAuthorInitial, getAuthorBgColor } from "@/lib/blogsData";
 import { io } from "socket.io-client";
 
 interface BlogSectionProps {
@@ -98,8 +98,8 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
 
               {/* Author Footer */}
               <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-slate-200 bg-slate-100">
-                  {post?.author?.avatar && (
+                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-slate-200 flex items-center justify-center">
+                  {post?.author?.avatar && post.author.avatar.trim() !== "" ? (
                     <Image
                       src={post.author.avatar}
                       alt={post?.author?.name || "Author"}
@@ -107,6 +107,14 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
                       unoptimized
                       className="object-cover"
                     />
+                  ) : (
+                    <div
+                      className={`w-full h-full flex items-center justify-center font-bold text-xs ${getAuthorBgColor(
+                        post?.author?.name
+                      )}`}
+                    >
+                      {getAuthorInitial(post?.author?.name)}
+                    </div>
                   )}
                 </div>
                 <span className="text-slate-600 font-semibold text-xs sm:text-sm truncate">

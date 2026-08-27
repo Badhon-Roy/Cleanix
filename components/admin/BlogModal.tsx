@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { BlogDetail } from "@/lib/blogsData";
 import { createBlogAPI, updateBlogAPI } from "@/services/blogService";
+import { getAuthUser } from "@/utils/cookie";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -68,10 +69,7 @@ export default function BlogModal({
       setCategory(blogData.category || "HOME HYGIENE");
       setDate(blogData.date || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase());
       setAuthorName(blogData.author?.name || "Cleanix Editorial Team");
-      setAuthorAvatar(
-        blogData.author?.avatar ||
-          "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
-      );
+      setAuthorAvatar(blogData.author?.avatar || "");
       setImage(blogData.image || "");
       setShortDesc(blogData.shortDesc || "");
       setIntroParagraph(blogData.introParagraph || "");
@@ -82,16 +80,29 @@ export default function BlogModal({
         },
       ]);
     } else {
-      // Defaults for Add New Blog
+      // Defaults for Add New Blog - fetch current logged in user
+      const authUser = getAuthUser();
+      const loggedInName =
+        authUser?.name ||
+        (authUser?.firstName
+          ? `${authUser.firstName} ${authUser.lastName || ""}`.trim()
+          : null) ||
+        authUser?.email ||
+        "Cleanix Editorial Team";
+      const loggedInAvatar =
+        authUser?.avatar ||
+        authUser?.profile?.avatar ||
+        authUser?.image ||
+        authUser?.profileImg ||
+        "";
+
       const defaultDate = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
       setTitle("");
       setSlug("");
       setCategory("HOME HYGIENE");
       setDate(defaultDate);
-      setAuthorName("Cleanix Editorial Team");
-      setAuthorAvatar(
-        "https://framerusercontent.com/images/umUJPorhrTL7f9c5r9HBu8jbmg.png?width=342&height=292"
-      );
+      setAuthorName(loggedInName);
+      setAuthorAvatar(loggedInAvatar);
       setImage("https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80");
       setShortDesc("");
       setIntroParagraph("");
@@ -106,16 +117,20 @@ export default function BlogModal({
     }
   }, [blogData, isOpen]);
 
+  const makeSlug = (text: string) => {
+    const cleaned = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+    return cleaned || `blog-post-${Date.now()}`;
+  };
+
   // Auto-generate slug when title changes for new post
   const handleTitleChange = (val: string) => {
     setTitle(val);
     if (!blogData) {
-      const generatedSlug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
-      setSlug(generatedSlug);
+      setSlug(makeSlug(val));
     }
   };
 
@@ -176,22 +191,31 @@ export default function BlogModal({
     e.preventDefault();
     setIsSaving(true);
 
-    const finalSlug =
-      slug.trim() ||
-      title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .trim()
-        .replace(/\s+/g, "-");
+    const finalSlug = slug.trim() ? makeSlug(slug) : makeSlug(title);
+
+    const authUser = getAuthUser();
+    const loggedInName =
+      authUser?.name ||
+      (authUser?.firstName
+        ? `${authUser.firstName} ${authUser.lastName || ""}`.trim()
+        : null) ||
+      authUser?.email ||
+      "Cleanix Editorial Team";
+    const loggedInAvatar =
+      authUser?.avatar ||
+      authUser?.profile?.avatar ||
+      authUser?.image ||
+      authUser?.profileImg ||
+      "";
 
     const savedBlog: BlogDetail = {
       slug: finalSlug,
       title: title.trim(),
       category: category.trim().toUpperCase(),
-      date: date.trim() || "MAY 2, 2026",
+      date: date.trim() || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase(),
       author: {
-        name: authorName.trim() || "Cleanix Editorial Team",
-        avatar: authorAvatar.trim(),
+        name: authorName.trim() || loggedInName,
+        avatar: authorAvatar.trim() || loggedInAvatar,
       },
       image: image.trim(),
       shortDesc: shortDesc.trim(),
@@ -363,8 +387,7 @@ export default function BlogModal({
                 type="text"
                 value={authorAvatar}
                 onChange={(e) => setAuthorAvatar(e.target.value)}
-                placeholder="https://framerusercontent.com/images/..."
-                required
+                placeholder="Optional image URL (leave blank to use initial badge)"
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-xs sm:text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
               />
             </div>

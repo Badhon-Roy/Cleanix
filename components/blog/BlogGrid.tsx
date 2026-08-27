@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BlogDetail, defaultBlogsList } from "@/lib/blogsData";
+import { BlogDetail, defaultBlogsList, getAuthorInitial, getAuthorBgColor } from "@/lib/blogsData";
 import { io } from "socket.io-client";
 
 interface BlogGridProps {
@@ -96,8 +96,8 @@ export default function BlogGrid({ initialBlogs }: BlogGridProps) {
 
               {/* Author Footer */}
               <div className="pt-4 border-t border-slate-100 flex items-center gap-3 mt-4">
-                <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shadow-xs flex-shrink-0 bg-slate-100">
-                  {blog?.author?.avatar && (
+                <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 shadow-xs flex-shrink-0 flex items-center justify-center">
+                  {blog?.author?.avatar && blog.author.avatar.trim() !== "" ? (
                     <Image
                       src={blog.author.avatar}
                       alt={blog?.author?.name || "Author"}
@@ -105,6 +105,14 @@ export default function BlogGrid({ initialBlogs }: BlogGridProps) {
                       unoptimized
                       className="object-cover object-center"
                     />
+                  ) : (
+                    <div
+                      className={`w-full h-full flex items-center justify-center font-bold text-xs ${getAuthorBgColor(
+                        blog?.author?.name
+                      )}`}
+                    >
+                      {getAuthorInitial(blog?.author?.name)}
+                    </div>
                   )}
                 </div>
                 <span className="text-slate-700 font-bold text-xs sm:text-sm truncate">

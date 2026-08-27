@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { BlogDetail } from "@/lib/blogsData";
+import { BlogDetail, getAuthorInitial, getAuthorBgColor } from "@/lib/blogsData";
 
 interface Props {
   blog: BlogDetail;
@@ -20,8 +20,8 @@ export default function BlogDetailsContent({ blog }: Props) {
         {/* 2. Author & Date Meta Bar */}
         <div className="flex items-center justify-between max-w-4xl mx-auto mb-8 px-2 border-b border-slate-200/60 pb-6">
           <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-300 shadow-xs flex-shrink-0 bg-slate-100">
-              {blog?.author?.avatar && (
+            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-300 shadow-xs flex-shrink-0 flex items-center justify-center">
+              {blog?.author?.avatar && blog.author.avatar.trim() !== "" ? (
                 <Image
                   src={blog.author.avatar}
                   alt={blog?.author?.name || "Author"}
@@ -29,6 +29,14 @@ export default function BlogDetailsContent({ blog }: Props) {
                   unoptimized
                   className="object-cover object-center"
                 />
+              ) : (
+                <div
+                  className={`w-full h-full flex items-center justify-center font-bold text-xs ${getAuthorBgColor(
+                    blog?.author?.name
+                  )}`}
+                >
+                  {getAuthorInitial(blog?.author?.name)}
+                </div>
               )}
             </div>
             <span className="text-slate-800 font-extrabold text-sm sm:text-base">
