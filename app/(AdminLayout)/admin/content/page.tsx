@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,7 +31,10 @@ import {
   DollarSign,
   Home as HomeIcon,
 } from "lucide-react";
-import { blogsData, BlogDetail } from "@/lib/blogsData";
+import { defaultBlogsList, BlogDetail } from "@/lib/blogsData";
+import { fetchBlogsAPI, deleteBlogAPI } from "@/services/blogService";
+import { toast } from "sonner";
+import { io } from "socket.io-client";
 import BlogModal from "@/components/admin/BlogModal";
 import AboutCMSManager from "@/components/admin/AboutCMSManager";
 import ServicesCMSManager from "@/components/admin/ServicesCMSManager";
@@ -46,14 +49,40 @@ export default function AdminContentCMSPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Blog Posts State
-  const [blogsList, setBlogsList] = useState<BlogDetail[]>(
-    Object.values(blogsData)
-  );
+  const [blogsList, setBlogsList] = useState<BlogDetail[]>(defaultBlogsList);
   const [blogSearchQuery, setBlogSearchQuery] = useState("");
   const [selectedBlogForEdit, setSelectedBlogForEdit] = useState<BlogDetail | null>(null);
   const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
 
+  const loadBlogs = () => {
+    fetchBlogsAPI().then((res) => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setBlogsList(res.data);
+      }
+    });
+  };
 
+  useEffect(() => {
+    loadBlogs();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "blog") {
+        loadBlogs();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const handleSaveBlog = (savedBlog: BlogDetail) => {
     setBlogsList((prev) => {
@@ -66,18 +95,25 @@ export default function AdminContentCMSPage() {
       return [savedBlog, ...prev];
     });
 
-    // Sync with global blogsData Record
-    blogsData[savedBlog.slug] = savedBlog;
-
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3500);
   };
 
-  const handleDeleteBlog = (slug: string) => {
+  const handleDeleteBlog = async (slug: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this blog article?");
     if (confirmDelete) {
-      setBlogsList((prev) => prev.filter((b) => b.slug !== slug));
-      delete blogsData[slug];
+      try {
+        const res = await deleteBlogAPI(slug);
+        if (res && res.success) {
+          toast.success("Blog article deleted live from MongoDB database!");
+          setBlogsList((prev) => prev.filter((b) => b.slug !== slug));
+        } else {
+          toast.error(res?.message || "Failed to delete blog article");
+        }
+      } catch (err) {
+        console.error("Error deleting blog article:", err);
+        toast.error("Failed to delete blog article");
+      }
     }
   };
 

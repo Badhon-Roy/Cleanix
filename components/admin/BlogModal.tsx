@@ -15,8 +15,11 @@ import {
   Layers,
   Sparkles,
   AlignLeft,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { BlogDetail } from "@/lib/blogsData";
+import { createBlogAPI, updateBlogAPI } from "@/services/blogService";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -168,8 +171,12 @@ export default function BlogModal({
 
   if (!isOpen || !mounted) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+
     const finalSlug =
       slug.trim() ||
       title
@@ -196,8 +203,32 @@ export default function BlogModal({
       })),
     };
 
-    onSave(savedBlog);
-    onClose();
+    try {
+      if (blogData) {
+        const res = await updateBlogAPI(blogData.slug, savedBlog);
+        if (res && res.success) {
+          toast.success("Blog article updated live on MongoDB database!");
+          onSave(res.data || savedBlog);
+          onClose();
+        } else {
+          toast.error(res?.message || "Failed to update blog article");
+        }
+      } else {
+        const res = await createBlogAPI(savedBlog);
+        if (res && res.success) {
+          toast.success("Blog article published live on MongoDB database!");
+          onSave(res.data || savedBlog);
+          onClose();
+        } else {
+          toast.error(res?.message || "Failed to publish blog article");
+        }
+      }
+    } catch (err: any) {
+      console.error("Error saving blog post:", err);
+      toast.error("Failed to save blog post");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return createPortal(
@@ -476,10 +507,21 @@ export default function BlogModal({
             </button>
             <button
               type="submit"
-              className="px-8 py-3 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-[#007eff] hover:bg-blue-600 shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
+              disabled={isSaving}
+              className="px-8 py-3 rounded-2xl font-extrabold text-xs sm:text-sm text-white bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{blogData ? "Update Blog Post" : "Publish Blog Post"}</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              <span>
+                {isSaving
+                  ? "Saving..."
+                  : blogData
+                  ? "Update Blog Post"
+                  : "Publish Blog Post"}
+              </span>
             </button>
           </div>
         </form>

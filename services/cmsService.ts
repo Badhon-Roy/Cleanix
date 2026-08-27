@@ -247,3 +247,37 @@ export const updateContactCMSAPI = async (payload: any) => {
     };
   }
 };
+
+export const fetchBlogCMSAPI = async () => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/blog`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching Blog CMS data from backend:", error);
+    return { success: false, data: null };
+  }
+};
+
+export const updateBlogCMSAPI = async (payload: any) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cms/blog`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating Blog CMS content:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to update Blog CMS content",
+    };
+  }
+};
