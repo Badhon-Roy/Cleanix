@@ -1,24 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { projectsData } from "@/lib/projectsData";
 import ProjectDetailsHeader from "@/components/projects/ProjectDetailsHeader";
 import ProjectDetailsSidebar from "@/components/projects/ProjectDetailsSidebar";
 import ProjectDetailsContent from "@/components/projects/ProjectDetailsContent";
 import CtaBanner from "@/components/CtaBanner";
+import { fetchProjectBySlugServer } from "@/services/projectServerService";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return Object.keys(projectsData).map((slug) => ({
-    slug,
-  }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const project = projectsData[slug];
+  const project = await fetchProjectBySlugServer(slug);
 
   if (!project) {
     return {
@@ -27,15 +21,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${project.title} | Cleanix Case Studies`,
-    description: project.introParagraph,
-    keywords: [project.title, "Cleanix Case Study", "Cleaning Project Dhaka", project.category],
+    title: `${project?.title || "Project Case Study"} | Cleanix Case Studies`,
+    description: project?.introParagraph || "Cleanix cleaning project case study",
+    keywords: [project?.title || "Cleanix", "Cleanix Case Study", "Cleaning Project Dhaka", project?.category || "Cleaning"],
   };
 }
 
 export default async function ProjectDetailsPage({ params }: Props) {
   const { slug } = await params;
-  const project = projectsData[slug];
+  const project = await fetchProjectBySlugServer(slug);
 
   if (!project) {
     notFound();

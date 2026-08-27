@@ -13,10 +13,12 @@ import ImpactSection from "@/components/ImpactSection";
 import CtaBanner from "@/components/CtaBanner";
 import { fetchHomeCMSServer } from "@/services/cmsServerService";
 import { fetchBlogsServer } from "@/services/blogServerService";
+import { fetchProjectsServer } from "@/services/projectServerService";
 
 export default async function Home() {
   const cmsData = await fetchHomeCMSServer();
   const blogsList = await fetchBlogsServer();
+  const projectsList = await fetchProjectsServer();
 
   return (
     <>
@@ -26,7 +28,7 @@ export default async function Home() {
       <ImpactSection initialData={cmsData} />
       <WhyChooseUs initialData={cmsData} />
       <OurServices initialData={cmsData} />
-      <ProjectsSection />
+      <ProjectsSection initialProjects={projectsList} />
       <PricingSection />
       <HowItWorks />
       <TestimonialsSection />

@@ -22,15 +22,17 @@ import {
   Calendar,
   User,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { io } from "socket.io-client";
+import { ProjectDetail } from "@/lib/projectsData";
 import {
-  ProjectDetail,
-  getStoredProjects,
-  addProject,
-  updateProject,
-  deleteProject,
-} from "@/lib/projectsData";
+  fetchProjectsAPI,
+  createProjectAPI,
+  updateProjectAPI,
+  deleteProjectAPI,
+} from "@/services/projectService";
 
 export default function AdminProjectsManagementPage() {
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
@@ -60,21 +62,37 @@ export default function AdminProjectsManagementPage() {
   const [formSection4Title, setFormSection4Title] = useState("");
   const [formSection4Paragraph, setFormSection4Paragraph] = useState("");
   const [formStatus, setFormStatus] = useState<"PUBLISHED" | "DRAFT">("PUBLISHED");
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadData = () => {
-    setProjects(getStoredProjects());
+    fetchProjectsAPI().then((res) => {
+      if (res && res.success && Array.isArray(res.data)) {
+        setProjects(res.data);
+      } else {
+        setProjects([]);
+      }
+    });
   };
 
   useEffect(() => {
     loadData();
 
-    const handleUpdate = () => {
-      loadData();
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_projects_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "projects") {
+        loadData();
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_projects_updated", handleUpdate);
+      socket.disconnect();
     };
   }, []);
 
@@ -132,7 +150,7 @@ export default function AdminProjectsManagementPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formTitle.trim() || !formIntroParagraph.trim()) {
@@ -140,12 +158,15 @@ export default function AdminProjectsManagementPage() {
       return;
     }
 
+    setIsSaving(true);
+
     const computedSlug =
       formSlug.trim() ||
       formTitle
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+        .replace(/(^-|-$)/g, "") ||
+      `project-${Date.now()}`;
 
     const benefitsPoints = formBenefitsPointsStr
       .split(",")
@@ -173,34 +194,66 @@ export default function AdminProjectsManagementPage() {
       status: formStatus,
     };
 
-    if (editingSlug) {
-      const updated = updateProject(editingSlug, projectObj);
-      setProjects(updated);
-      toast.success(`Project "${formTitle}" updated successfully!`);
-    } else {
-      const updated = addProject(projectObj);
-      setProjects(updated);
-      toast.success(`New Project "${formTitle}" published successfully!`);
+    try {
+      if (editingSlug) {
+        const res = await updateProjectAPI(editingSlug, projectObj);
+        if (res && res.success) {
+          toast.success(`Project "${formTitle}" updated successfully live!`);
+          loadData();
+          setIsModalOpen(false);
+        } else {
+          toast.error(res?.message || "Failed to update project");
+        }
+      } else {
+        const res = await createProjectAPI(projectObj);
+        if (res && res.success) {
+          toast.success(`New Project "${formTitle}" published successfully live!`);
+          loadData();
+          setIsModalOpen(false);
+        } else {
+          toast.error(res?.message || "Failed to publish project");
+        }
+      }
+    } catch (err: any) {
+      console.error("Error saving project:", err);
+      toast.error("Failed to save project");
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleToggleStatus = (item: ProjectDetail) => {
+  const handleToggleStatus = async (item: ProjectDetail) => {
     const nextStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-    const updated = updateProject(item.slug, { status: nextStatus });
-    setProjects(updated);
-    toast.info(`Project "${item.title}" status set to ${nextStatus}`);
+    try {
+      const res = await updateProjectAPI(item.slug, { status: nextStatus });
+      if (res && res.success) {
+        toast.info(`Project "${item.title}" status set to ${nextStatus}`);
+        setProjects((prev) =>
+          prev.map((p) => (p.slug === item.slug ? { ...p, status: nextStatus } : p))
+        );
+      }
+    } catch (err) {
+      console.error("Error toggling project status:", err);
+    }
   };
 
-  const handleDelete = (slug: string, title: string) => {
+  const handleDelete = async (slug: string, title: string) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete project case study "${title}"?`
     );
     if (confirmDelete) {
-      const updated = deleteProject(slug);
-      setProjects(updated);
-      toast.error(`Project "${title}" deleted.`);
+      try {
+        const res = await deleteProjectAPI(slug);
+        if (res && res.success) {
+          toast.success(`Project "${title}" deleted live from database.`);
+          setProjects((prev) => prev.filter((p) => p.slug !== slug));
+        } else {
+          toast.error(res?.message || "Failed to delete project");
+        }
+      } catch (err) {
+        console.error("Error deleting project:", err);
+        toast.error("Failed to delete project");
+      }
     }
   };
 
@@ -691,10 +744,21 @@ export default function AdminProjectsManagementPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-2xl bg-[#007eff] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{editingSlug ? "Save Changes" : "Publish Project"}</span>
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isSaving
+                      ? "Saving..."
+                      : editingSlug
+                      ? "Save Changes"
+                      : "Publish Project"}
+                  </span>
                 </button>
               </div>
             </form>

@@ -3,9 +3,9 @@ import ProjectsHero from "@/components/projects/ProjectsHero";
 import ProjectsOverview from "@/components/projects/ProjectsOverview";
 import ProjectsGrid from "@/components/projects/ProjectsGrid";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import CtaBanner from "@/components/CtaBanner";
 import FaqSection from "@/components/FaqSection";
 import { fetchProjectsCMSServer } from "@/services/cmsServerService";
+import { fetchProjectsServer } from "@/services/projectServerService";
 
 export const metadata: Metadata = {
   title: "Completed Projects & Portfolio | Cleanix - Pioneer Cleaning SaaS",
@@ -22,12 +22,13 @@ export const metadata: Metadata = {
 
 export default async function ProjectsPage() {
   const projectsData = await fetchProjectsCMSServer();
+  const projectsList = await fetchProjectsServer();
 
   return (
     <>
       <ProjectsHero initialData={projectsData} />
       <ProjectsOverview initialData={projectsData} />
-      <ProjectsGrid />
+      <ProjectsGrid initialProjects={projectsList} />
       <TestimonialsSection />
       <FaqSection />
     </>

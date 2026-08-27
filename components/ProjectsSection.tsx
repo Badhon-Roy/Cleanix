@@ -1,54 +1,55 @@
 "use client";
 
-import React from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { ProjectDetail } from "@/lib/projectsData";
+import { io } from "socket.io-client";
 
-const projectsList = [
-  {
-    id: 1,
-    title: "SPARK HOME REFRESH",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Reliable residential cleaning for busy homes, using trained teams, safe products, and detailed room-by-room checklists for a healthier living space.",
-    image:
-      "https://framerusercontent.com/images/bGhAKZiC8z0rbAf11PaNvvEUJA8.png?width=554&height=370",
-  },
-  {
-    id: 2,
-    title: "OFFICE DEEP CLEANING",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Comprehensive office cleaning that keeps workstations, meeting rooms, kitchens, and common areas fresh, hygienic, and ready for productive teams.",
-    image:
-      "https://framerusercontent.com/images/iwM5w99dnI438KMR1A53E3idQ.png?width=554&height=370",
-  },
-  {
-    id: 3,
-    title: "MOVE OUT CLEAN SERVICE",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Fast, dependable move-in and move-out cleaning designed for tight schedules, detailed turnovers, and spotless handover-ready interiors.",
-    image:
-      "https://framerusercontent.com/images/fxmPYxWX2tkvPKHFeqbLVtKSLs4.png?width=554&height=370",
-  },
-  {
-    id: 4,
-    title: "SPARK HOME REFRESH",
-    category: "CLEANING",
-    year: "2026",
-    description:
-      "Reliable residential cleaning for busy homes, using trained teams, safe products, and detailed room-by-room checklists for a healthier living space.",
-    image:
-      "https://framerusercontent.com/images/bGhAKZiC8z0rbAf11PaNvvEUJA8.png?width=554&height=370",
-  }
-];
+interface ProjectsSectionProps {
+  initialProjects?: ProjectDetail[];
+}
 
-export default function ProjectsSection() {
+export default function ProjectsSection({ initialProjects }: ProjectsSectionProps) {
+  const [projectsList, setProjectsList] = useState<ProjectDetail[]>(
+    initialProjects || []
+  );
+
+  useEffect(() => {
+    if (initialProjects && initialProjects.length > 0) {
+      setProjectsList(initialProjects);
+    }
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "projects") {
+        if (payload?.action === "create" && payload?.data) {
+          setProjectsList((prev) => [payload.data, ...prev]);
+        } else if (payload?.action === "update" && payload?.data) {
+          setProjectsList((prev) =>
+            prev.map((p) => (p.slug === payload.data.slug ? payload.data : p))
+          );
+        } else if (payload?.action === "delete" && payload?.slug) {
+          setProjectsList((prev) => prev.filter((p) => p.slug !== payload.slug));
+        }
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [initialProjects]);
+
+  const publishedProjects = projectsList.filter((p) => p?.status !== "DRAFT");
+
   return (
     <section className="w-full bg-[#001837] text-white py-16 md:py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="container mx-auto max-w-7xl">
@@ -57,7 +58,7 @@ export default function ProjectsSection() {
           {/* Badge (Left) */}
           <div className="flex-shrink-0">
             <span className="inline-block border border-[#007eff]/40 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2">
-              OUR SUCCESSFULL WORK
+              OUR SUCCESSFUL WORK
             </span>
           </div>
 
@@ -72,9 +73,9 @@ export default function ProjectsSection() {
 
         {/* Sticky Stacking Projects Cards Stack */}
         <div className="space-y-12 md:space-y-16 relative pb-12">
-          {projectsList.map((project, index) => (
+          {publishedProjects.map((project, index) => (
             <div
-              key={project.id}
+              key={project?.slug || project?._id || index}
               style={{
                 top: `calc(100px + ${index * 24}px)`,
                 zIndex: index + 10,
@@ -87,28 +88,28 @@ export default function ProjectsSection() {
                   {/* Category & Year Tags */}
                   <div className="flex items-center gap-2.5 mb-5">
                     <span className="bg-[#007eff] text-white font-bold text-[10px] sm:text-xs uppercase px-3.5 py-1 rounded-full shadow-sm">
-                      {project.category}
+                      {project?.category}
                     </span>
                     <span className="bg-white/10 text-white/80 font-bold text-[10px] sm:text-xs uppercase px-3.5 py-1 rounded-full border border-white/10">
-                      {project.year}
+                      {project?.startDate ? project.startDate.split(" ").pop() : "2026"}
                     </span>
                   </div>
 
                   {/* Project Title */}
                   <h3 className="text-white font-black text-2xl sm:text-3xl md:text-4xl tracking-tight uppercase mb-4">
-                    {project.title}
+                    {project?.title}
                   </h3>
 
                   {/* Project Description */}
-                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-lg mb-8">
-                    {project.description}
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-lg mb-8 line-clamp-3">
+                    {project?.introParagraph}
                   </p>
                 </div>
 
                 {/* View Details Button */}
                 <div>
                   <Link
-                    href={`#project-${project.id}`}
+                    href={`/projects/${project?.slug}`}
                     className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-5 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03]"
                   >
                     <span>View Details</span>
@@ -122,10 +123,11 @@ export default function ProjectsSection() {
               {/* Right Image Area */}
               <div className="w-full lg:w-1/2 relative h-[260px] sm:h-[320px] md:h-[360px] overflow-hidden rounded-b-lg rounded-tr-lg">
                 <Image
-                  src={project.image}
-                  alt={project.title}
+                  src={project?.heroImage || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"}
+                  alt={project?.title || "Cleanix Project"}
                   fill
                   priority
+                  unoptimized
                   className="object-cover object-center transition-transform duration-700"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
