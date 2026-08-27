@@ -14,6 +14,7 @@ import {
   Star,
   Eye,
   EyeOff,
+  Gift,
 } from "lucide-react";
 
 export interface PackageData {
@@ -25,6 +26,7 @@ export interface PackageData {
   category?: string;
   active: boolean;
   isPopular: boolean;
+  isAddonFree?: boolean;
   features: string[];
 }
 
@@ -47,6 +49,7 @@ export default function EditPackageModal({
   const [description, setDescription] = useState(packageData.description || "");
   const [active, setActive] = useState<boolean>(packageData.active ?? true);
   const [isPopular, setIsPopular] = useState<boolean>(packageData.isPopular ?? false);
+  const [isAddonFree, setIsAddonFree] = useState<boolean>(packageData.isAddonFree ?? false);
   const [features, setFeatures] = useState<string[]>(packageData.features || []);
   const [newFeatureInput, setNewFeatureInput] = useState("");
 
@@ -61,6 +64,7 @@ export default function EditPackageModal({
       setDescription(packageData.description || "");
       setActive(packageData.active ?? true);
       setIsPopular(packageData.isPopular ?? false);
+      setIsAddonFree(packageData.isAddonFree ?? false);
       setFeatures(packageData.features || []);
     }
   }, [packageData]);
@@ -98,6 +102,7 @@ export default function EditPackageModal({
       category: packageData.category || "SUBSCRIPTION",
       active,
       isPopular,
+      isAddonFree,
       features: features.filter((f) => f.trim().length > 0),
     });
     onClose();
@@ -175,15 +180,15 @@ export default function EditPackageModal({
           </div>
 
           {/* Status Toggles Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 border border-slate-200 rounded-3xl p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 border border-slate-200 rounded-3xl p-5">
             <div className="flex items-center justify-between sm:justify-center gap-3 p-3 bg-white rounded-2xl border border-slate-200">
               <span className="font-extrabold text-slate-700 text-xs sm:text-sm flex items-center gap-1.5">
-                {active ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-slate-400" />} Active Status:
+                {active ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-slate-400" />} Status:
               </span>
               <button
                 type="button"
                 onClick={() => setActive(!active)}
-                className={`px-4 py-1.5 rounded-full text-xs font-black cursor-pointer border transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer border transition-colors ${
                   active
                     ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                     : "bg-slate-100 text-slate-500 border-slate-300"
@@ -200,13 +205,30 @@ export default function EditPackageModal({
               <button
                 type="button"
                 onClick={() => setIsPopular(!isPopular)}
-                className={`px-4 py-1.5 rounded-full text-xs font-black cursor-pointer border transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer border transition-colors ${
                   isPopular
                     ? "bg-amber-50 text-amber-700 border-amber-300"
                     : "bg-slate-100 text-slate-500 border-slate-300"
                 }`}
               >
-                {isPopular ? "MOST POPULAR" : "NORMAL"}
+                {isPopular ? "POPULAR" : "NORMAL"}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-center gap-3 p-3 bg-white rounded-2xl border border-slate-200">
+              <span className="font-extrabold text-slate-700 text-xs sm:text-sm flex items-center gap-1.5">
+                <Gift className={`w-4 h-4 ${isAddonFree ? "text-emerald-600" : "text-slate-400"}`} /> Free Addons:
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAddonFree(!isAddonFree)}
+                className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer border transition-colors ${
+                  isAddonFree
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-slate-100 text-slate-500 border-slate-300"
+                }`}
+              >
+                {isAddonFree ? "🎁 100% FREE" : "PAID ADDONS"}
               </button>
             </div>
           </div>
