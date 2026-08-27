@@ -47,8 +47,8 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
     };
   }, [initialBlogs]);
 
-  // Display top 2 latest blogs on homepage preview section
-  const displayBlogs = blogs.slice(0, 2);
+  // Display top 3 latest blogs on homepage preview section
+  const displayBlogs = blogs.slice(0, 3);
 
   return (
     <section className="w-full bg-[#F0F2F4] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
@@ -63,8 +63,8 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
           </h2>
         </div>
 
-        {/* 2 Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+        {/* Blog Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-8">
           {displayBlogs.map((post) => (
             <Link
               key={post?.slug || post?._id}
@@ -123,6 +123,21 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* View All Blogs CTA */}
+        <div className="flex justify-center mt-12 md:mt-16">
+          <Link
+            href="/blog"
+            className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm tracking-wide shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 hover:scale-[1.03]"
+          >
+            <span>View All Blogs</span>
+            <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center transition-transform duration-300 group-hover:translate-x-0.5">
+              <svg className="w-4 h-4 text-[#007eff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
         </div>
       </div>
     </section>

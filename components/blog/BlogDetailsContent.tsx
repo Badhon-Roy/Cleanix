@@ -67,9 +67,12 @@ export default function BlogDetailsContent({ blog }: Props) {
         {/* 4. Article Reading Body */}
         <div className="max-w-5xl mx-auto space-y-10 text-slate-700 text-base sm:text-lg leading-relaxed font-normal">
           {/* Intro Paragraph */}
-          <p className="text-slate-700 font-medium text-base sm:text-lg leading-relaxed">
-            {blog?.introParagraph}
-          </p>
+          {blog?.introParagraph && (
+            <div
+              className="text-slate-700 font-medium text-base sm:text-lg leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: blog.introParagraph }}
+            />
+          )}
 
           {/* Dynamic Article Sections */}
           {blog?.sections?.map((section, idx) => (
@@ -78,9 +81,11 @@ export default function BlogDetailsContent({ blog }: Props) {
                 {section?.title}
               </h2>
               {section?.paragraphs?.map((p, pIdx) => (
-                <p key={pIdx} className="text-slate-600 font-normal">
-                  {p}
-                </p>
+                <div
+                  key={pIdx}
+                  className="text-slate-600 font-normal leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: p }}
+                />
               ))}
             </div>
           ))}

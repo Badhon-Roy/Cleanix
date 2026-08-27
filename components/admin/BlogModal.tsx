@@ -22,6 +22,7 @@ import { BlogDetail } from "@/lib/blogsData";
 import { createBlogAPI, updateBlogAPI } from "@/services/blogService";
 import { getAuthUser } from "@/utils/cookie";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -389,33 +390,21 @@ export default function BlogModal({
 
           {/* Short Excerpt & Intro Paragraph */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 text-xs sm:text-sm">
-                Short Summary (Card Excerpt):
-              </label>
-              <textarea
-                rows={3}
-                value={shortDesc}
-                onChange={(e) => setShortDesc(e.target.value)}
-                placeholder="Enter brief card summary in Bengali or English..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
-              />
-            </div>
+            <RichTextEditor
+              label="Short Summary (Card Excerpt):"
+              value={shortDesc}
+              onChange={(val) => setShortDesc(val)}
+              rows={3}
+              placeholder="Enter brief card summary in Bengali or English..."
+            />
 
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 text-xs sm:text-sm">
-                Article Intro Paragraph:
-              </label>
-              <textarea
-                rows={3}
-                value={introParagraph}
-                onChange={(e) => setIntroParagraph(e.target.value)}
-                placeholder="Enter lead paragraph opening the article..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
-              />
-            </div>
+            <RichTextEditor
+              label="Article Intro Paragraph:"
+              value={introParagraph}
+              onChange={(val) => setIntroParagraph(val)}
+              rows={3}
+              placeholder="Enter lead paragraph opening the article..."
+            />
           </div>
 
           {/* Dynamic Article Sections (Headings + Paragraphs) */}
@@ -484,26 +473,29 @@ export default function BlogModal({
                     </div>
 
                     {sec.paragraphs.map((pText, pIdx) => (
-                      <div key={pIdx} className="flex items-start gap-2">
-                        <textarea
-                          rows={2}
+                      <div key={pIdx} className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2 relative">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-extrabold text-slate-600">Paragraph #{pIdx + 1}:</span>
+                          {sec.paragraphs.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveParagraph(secIdx, pIdx)}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
+                              title="Remove paragraph"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <RichTextEditor
+                          label=""
                           value={pText}
-                          onChange={(e) =>
-                            handleParagraphChange(secIdx, pIdx, e.target.value)
+                          onChange={(val) =>
+                            handleParagraphChange(secIdx, pIdx, val)
                           }
-                          placeholder={`Enter paragraph #${pIdx + 1} content...`}
-                          required
-                          className="flex-1 bg-white border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff]"
+                          rows={2}
+                          placeholder={`Enter paragraph #${pIdx + 1} content with formatting...`}
                         />
-                        {sec.paragraphs.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveParagraph(secIdx, pIdx)}
-                            className="p-2 text-slate-400 hover:text-red-600 rounded-xl hover:bg-red-50 cursor-pointer transition-colors mt-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>

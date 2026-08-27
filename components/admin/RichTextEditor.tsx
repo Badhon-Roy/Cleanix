@@ -63,22 +63,36 @@ export default function RichTextEditor({
   const applyHighlightBlue = () => {
     if (showHtmlCode) return;
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const selectedText = selection.toString();
-    if (!selectedText) return;
-
-    // Use foreColor command for clean blue color application
-    document.execCommand("foreColor", false, "#007eff");
-    document.execCommand("bold", false);
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      document.execCommand(
+        "insertHTML",
+        false,
+        '<span class="text-[#007eff] font-bold">Highlight Blue Text</span>'
+      );
+    } else {
+      document.execCommand("foreColor", false, "#007eff");
+      document.execCommand("bold", false);
+    }
     handleInput();
   };
 
   const applyLink = () => {
     if (showHtmlCode) return;
-    const url = prompt("Enter link URL (e.g. https://example.com):", "https://");
+    const url = prompt(
+      "Enter link URL (e.g. https://cleanix.bd or /contact):",
+      "https://"
+    );
     if (url) {
-      document.execCommand("createLink", false, url);
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        document.execCommand(
+          "insertHTML",
+          false,
+          `<a href="${url}" class="text-[#007eff] underline font-bold" target="_blank" rel="noopener noreferrer">Link Text</a>`
+        );
+      } else {
+        document.execCommand("createLink", false, url);
+      }
       handleInput();
     }
   };
