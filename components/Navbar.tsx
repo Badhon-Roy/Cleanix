@@ -93,7 +93,6 @@ export default function Navbar({ user: initialUser }: NavbarProps) {
     { name: "About Us", href: "/about" },
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
-    { name: "Gallery", href: "/gallery" },
     { name: "Pricing", href: "/pricing" },
     { name: "Coverage Area", href: "/coverage" },
     { name: "Contact", href: "/contact" },
@@ -104,7 +103,6 @@ export default function Navbar({ user: initialUser }: NavbarProps) {
     if (href === "/about") return pathname === "/about";
     if (href === "/services") return pathname.startsWith("/services");
     if (href === "/projects") return pathname.startsWith("/projects");
-    if (href === "/gallery") return pathname.startsWith("/gallery");
     if (href === "/pricing") return pathname.startsWith("/pricing");
     if (href === "/coverage") return pathname.startsWith("/coverage");
     if (href === "/contact") return pathname.startsWith("/contact");
