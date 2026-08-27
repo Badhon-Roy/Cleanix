@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { BlogDetail } from "@/lib/blogsData";
 import { createBlogAPI, updateBlogAPI } from "@/services/blogService";
 import { getAuthUser } from "@/utils/cookie";
+import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -365,30 +366,23 @@ export default function BlogModal({
 
           {/* Grid 3: Featured Banner Image & Author Avatar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
-                <ImageIcon className="w-4 h-4 text-[#007eff]" /> Hero Featured Image URL:
-              </label>
-              <input
-                type="text"
+            <div>
+              <ImageUploadPreview
+                label="Hero Featured Image:"
                 value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-xs sm:text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                onChange={(val) => setImage(val)}
+                recommendedSize="Recommended 1200x630 JPG/WebP format"
+                aspectRatio="banner"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
-                <User className="w-4 h-4 text-[#007eff]" /> Author Avatar Image URL:
-              </label>
-              <input
-                type="text"
+            <div>
+              <ImageUploadPreview
+                label="Author Avatar Image:"
                 value={authorAvatar}
-                onChange={(e) => setAuthorAvatar(e.target.value)}
-                placeholder="Optional image URL (leave blank to use initial badge)"
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-medium text-xs sm:text-sm focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
+                onChange={(val) => setAuthorAvatar(val)}
+                recommendedSize="Optional JPG/PNG (leave blank for initial badge)"
+                aspectRatio="square"
               />
             </div>
           </div>
