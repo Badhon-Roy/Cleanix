@@ -8,24 +8,48 @@ import { getStoredServices, ServiceDetail } from "@/lib/servicesData";
 import { defaultServicesCMSData, ServicesCMSContent } from "@/lib/servicesCMSData";
 import { io } from "socket.io-client";
 
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
+
 interface CoreServicesSectionProps {
   initialData?: ServicesCMSContent;
+  initialServices?: any[];
 }
 
-export default function CoreServicesSection({ initialData }: CoreServicesSectionProps) {
-  const [servicesList, setServicesList] = useState<ServiceDetail[]>([]);
+export default function CoreServicesSection({
+  initialData,
+  initialServices,
+}: CoreServicesSectionProps) {
+  const [servicesList, setServicesList] = useState<any[]>(
+    initialServices && initialServices.length > 0 ? initialServices : getStoredServices()
+  );
   const [cmsData, setCmsData] = useState<ServicesCMSContent>(
     initialData || defaultServicesCMSData
   );
 
+  const loadActiveServices = async () => {
+    try {
+      const res = await fetchActiveServicesAPI();
+      if (res?.success && Array.isArray(res?.data) && res.data.length > 0) {
+        setServicesList(res.data);
+      }
+    } catch (e) {
+      console.error("Error loading active services in CoreServicesSection:", e);
+    }
+  };
+
   useEffect(() => {
-    setServicesList(getStoredServices());
+    if (initialServices && initialServices.length > 0) {
+      setServicesList(initialServices);
+    } else {
+      loadActiveServices();
+    }
+
     if (initialData) {
       setCmsData(initialData);
     }
 
     const handleUpdate = () => {
-      setServicesList(getStoredServices());
+      loadActiveServices();
     };
 
     window.addEventListener("cleanix_services_updated", handleUpdate);
@@ -47,11 +71,15 @@ export default function CoreServicesSection({ initialData }: CoreServicesSection
       }
     });
 
+    socket.on("service_catalog_updated", () => {
+      loadActiveServices();
+    });
+
     return () => {
       window.removeEventListener("cleanix_services_updated", handleUpdate);
       socket.disconnect();
     };
-  }, [initialData]);
+  }, [initialData, initialServices]);
 
   const activeServices = servicesList.filter((s) => s.status !== "INACTIVE");
 
@@ -79,7 +107,7 @@ export default function CoreServicesSection({ initialData }: CoreServicesSection
           {activeServices.map((item, idx) => {
             const num = (idx + 1).toString().padStart(2, "0");
             const imageFirst = idx % 2 === 0;
-            const checklist = item.offers.slice(0, 2).map((o) => o.title);
+            const checklist = (item.offers || []).slice(0, 2).map((o: any) => o.title);
 
             return (
               <div
@@ -127,7 +155,7 @@ export default function CoreServicesSection({ initialData }: CoreServicesSection
                       <div className="relative z-10">
                         <div className="w-full border-t border-white/15 my-6" />
                         <div className="space-y-3">
-                          {checklist.map((point, i) => (
+                          {checklist.map((point: any, i: number) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 shadow-xs">
                                 <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
@@ -183,7 +211,7 @@ export default function CoreServicesSection({ initialData }: CoreServicesSection
                       <div className="relative z-10">
                         <div className="w-full border-t border-white/15 my-6" />
                         <div className="space-y-3">
-                          {checklist.map((point, i) => (
+                          {checklist.map((point: any, i: number) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#0055ff] to-[#00aaff] flex items-center justify-center flex-shrink-0 shadow-xs">
                                 <Check className="w-3.5 h-3.5 text-white stroke-[3]" />

@@ -1,20 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Phone, ShieldCheck } from "lucide-react";
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
 
 interface Props {
   currentSlug: string;
 }
 
 export default function ServiceDetailsSidebar({ currentSlug }: Props) {
-  const allServicesList = [
-    { name: "Residential Deep Cleaning", slug: "residential-deep-cleaning" },
-    { name: "Commercial Office Cleaning", slug: "commercial-office-cleaning" },
-    { name: "Post-Construction Cleaning", slug: "post-construction-cleaning" },
-    { name: "Move-Out Cleaning", slug: "move-out-cleaning" },
-  ];
+  const [allServicesList, setAllServicesList] = useState<any[]>([
+    { title: "Residential Deep Cleaning", slug: "residential-deep-cleaning" },
+    { title: "Commercial Office Cleaning", slug: "commercial-office-cleaning" },
+    { title: "Move-In & Move-Out Cleaning", slug: "move-in-move-out-cleaning" },
+    { title: "Post-Construction Cleaning", slug: "post-construction-cleaning" },
+  ]);
+
+  useEffect(() => {
+    fetchActiveServicesAPI().then((res) => {
+      if (res?.success && Array.isArray(res?.data) && res.data.length > 0) {
+        setAllServicesList(res.data);
+      }
+    });
+  }, []);
 
   return (
     <aside className="w-full space-y-8">
@@ -42,7 +51,7 @@ export default function ServiceDetailsSidebar({ currentSlug }: Props) {
                     : "text-slate-700 hover:text-[#007eff]"
                 }`}
               >
-                <span>{item.name}</span>
+                <span>{item.title || item.name}</span>
                 <ArrowUpRight className="w-4.5 h-4.5 text-[#007eff] stroke-[2.5]" />
               </Link>
             );
