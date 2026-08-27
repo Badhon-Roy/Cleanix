@@ -4,26 +4,46 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Navigation } from "lucide-react";
 import {
-  getStoredCoverageCMSData,
   defaultCoverageCMSData,
   CoverageCMSContent,
 } from "@/lib/coverageCMSData";
+import { io } from "socket.io-client";
 
-export default function CoverageHero() {
-  const [data, setData] = useState<CoverageCMSContent>(defaultCoverageCMSData);
+interface CoverageHeroProps {
+  initialData?: CoverageCMSContent;
+}
+
+export default function CoverageHero({ initialData }: CoverageHeroProps) {
+  const [data, setData] = useState<CoverageCMSContent>(
+    initialData || defaultCoverageCMSData
+  );
 
   useEffect(() => {
-    setData(getStoredCoverageCMSData());
+    if (initialData) {
+      setData(initialData);
+    }
 
-    const handleUpdate = () => {
-      setData(getStoredCoverageCMSData());
-    };
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
 
-    window.addEventListener("cleanix_coverage_cms_updated", handleUpdate);
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "coverage" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_coverage_cms_updated", handleUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   return (
     <section className="relative w-full min-h-[460px] md:min-h-[500px] bg-[#001837] text-white pt-32 pb-20 md:pt-40 md:pb-24 px-4 sm:px-6 lg:px-12 overflow-hidden border-b border-white/10 flex items-center justify-center -mt-[102px]">
@@ -40,7 +60,7 @@ export default function CoverageHero() {
         >
           <Image
             src={
-              data.heroImage ||
+              data?.heroImage ||
               "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80"
             }
             alt="Cleanix Dhaka Service Coverage Map"
@@ -68,21 +88,21 @@ export default function CoverageHero() {
           <div className="flex items-center gap-2.5 rounded-full border border-[#007eff]/40 bg-[#007eff]/15 backdrop-blur-md px-4 py-2 mb-6 shadow-lg max-w-max">
             <Navigation className="w-4 h-4 text-[#007eff]" />
             <span className="text-white text-xs md:text-sm font-bold tracking-wider uppercase">
-              {data.heroBadge || "24/7 ACTIVE GPS FLEET COVERAGE"}
+              {data?.heroBadge || "24/7 ACTIVE GPS FLEET COVERAGE"}
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white leading-[1.12] tracking-tight mb-6 uppercase drop-shadow-md">
-            {data.heroTitleLine1}{" "}
-            {data.heroTitleHighlight && (
-              <span className="text-[#007eff]">{data.heroTitleHighlight}</span>
+            {data?.heroTitleLine1}{" "}
+            {data?.heroTitleHighlight && (
+              <span className="text-[#007eff]">{data?.heroTitleHighlight}</span>
             )}{" "}
-            {data.heroTitleLine2}
+            {data?.heroTitleLine2}
           </h1>
 
           {/* Description */}
-          {data.heroSubtitle && (
+          {data?.heroSubtitle && (
             <div
               className="text-slate-200 text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-2xl text-shadow-sm [&_p]:mb-2"
               dangerouslySetInnerHTML={{ __html: data.heroSubtitle }}

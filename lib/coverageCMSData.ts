@@ -34,28 +34,3 @@ export const defaultCoverageCMSData: CoverageCMSContent = {
   sectionSubtitle:
     "আমাদের জিপিএস ট্র্যাকিংকৃত ক্লিনার বহর ঢাকার প্রতিটি প্রধান এলাকায় জরুরি ২৫-৩০ মিনিটের মধ্যে পৌঁছে যায়।",
 };
-
-export const COVERAGE_CMS_STORAGE_KEY = "cleanix_coverage_cms_v1";
-
-export function getStoredCoverageCMSData(): CoverageCMSContent {
-  if (typeof window === "undefined") return defaultCoverageCMSData;
-  try {
-    const raw = localStorage.getItem(COVERAGE_CMS_STORAGE_KEY);
-    if (!raw) return defaultCoverageCMSData;
-    const parsed = JSON.parse(raw);
-    return { ...defaultCoverageCMSData, ...parsed };
-  } catch (err) {
-    console.error("Failed to parse Coverage CMS data:", err);
-    return defaultCoverageCMSData;
-  }
-}
-
-export function saveCoverageCMSData(data: CoverageCMSContent): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(COVERAGE_CMS_STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent("cleanix_coverage_cms_updated"));
-  } catch (err) {
-    console.error("Failed to save Coverage CMS data:", err);
-  }
-}

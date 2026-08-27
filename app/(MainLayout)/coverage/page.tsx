@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import CoverageHero from "@/components/coverage/CoverageHero";
 import DhakaCoverageSection from "@/components/DhakaCoverageSection";
+import { fetchCoverageCMSServer } from "@/services/cmsServerService";
 
 export const metadata: Metadata = {
   title: "Coverage Area | Cleanix Dhaka Service Locations",
@@ -15,11 +16,13 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function CoveragePage() {
+export default async function CoveragePage() {
+  const coverageData = await fetchCoverageCMSServer();
+
   return (
     <>
-      <CoverageHero />
-      <DhakaCoverageSection />
+      <CoverageHero initialData={coverageData} />
+      <DhakaCoverageSection initialData={coverageData} />
     </>
   );
 }

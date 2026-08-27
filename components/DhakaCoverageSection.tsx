@@ -6,10 +6,10 @@ import { MapPin, Navigation, Search, X, ChevronRight } from "lucide-react";
 
 import { getStoredCoverageAreas, CoverageAreaItem } from "@/lib/coverageData";
 import {
-  getStoredCoverageCMSData,
   defaultCoverageCMSData,
   CoverageCMSContent,
 } from "@/lib/coverageCMSData";
+import { io } from "socket.io-client";
 
 export function AreaStarIcon() {
   return (
@@ -19,27 +19,51 @@ export function AreaStarIcon() {
   );
 }
 
-export default function DhakaCoverageSection() {
+interface DhakaCoverageSectionProps {
+  initialData?: CoverageCMSContent;
+}
+
+export default function DhakaCoverageSection({ initialData }: DhakaCoverageSectionProps) {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [coverageAreas, setCoverageAreas] = useState<CoverageAreaItem[]>([]);
-  const [cmsData, setCmsData] = useState<CoverageCMSContent>(defaultCoverageCMSData);
+  const [cmsData, setCmsData] = useState<CoverageCMSContent>(
+    initialData || defaultCoverageCMSData
+  );
 
   useEffect(() => {
     setCoverageAreas(getStoredCoverageAreas());
-    setCmsData(getStoredCoverageCMSData());
+    if (initialData) {
+      setCmsData(initialData);
+    }
 
-    const handleUpdate = () => {
+    const handleAreasUpdate = () => {
       setCoverageAreas(getStoredCoverageAreas());
-      setCmsData(getStoredCoverageCMSData());
     };
 
-    window.addEventListener("cleanix_coverage_areas_updated", handleUpdate);
-    window.addEventListener("cleanix_coverage_cms_updated", handleUpdate);
+    window.addEventListener("cleanix_coverage_areas_updated", handleAreasUpdate);
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("cms_updated", (payload: any) => {
+      if (payload?.page === "coverage" || payload?.data) {
+        const delta = payload?.updatedFields || payload?.data;
+        if (delta) {
+          setCmsData((prev) => ({ ...prev, ...delta }));
+        }
+      }
+    });
+
     return () => {
-      window.removeEventListener("cleanix_coverage_areas_updated", handleUpdate);
-      window.removeEventListener("cleanix_coverage_cms_updated", handleUpdate);
+      window.removeEventListener("cleanix_coverage_areas_updated", handleAreasUpdate);
+      socket.disconnect();
     };
-  }, []);
+  }, [initialData]);
 
   const activeAreas = coverageAreas.filter((a) => a.status !== "INACTIVE");
 
@@ -57,18 +81,18 @@ export default function DhakaCoverageSection() {
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center gap-2 border border-[#007eff]/50 text-[#007eff] font-bold text-xs tracking-wider uppercase rounded-full px-5 py-2 mb-6 bg-white shadow-2xs">
             <Navigation className="w-3.5 h-3.5 text-[#007eff]" />
-            <span>{cmsData.sectionBadge || "COVERAGE AREA MAP"}</span>
+            <span>{cmsData?.sectionBadge || "COVERAGE AREA MAP"}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#001837] tracking-tight leading-[1.12]">
-            {cmsData.sectionTitleLine1} <br />
-            {cmsData.sectionTitleHighlight && (
-              <span className="text-[#007eff]">{cmsData.sectionTitleHighlight}</span>
+            {cmsData?.sectionTitleLine1} <br />
+            {cmsData?.sectionTitleHighlight && (
+              <span className="text-[#007eff]">{cmsData?.sectionTitleHighlight}</span>
             )}{" "}
-            {cmsData.sectionTitleLine2}
+            {cmsData?.sectionTitleLine2}
           </h2>
 
-          {cmsData.sectionSubtitle && (
+          {cmsData?.sectionSubtitle && (
             <div
               className="text-slate-600 text-sm sm:text-base font-normal mt-4 max-w-xl mx-auto [&_p]:mb-2"
               dangerouslySetInnerHTML={{ __html: cmsData.sectionSubtitle }}
