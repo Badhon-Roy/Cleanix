@@ -10,6 +10,7 @@ export interface IPlan {
   isPopular: boolean;
   popularLabel?: string;
   vipBadge?: string;
+  isAddonFree?: boolean;
   ctaText?: string;
   ctaHref?: string;
   features: string[];
@@ -46,6 +47,7 @@ const mapPlan = (item: any): IPlan => {
     isPopular: item.isPopular ?? false,
     popularLabel: item.popularLabel || "★ MOST POPULAR",
     vipBadge: item.vipBadge || "",
+    isAddonFree: item.isAddonFree ?? false,
     ctaText: item.ctaText || "Select Plan",
     ctaHref: item.ctaHref || "/contact",
     features: Array.isArray(item.features) ? item.features : [],

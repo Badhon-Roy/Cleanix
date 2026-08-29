@@ -179,7 +179,7 @@ export default function PricingCardsGrid({
                 </button>
               ) : (
                 <Link
-                  href={plan.ctaHref || "/contact"}
+                  href={`/subscribe?plan=${(plan.id || plan.title || "standard").toLowerCase()}`}
                   className={`font-semibold text-sm sm:text-base py-3.5 px-6 rounded-full w-full flex items-center justify-between transition-all duration-300 hover:scale-[1.02] mb-8 cursor-pointer ${
                     plan.title === "PREMIUM" || plan.id === "PREMIUM"
                       ? "bg-[#001837] hover:bg-[#0d274c] text-white border border-slate-800"

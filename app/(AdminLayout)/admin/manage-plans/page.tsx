@@ -98,6 +98,7 @@ export default function ManagePlansPage() {
           category: updatedPkg.category || "SUBSCRIPTION",
           active: updatedPkg.active,
           isPopular: updatedPkg.isPopular,
+          isAddonFree: updatedPkg.isAddonFree,
           features: updatedPkg.features,
         });
         if (res && res.success) {
@@ -114,6 +115,7 @@ export default function ManagePlansPage() {
           subtitleBn: updatedPkg.description,
           active: updatedPkg.active,
           isPopular: updatedPkg.isPopular,
+          isAddonFree: updatedPkg.isAddonFree,
           features: updatedPkg.features,
         });
         if (res && res.success) {
@@ -316,6 +318,7 @@ export default function ManagePlansPage() {
                         category: plan.category || "SUBSCRIPTION",
                         active: plan.active,
                         isPopular: plan.isPopular,
+                        isAddonFree: plan.isAddonFree,
                         features: plan.features,
                         _id: plan._id,
                       } as any);
