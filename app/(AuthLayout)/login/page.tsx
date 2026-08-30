@@ -116,30 +116,27 @@ export default function LoginPage() {
         toast.success(res.message);
       }
 
+      const searchParamsObj = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const redirectUrl = searchParamsObj.get("redirect");
+
+      let targetPath = "/dashboard";
       if (role === "ADMIN") {
-        setTimeout(() => {
-          router.push("/admin");
-        }, 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/admin") ? redirectUrl : "/admin";
       } else if (role === "TEAM_LEADER") {
-        const teamSlug =
-          userData?.leadTeam?.teamSlug || res.data?.user?.leadTeam?.teamSlug;
-        const targetPath = teamSlug ? `/team/${teamSlug}` : "/team";
-        setTimeout(() => {
-          router.push(targetPath);
-        }, 800);
+        const teamSlug = userData?.leadTeam?.teamSlug || res.data?.user?.leadTeam?.teamSlug;
+        const defaultTeamPath = teamSlug ? `/team/${teamSlug}` : "/team";
+        targetPath = redirectUrl && redirectUrl.startsWith("/team") ? redirectUrl : defaultTeamPath;
       } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
-        setTimeout(() => {
-          router.push("/waiting-approval");
-        }, 800);
+        targetPath = "/waiting-approval";
       } else if (role === "CLEANER") {
-        setTimeout(() => {
-          router.push("/cleaner");
-        }, 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/cleaner") ? redirectUrl : "/cleaner";
       } else {
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/dashboard") ? redirectUrl : "/dashboard";
       }
+
+      setTimeout(() => {
+        router.push(targetPath);
+      }, 800);
     } catch (error: any) {
       toast.error(error?.message || "Sign-in failed. Please check your credentials.");
       setIsLoading(false);
@@ -153,8 +150,11 @@ export default function LoginPage() {
       description: "Connecting to Google OAuth 2.0 service",
     });
     try {
+      const searchParamsObj = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const redirectUrl = searchParamsObj.get("redirect");
       const googleUrl = await getGoogleAuthUrl();
-      window.location.href = `${googleUrl}?role=CUSTOMER`;
+      const redirectQuery = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : "";
+      window.location.href = `${googleUrl}?role=CUSTOMER${redirectQuery}`;
     } catch (error) {
       console.error("Failed to get Google Auth URL:", error);
       toast.error("Failed to connect to Google OAuth service.");
