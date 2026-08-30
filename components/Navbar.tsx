@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Menu, X, ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
-import { logoutUser } from "@/services/authService";
-import { getAuthUser } from "@/utils/cookie";
+import { logoutUser, getAuthUser } from "@/utils/cookie";
 
 export function SwirlLogo() {
   return (
