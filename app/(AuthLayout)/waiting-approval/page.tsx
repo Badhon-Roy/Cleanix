@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SwirlLogo } from "@/components/Navbar";
-import { getAuthUser, setAuthUser } from "@/utils/cookie";
-import { fetchUserProfileAPI, logoutUser } from "@/services/authService";
+import { getAuthUser, setAuthUser, logoutUser } from "@/utils/cookie";
+import { fetchUserProfileAPI } from "@/services/authService";
 
 export default function WaitingApprovalPage() {
   const router = useRouter();

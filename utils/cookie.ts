@@ -118,7 +118,15 @@ export const logoutUser = (redirectUrl = "/login") => {
   removeAuthToken();
   removeAuthUser();
   removeAuthRole();
+  removeCookie("token");
+  removeCookie("user");
+  removeCookie("role");
+
   if (typeof window !== "undefined") {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
     window.location.href = redirectUrl;
   }
 };

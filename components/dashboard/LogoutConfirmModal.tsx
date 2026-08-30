@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { LogOut, X } from "lucide-react";
-import { logoutUser } from "@/services/authService";
+import { logoutUser } from "@/utils/cookie";
 
 interface LogoutConfirmModalProps {
   isOpen: boolean;

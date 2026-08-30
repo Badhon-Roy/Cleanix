@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { AlertTriangle, Trash2, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteCustomerAccountAPI } from "@/services/customerService";
-import { logoutUser } from "@/services/authService";
+import { logoutUser } from "@/utils/cookie";
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
