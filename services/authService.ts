@@ -119,10 +119,17 @@ export const loginUserAPI = async (payload: ILoginPayload) => {
     const data = await res.json();
     if (data?.success && (data?.data?.accessToken || data?.accessToken)) {
       const token = data?.data?.accessToken || data?.accessToken;
+      const role = data?.data?.user?.role || "CUSTOMER";
       try {
         const cookieStore = await cookies();
         cookieStore.set("cleanix_token", token, { path: "/", maxAge: 7 * 86400 });
         cookieStore.set("accessToken", token, { path: "/", maxAge: 7 * 86400 });
+        cookieStore.set("cleanix_role", role, { path: "/", maxAge: 7 * 86400 });
+        if (data?.data?.user) {
+          const userCopy = { ...data.data.user };
+          delete userCopy.avatar; // Keep cookie lightweight
+          cookieStore.set("cleanix_user", JSON.stringify(userCopy), { path: "/", maxAge: 7 * 86400 });
+        }
       } catch (e) {
         console.error("Error setting server cookies:", e);
       }

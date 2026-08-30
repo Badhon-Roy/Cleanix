@@ -63,15 +63,22 @@ function CallbackContent() {
       }
 
       // 3. Role-Based Navigation
+      const redirectUrl = searchParams.get("redirect");
+
+      let targetPath = "/dashboard";
       if (role === "ADMIN") {
-        setTimeout(() => router.push("/admin"), 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/admin") ? redirectUrl : "/admin";
       } else if (role === "CLEANER" && (!isApproved || status === "PENDING_APPROVAL")) {
-        setTimeout(() => router.push("/waiting-approval"), 800);
+        targetPath = "/waiting-approval";
       } else if (role === "CLEANER") {
-        setTimeout(() => router.push("/cleaner"), 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/cleaner") ? redirectUrl : "/cleaner";
+      } else if (role === "TEAM_LEADER") {
+        targetPath = redirectUrl && redirectUrl.startsWith("/team") ? redirectUrl : "/team";
       } else {
-        setTimeout(() => router.push("/dashboard"), 800);
+        targetPath = redirectUrl && redirectUrl.startsWith("/dashboard") ? redirectUrl : "/dashboard";
       }
+
+      setTimeout(() => router.push(targetPath), 800);
     } else {
       router.push("/login");
     }
