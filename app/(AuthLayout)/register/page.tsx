@@ -151,15 +151,21 @@ export default function RegisterPage() {
 
   useEffect(() => {
     let interval: any;
-    if (isOtpModalOpen && timerSeconds > 0) {
+    if (step === 3 && timerSeconds > 0) {
       interval = setInterval(() => {
-        setTimerSeconds((prev) => prev - 1);
+        setTimerSeconds((prev) => {
+          if (prev <= 1) {
+            setCanResendOtp(true);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     } else if (timerSeconds <= 0) {
       setCanResendOtp(true);
     }
     return () => clearInterval(interval);
-  }, [isOtpModalOpen, timerSeconds]);
+  }, [step, timerSeconds]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -1203,11 +1209,17 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => handleSendEmailOtp(pendingStep2Data?.email || watch("email"))}
-                    disabled={!canResendOtp || isSendingOtp}
+                    disabled={isSendingOtp || (!canResendOtp && timerSeconds > 270)}
                     className="font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
                   >
-                    {isSendingOtp && <RefreshCw className="w-3 h-3 animate-spin" />}
-                    <span>Resend Code</span>
+                    {isSendingOtp ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Resending Code...</span>
+                      </>
+                    ) : (
+                      <span>Resend Code</span>
+                    )}
                   </button>
                 </div>
 
