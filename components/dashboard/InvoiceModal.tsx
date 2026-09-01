@@ -15,13 +15,18 @@ export interface InvoiceData {
   customerName: string;
   customerAddress: string;
   serviceTitle: string;
-  items: { description: string; qty: number; unitPrice: number; total: number }[];
+  items: {
+    description: string;
+    qty: number;
+    unitPrice: number;
+    total: number;
+  }[];
   subtotal: number;
   vat: number;
   discount: number;
   totalAmount: number;
   paymentMethod: string;
-  paymentStatus: "PAID" | "PENDING" | "REFUNDED";
+  paymentStatus: string;
   transactionId: string;
 }
 
@@ -43,10 +48,18 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
       return;
     }
 
-    const cleanRef = (invoice.invoiceNumber || invoice.bookingNumber || "INVOICE").replace(/#/g, "");
+    const cleanRef = (
+      invoice.invoiceNumber ||
+      invoice.bookingNumber ||
+      "INVOICE"
+    ).replace(/#/g, "");
     const filename = `Cleanix-Invoice-${cleanRef}.pdf`;
 
-    if (invoice.invoiceNumber?.startsWith("INV-SUB") || invoice.invoiceNumber?.startsWith("SUB") || invoice.bookingNumber?.startsWith("#SUB")) {
+    if (
+      invoice.invoiceNumber?.startsWith("INV-SUB") ||
+      invoice.invoiceNumber?.startsWith("SUB") ||
+      invoice.bookingNumber?.startsWith("#SUB")
+    ) {
       await downloadSubscriptionPDFAPI(invoice.id, filename);
     } else {
       await downloadBookingPDFAPI(invoice.id, filename);
@@ -98,14 +111,22 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
             <div className="flex items-center gap-3">
               <SwirlLogo />
               <div>
-                <h2 className="text-2xl font-extrabold text-[#0d274c] tracking-tight">Cleanix</h2>
-                <p className="text-xs text-slate-500 font-medium">Field Service Management System</p>
-                <p className="text-[11px] text-slate-400">Dhaka, Bangladesh • BIN: 004819283-0102</p>
+                <h2 className="text-2xl font-extrabold text-[#0d274c] tracking-tight">
+                  Cleanix
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Field Service Management System
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Dhaka, Bangladesh • BIN: 004819283-0102
+                </p>
               </div>
             </div>
 
             <div className="sm:text-right text-xs space-y-1 text-slate-600 font-mono">
-              <p className="text-slate-900 font-extrabold text-sm">TAX INVOICE</p>
+              <p className="text-slate-900 font-extrabold text-sm">
+                TAX INVOICE
+              </p>
               <p>Invoice Date: {invoice.date}</p>
               <p>Booking Ref: #{invoice.bookingNumber}</p>
               <p>Trx ID: {invoice.transactionId}</p>
@@ -118,8 +139,12 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
               <h4 className="text-[11px] uppercase font-extrabold text-[#007eff] tracking-wider mb-1">
                 Billed To (Customer):
               </h4>
-              <p className="font-extrabold text-slate-900 text-sm">{invoice.customerName}</p>
-              <p className="text-slate-600 mt-0.5 font-medium">{invoice.customerAddress}</p>
+              <p className="font-extrabold text-slate-900 text-sm">
+                {invoice.customerName}
+              </p>
+              <p className="text-slate-600 mt-0.5 font-medium">
+                {invoice.customerAddress}
+              </p>
               <p className="text-slate-500 mt-1">Phone: +880 1711-223344</p>
             </div>
 
@@ -127,10 +152,15 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
               <h4 className="text-[11px] uppercase font-extrabold text-[#007eff] tracking-wider mb-1">
                 Service Package Details:
               </h4>
-              <p className="font-extrabold text-slate-900 text-sm">{invoice.serviceTitle}</p>
-              <p className="text-slate-600 mt-0.5 font-medium">Payment Method: {invoice.paymentMethod}</p>
+              <p className="font-extrabold text-slate-900 text-sm">
+                {invoice.serviceTitle}
+              </p>
+              <p className="text-slate-600 mt-0.5 font-medium">
+                Payment Method: {invoice.paymentMethod}
+              </p>
               <div className="mt-2 inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200 text-[10px] font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Guaranteed Quality Inspection
+                <ShieldCheck className="w-3.5 h-3.5" /> Guaranteed Quality
+                Inspection
               </div>
             </div>
           </div>
@@ -143,15 +173,21 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
                   <th className="p-3.5 pl-4 font-bold">Item & Description</th>
                   <th className="p-3.5 text-center font-bold">Qty</th>
                   <th className="p-3.5 text-right font-bold">Unit Price</th>
-                  <th className="p-3.5 text-right pr-4 font-bold">Total Amount</th>
+                  <th className="p-3.5 text-right pr-4 font-bold">
+                    Total Amount
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
                 {invoice.items.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
-                    <td className="p-3.5 pl-4 font-semibold">{item.description}</td>
+                    <td className="p-3.5 pl-4 font-semibold">
+                      {item.description}
+                    </td>
                     <td className="p-3.5 text-center font-mono">{item.qty}</td>
-                    <td className="p-3.5 text-right font-mono">৳{item.unitPrice.toLocaleString()}</td>
+                    <td className="p-3.5 text-right font-mono">
+                      ৳{item.unitPrice.toLocaleString()}
+                    </td>
                     <td className="p-3.5 text-right font-mono font-bold text-slate-900 pr-4">
                       ৳{item.total.toLocaleString()}
                     </td>
@@ -165,7 +201,10 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
             <div className="text-xs text-slate-500 space-y-1 max-w-xs font-medium">
               <p className="font-bold text-slate-700">Payment Terms:</p>
-              <p>Paid electronically via {invoice.paymentMethod}. All service fees include certified eco-chemicals and equipment.</p>
+              <p>
+                Paid electronically via {invoice.paymentMethod}. All service
+                fees include certified eco-chemicals and equipment.
+              </p>
             </div>
 
             <div className="w-full sm:w-64 space-y-2 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200 font-mono">
@@ -185,14 +224,18 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
               </div>
               <div className="border-t border-slate-200 pt-2 flex justify-between text-slate-900 font-extrabold text-sm">
                 <span>Total Paid:</span>
-                <span className="text-[#007eff]">৳{invoice.totalAmount.toLocaleString()}</span>
+                <span className="text-[#007eff]">
+                  ৳{invoice.totalAmount.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Footer Note */}
           <div className="text-center text-[11px] text-slate-400 pt-4 border-t border-slate-100 font-medium">
-            Thank you for choosing <span className="text-[#007eff] font-bold">Cleanix</span>! For inquiries, call +880 1700-000000 or email support@cleanix.com.
+            Thank you for choosing{" "}
+            <span className="text-[#007eff] font-bold">Cleanix</span>! For
+            inquiries, call +880 1700-000000 or email support@cleanix.com.
           </div>
         </div>
       </div>

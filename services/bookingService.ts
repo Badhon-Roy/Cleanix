@@ -154,3 +154,39 @@ export const downloadBookingPDFAPI = async (bookingId: string, filename = "Clean
   }
 };
 
+export const updateBookingProgressAPI = async (
+  bookingId: string,
+  payload: { status?: string; notes?: string }
+) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/progress`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error updating booking progress:", error);
+    return { success: false, message: error.message || "Failed to update booking progress" };
+  }
+};
+
+export const requestBookingByTeamAPI = async (bookingId: string, teamSlug?: string) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/request`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ teamSlug }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error requesting booking for team:", error);
+    return { success: false, message: error.message || "Failed to request booking for team" };
+  }
+};
+
+

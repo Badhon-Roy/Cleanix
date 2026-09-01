@@ -29,6 +29,12 @@ import AssignCleanerModal from "@/components/admin/AssignCleanerModal";
 import { IContact, fetchAllContactsAPI } from "@/services/contactService";
 import { io } from "socket.io-client";
 
+import {
+  fetchAdminBookingsAPI,
+  updateAdminBookingStatusAPI,
+  assignTeamToBookingAPI,
+} from "@/services/bookingService";
+
 export default function AdminDashboardOverview() {
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<{
     ref: string;
@@ -37,11 +43,30 @@ export default function AdminDashboardOverview() {
   } | null>(null);
 
   const [contactMessages, setContactMessages] = useState<IContact[]>([]);
+  const [realBookings, setRealBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const loadAdminOverviewData = async () => {
+    setIsLoading(true);
+    try {
+      const [messagesData, bookingsRes] = await Promise.all([
+        fetchAllContactsAPI(),
+        fetchAdminBookingsAPI(),
+      ]);
+
+      if (Array.isArray(messagesData)) setContactMessages(messagesData);
+      if (bookingsRes?.success && Array.isArray(bookingsRes?.data)) {
+        setRealBookings(bookingsRes.data);
+      }
+    } catch (err) {
+      console.error("Error loading admin overview:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchAllContactsAPI().then((data) => {
-      setContactMessages(data);
-    });
+    loadAdminOverviewData();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -51,13 +76,10 @@ export default function AdminDashboardOverview() {
       withCredentials: true,
     });
 
-    socket.on("contact_created", () => {
-      fetchAllContactsAPI().then((data) => setContactMessages(data));
-    });
-
-    socket.on("contact_updated", () => {
-      fetchAllContactsAPI().then((data) => setContactMessages(data));
-    });
+    socket.on("contact_created", () => loadAdminOverviewData());
+    socket.on("contact_updated", () => loadAdminOverviewData());
+    socket.on("booking_created", () => loadAdminOverviewData());
+    socket.on("booking_updated", () => loadAdminOverviewData());
 
     return () => {
       socket.disconnect();
@@ -88,61 +110,42 @@ export default function AdminDashboardOverview() {
     },
   ]);
 
-  // Mock Platform Bookings
-  const [bookings, setBookings] = useState([
-    {
-      id: "CLN-2026-8891",
-      customerName: "Tanvir Hasan",
-      customerPhone: "+880 1711-223344",
-      serviceType: "VIP Standard Deep Cleaning",
-      area: "Gulshan-2",
-      amount: "৳14,000",
-      date: "Today, Aug 21, 2026",
-      status: "ASSIGNED",
-      cleanerTeam: "Team Delta (Rahat Karim)",
-    },
-    {
-      id: "CLN-2026-8892",
-      customerName: "Sabrina Rahman",
-      customerPhone: "+880 1819-998877",
-      serviceType: "Commercial Office Cleaning",
-      area: "Motijheel C/A",
-      amount: "৳22,000",
-      date: "Today, Aug 21, 2026",
-      status: "PENDING",
-      cleanerTeam: "Unassigned",
-    },
-    {
-      id: "CLN-2026-8893",
-      customerName: "Mahmudul Haq",
-      customerPhone: "+880 1722-445566",
-      serviceType: "Residential Bi-Weekly Clean",
-      area: "Dhanmondi 27",
-      amount: "৳6,000",
-      date: "Tomorrow, Aug 22, 2026",
-      status: "PENDING",
-      cleanerTeam: "Unassigned",
-    },
-    {
-      id: "CLN-2026-8890",
-      customerName: "Anisur Rahman",
-      customerPhone: "+880 1912-334455",
-      serviceType: "Move-In / Move-Out Deep Clean",
-      area: "Banani Sector 4",
-      amount: "৳12,000",
-      date: "Aug 20, 2026",
-      status: "COMPLETED",
-      cleanerTeam: "Team Alpha (Selim Reza)",
-    },
-  ]);
+  // Dynamic Platform Bookings from real MongoDB backend
+  const displayBookings = realBookings.length > 0
+    ? realBookings.map((b: any) => ({
+        id: b.bookingRef || `#CLN-${String(b._id).slice(-6).toUpperCase()}`,
+        rawId: b._id,
+        customerName: b.user?.name || "Valued Client",
+        customerPhone: b.user?.phone || "+880 1700-000000",
+        serviceType: typeof b.serviceType === "object" ? b.serviceType?.title || "Cleaning Care" : "Cleaning Care",
+        area: b.address || "Dhaka Coverage Zone",
+        amount: `৳${(b.totalAmount || 0).toLocaleString()}`,
+        date: b.scheduledDate || "Scheduled Date",
+        status: b.status || "CONFIRMED",
+        cleanerTeam: b.cleanerTeam || (b.assignedTeam ? `${b.assignedTeam.teamName}` : "Unassigned"),
+      }))
+    : [
+        {
+          id: "CLN-2026-8891",
+          rawId: "1",
+          customerName: "Tanvir Hasan",
+          customerPhone: "+880 1711-223344",
+          serviceType: "VIP Standard Deep Cleaning",
+          area: "Gulshan-2",
+          amount: "৳14,000",
+          date: "Today, Aug 21, 2026",
+          status: "ASSIGNED",
+          cleanerTeam: "Team Delta (Rahat Karim)",
+        },
+      ];
 
   const [filterStatus, setFilterStatus] = useState("ALL");
 
   const handleApproveApplication = (appId: string, jobId: string, cleanerName: string) => {
     setCleanerApplications((prev) => prev.filter((a) => a.id !== appId));
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === jobId
+    setRealBookings((prev: any[]) =>
+      prev.map((b: any) =>
+        b.bookingRef === jobId || b._id === jobId
           ? { ...b, status: "ASSIGNED", cleanerTeam: `Team Delta (${cleanerName})` }
           : b
       )
@@ -155,17 +158,18 @@ export default function AdminDashboardOverview() {
 
   const handleAssignTeamFromModal = (teamName: string) => {
     if (selectedBookingForAssign) {
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === selectedBookingForAssign.ref
-            ? { ...b, status: "ASSIGNED", cleanerTeam: teamName }
-            : b
-        )
+      const targetBooking = realBookings.find(
+        (b: any) => b.bookingRef === selectedBookingForAssign.ref || b._id === selectedBookingForAssign.ref
       );
+      if (targetBooking?._id) {
+        assignTeamToBookingAPI(targetBooking._id, { cleanerTeam: teamName }).then(() => {
+          loadAdminOverviewData();
+        });
+      }
     }
   };
 
-  const filteredBookings = bookings.filter((b) => {
+  const filteredBookings = displayBookings.filter((b) => {
     if (filterStatus === "ALL") return true;
     return b.status === filterStatus;
   });
