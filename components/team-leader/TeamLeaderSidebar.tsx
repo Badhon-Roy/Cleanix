@@ -15,6 +15,7 @@ import {
   X,
   ShieldCheck,
   Home,
+  Star,
 } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
@@ -81,6 +82,7 @@ export default function TeamLeaderSidebar({
     { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "Requests" },
     { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "Available" },
     { name: "Proof of Work Monitor", key: "proofs", icon: FileCheck, badge: "Quality" },
+    { name: "Squad Reviews & Ratings", key: "reviews", icon: Star, badge: "Ratings" },
     { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
     { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];

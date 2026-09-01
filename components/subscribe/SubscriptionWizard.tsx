@@ -32,6 +32,7 @@ import {
 import { fetchAllPlansAPI, IPlan } from "@/services/planService";
 import { fetchActiveAddonsAPI } from "@/services/addonService";
 import { fetchAllCoveragesAPI, ICoverageArea } from "@/services/coverageService";
+import { createSubscriptionAPI, downloadSubscriptionPDFAPI } from "@/services/subscriptionService";
 import { io } from "socket.io-client";
 
 export interface ISubscriptionPlanOption {
@@ -99,27 +100,26 @@ const TIME_SLOT_OPTIONS = [
   },
 ];
 
-const parsePriceNumber = (priceStr: any): number => {
-  if (typeof priceStr === "number") return priceStr;
-  if (!priceStr) return 0;
-  const cleaned = String(priceStr).replace(/[^0-9]/g, "");
-  return parseInt(cleaned, 10) || 0;
-};
-
 const mapApiPlansToOptions = (apiPlans: IPlan[]): ISubscriptionPlanOption[] => {
   if (!Array.isArray(apiPlans) || apiPlans.length === 0) return [];
   return apiPlans.map((p) => {
-    const numPrice = parsePriceNumber(p.price);
-    const rawId = (p.id || p._id || p.title).toLowerCase();
+    const rawPrice = String(p.price || "").replace(/[^0-9.]/g, "");
+    const parsedNum = parseFloat(rawPrice);
+    const numPrice = isNaN(parsedNum) ? 0 : parsedNum;
     return {
-      id: rawId,
-      title: p.title.toUpperCase(),
-      subtitleBn: p.subtitleBn || "প্রফেশনাল হোম ও অফিস ক্লিনিং প্যাকেজ",
+      id: (p.id || p.title || "standard").toLowerCase(),
+      title: p.title,
+      subtitleBn: p.subtitleBn || "মাসিক সাবস্ক্রিপশন প্যাকেজ",
       price: numPrice,
-      priceStr: typeof p.price === "string" && p.price.includes("৳") ? p.price : `৳${numPrice.toLocaleString()}`,
-      visitsStr: p.features?.[0] || "নিয়মিত স্যানিটাইজেশন ও ক্লিনিং ভিজিট",
+      priceStr: p.price as string,
+      visitsStr:
+        p.title?.toUpperCase() === "BASIC"
+          ? "মাসে ২ বার রুটিন ক্লিন"
+          : p.title?.toUpperCase() === "PREMIUM"
+          ? "মাসে ৮ বার মাস্টার ক্লিন"
+          : "মাসে ৪ বার (সাপ্তাহিক ১ বার)",
       popular: p.isPopular,
-      isAddonFree: p.isAddonFree ?? (rawId.includes("premium") || p.title.includes("PREMIUM")),
+      isAddonFree: p.isAddonFree || p.title?.toUpperCase() === "PREMIUM",
       features: p.features || [],
     };
   });
@@ -155,11 +155,11 @@ const mapCoverageAreasToOptions = (coverages: ICoverageArea[]): ICoverageZoneOpt
 };
 
 const formatDisplayDate = (dateStr: string) => {
-  if (!dateStr) return "Select First Cleaning Date";
-  const parts = dateStr.split("-").map(Number);
+  if (!dateStr) return "Not selected";
+  const parts = dateStr.split("-");
   if (parts.length !== 3) return dateStr;
   const [year, month, day] = parts;
-  const d = new Date(year, month - 1, day);
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
   const monthsBn = [
     "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
     "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
@@ -184,6 +184,8 @@ export default function SubscriptionWizard({
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [maxStepReached, setMaxStepReached] = useState<number>(1);
   const [validationError, setValidationError] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [createdSubscription, setCreatedSubscription] = useState<any>(null);
 
   // Dynamic Data States initialized 100% from Server-Fetched MongoDB API Props
   const [plansList, setPlansList] = useState<ISubscriptionPlanOption[]>(() =>
@@ -429,10 +431,51 @@ export default function SubscriptionWizard({
     setCurrentStep(3);
   };
 
-  const onSubmitForm = (data: ISubscriptionFormValues) => {
-    console.log("Subscription Order Submitted via React Hook Form:", data);
-    setMaxStepReached(4);
-    setCurrentStep(4);
+  const onSubmitForm = async (data: ISubscriptionFormValues) => {
+    setIsSubmitting(true);
+    setValidationError("");
+
+    try {
+      const selectedSlot = TIME_SLOT_OPTIONS.find((s) => s.id === data.selectedSlotId) || TIME_SLOT_OPTIONS[0];
+
+      const payload = {
+        selectedPlanId: data.selectedPlanId || selectedPlanId,
+        selectedAddonIds: selectedAddonIds,
+        selectedZone: selectedZoneObj?.name || data.selectedZone || "Dhaka Zone",
+        streetAddress: data.streetAddress,
+        firstVisitDate: data.firstVisitDate || firstVisitDate,
+        selectedSlotId: data.selectedSlotId,
+        timeSlot: selectedSlot.label,
+        specialInstructions: data.specialInstructions,
+        paymentMethod: data.paymentMethod,
+        bkashPhone: data.bkashPhone,
+        bkashTrxId: data.bkashTrxId,
+      };
+
+      const res = await createSubscriptionAPI(payload);
+      setIsSubmitting(false);
+
+      if (res?.success && res?.data) {
+        setCreatedSubscription(res.data);
+        setMaxStepReached(4);
+        setCurrentStep(4);
+      } else {
+        const errorMsg = res?.message || "সাবস্ক্রিপশন চালু করতে সমস্যা হয়েছে। অনুগ্রহ করে লগইন করুন।";
+        setValidationError(errorMsg);
+        if (
+          typeof window !== "undefined" &&
+          (errorMsg.toLowerCase().includes("authentication") ||
+            errorMsg.toLowerCase().includes("login") ||
+            errorMsg.toLowerCase().includes("401") ||
+            errorMsg.toLowerCase().includes("unauthorized"))
+        ) {
+          window.location.href = `/login?redirect=/subscribe`;
+        }
+      }
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setValidationError(err?.message || "সাবস্ক্রিপশন চালু করতে একটি ত্রুটি ঘটেছে।");
+    }
   };
 
   return (
@@ -482,22 +525,22 @@ export default function SubscriptionWizard({
                 { num: 3, stepCode: "03", title: "Payment Method", sub: "পেমেন্ট চ্যানেল", icon: CreditCard },
                 { num: 4, stepCode: "04", title: "Invoice & Order", sub: "কনফার্মেশন", icon: CheckCircle2 },
               ].map((step) => {
-                const isActive = currentStep === step.num;
-                const isNavigable = step.num <= maxStepReached;
-                const isCompleted = step.num < currentStep || (step.num < maxStepReached);
+                const isStep4Confirmed = currentStep === 4 && step.num === 4;
+                const isCompleted = step.num < currentStep || isStep4Confirmed;
+                const isActive = currentStep === step.num && !isStep4Confirmed;
                 const IconComponent = step.icon;
 
                 return (
                   <div
                     key={step.num}
                     onClick={() => {
-                      if (isNavigable) {
+                      if (step.num <= maxStepReached) {
                         setValidationError("");
                         setCurrentStep(step.num);
                       }
                     }}
                     className={`group flex flex-col items-center text-center p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ${
-                      isNavigable
+                      step.num <= maxStepReached
                         ? "cursor-pointer hover:bg-blue-50/40"
                         : "opacity-40 cursor-not-allowed"
                     }`}
@@ -505,10 +548,10 @@ export default function SubscriptionWizard({
                     {/* Step Icon Badge */}
                     <div
                       className={`w-13 h-13 rounded-2xl flex items-center justify-center transition-all duration-300 relative mb-3 ${
-                        isActive
-                          ? "bg-[#007eff] text-white ring-4 ring-blue-500/20 shadow-lg shadow-blue-500/25 scale-105"
-                          : isCompleted
+                        isCompleted
                           ? "bg-emerald-500 text-white ring-4 ring-emerald-500/10 shadow-xs"
+                          : isActive
+                          ? "bg-[#007eff] text-white ring-4 ring-blue-500/20 shadow-lg shadow-blue-500/25 scale-105"
                           : "bg-slate-100 border border-slate-200 text-slate-400"
                       }`}
                     >
@@ -1308,10 +1351,20 @@ export default function SubscriptionWizard({
 
                   <button
                     type="submit"
-                    className="px-8 py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2"
+                    disabled={isSubmitting}
+                    className="px-8 py-3.5 rounded-2xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle2 className="w-5 h-5 stroke-[2]" />
-                    <span>Confirm &amp; Subscribe</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Confirming &amp; Subscribing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 stroke-[2]" />
+                        <span>Confirm &amp; Subscribe</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1343,21 +1396,23 @@ export default function SubscriptionWizard({
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Subscription Invoice Ref:
                       </p>
-                      <p className="font-mono font-bold text-[#007eff] text-lg">#SUB-2026-9812</p>
+                      <p className="font-mono font-bold text-[#007eff] text-lg">
+                        {createdSubscription?.subscriptionRef || "#SUB-2026-9812"}
+                      </p>
                     </div>
                     <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
-                      ACTIVE
+                      {createdSubscription?.status || "ACTIVE"}
                     </span>
                   </div>
 
                   <div className="space-y-2.5 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-medium">Plan Selected:</span>
-                      <span className="font-bold text-slate-900">{currentPlan?.title || "CUSTOM PLAN"}</span>
+                      <span className="font-bold text-slate-900">{createdSubscription?.planTitle || currentPlan?.title || "CUSTOM PLAN"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-medium">Monthly Rate:</span>
-                      <span className="font-bold text-slate-900">{currentPlan?.priceStr || "৳0"} / month</span>
+                      <span className="font-bold text-slate-900">{currentPlan?.priceStr || `৳${(createdSubscription?.subtotal || grandTotal).toLocaleString()}`} / month</span>
                     </div>
                     {selectedAddonsObj.length > 0 && (
                       <div className="flex justify-between">
@@ -1371,14 +1426,14 @@ export default function SubscriptionWizard({
                     )}
                     <div className="flex justify-between border-t border-slate-200 pt-3 text-base font-bold text-emerald-700">
                       <span>Total Billed Amount:</span>
-                      <span>৳{grandTotal.toLocaleString()} BDT</span>
+                      <span>৳{(createdSubscription?.totalAmount || grandTotal).toLocaleString()} BDT</span>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1 font-medium">
-                    <p>📍 Location Zone: {selectedZoneObj?.name || "Dhaka Coverage Zone"}</p>
-                    <p>🗓️ First Visit Date: {formatDisplayDate(firstVisitDate)}</p>
-                    <p>⏱️ Preferred Slot: {selectedSlot.label}</p>
+                    <p>📍 Location Zone: {createdSubscription?.zoneName || selectedZoneObj?.name || "Dhaka Coverage Zone"}</p>
+                    <p>🗓️ First Visit Date: {createdSubscription?.firstVisitDate ? formatDisplayDate(createdSubscription.firstVisitDate) : formatDisplayDate(firstVisitDate)}</p>
+                    <p>⏱️ Preferred Slot: {createdSubscription?.timeSlot || selectedSlot.label}</p>
                   </div>
                 </div>
 
@@ -1386,7 +1441,16 @@ export default function SubscriptionWizard({
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     type="button"
-                    onClick={() => alert("Simulating Invoice PDF download...")}
+                    onClick={() => {
+                      if (createdSubscription?._id) {
+                        downloadSubscriptionPDFAPI(
+                          String(createdSubscription._id),
+                          `Cleanix-Invoice-${(createdSubscription.subscriptionRef || "SUBSCRIPTION").replace(/#/g, "")}.pdf`
+                        );
+                      } else {
+                        alert("Subscription order reference not found. Please check your dashboard.");
+                      }
+                    }}
                     className="w-full sm:w-auto px-6 py-3.5 rounded-2xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-[#007eff]" />
@@ -1394,10 +1458,10 @@ export default function SubscriptionWizard({
                   </button>
 
                   <Link
-                    href="/dashboard"
+                    href="/dashboard/subscription"
                     className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold text-xs text-white bg-[#007eff] hover:bg-blue-600 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
                   >
-                    <span>Go to Customer Dashboard</span>
+                    <span>View Subscription on Dashboard</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -1406,7 +1470,7 @@ export default function SubscriptionWizard({
           </div>
 
           {/* Right Column: Order Billing Summary Sidebar (4 Cols) */}
-          <div className="lg:col-span-4 space-y-6 sticky top-28">
+          <div className="lg:col-span-4 space-y-6">
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-6 shadow-xs">
               <div className="border-b border-slate-100 pb-4">
                 <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">

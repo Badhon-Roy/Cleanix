@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import Lenis from "lenis";
 import {
   Camera,
   X,
@@ -12,7 +13,9 @@ import {
   Sparkles,
   ShieldCheck,
   Check,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProofOfWorkModalProps {
   isOpen: boolean;
@@ -20,7 +23,12 @@ interface ProofOfWorkModalProps {
   jobId: string;
   jobTitle: string;
   customerAddress: string;
-  onSubmitComplete: () => void;
+  onSubmitComplete: (data?: {
+    beforePhotos: string[];
+    afterPhotos: string[];
+    notes: string;
+    checklist: any[];
+  }) => Promise<void> | void;
 }
 
 export default function ProofOfWorkModal({
@@ -32,6 +40,8 @@ export default function ProofOfWorkModal({
   onSubmitComplete,
 }: ProofOfWorkModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Photos State
   const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
@@ -54,6 +64,32 @@ export default function ProofOfWorkModal({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Initialize Lenis Smooth Scrolling on the modal scroll container
+  useEffect(() => {
+    if (!isOpen || !mounted || !scrollContainerRef.current) return;
+
+    const lenis = new Lenis({
+      wrapper: scrollContainerRef.current,
+      content: (scrollContainerRef.current.firstElementChild as HTMLElement) || scrollContainerRef.current,
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let animationFrameId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      animationFrameId = requestAnimationFrame(raf);
+    }
+    animationFrameId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      lenis.destroy();
+    };
+  }, [isOpen, mounted]);
 
   if (!isOpen || !mounted) return null;
 
@@ -97,19 +133,39 @@ export default function ProofOfWorkModal({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (beforePhotos.length === 0 || afterPhotos.length === 0) {
-      alert("Please upload at least one Before and one After cleaning photo as proof of work.");
+      toast.error(
+        "অনুগ্রহ করে অন্তত ১টি পূর্বের (Before) এবং ১টি পরের (After) কাজের ছবি আপলোড করুন।"
+      );
       return;
     }
-    onSubmitComplete();
-    onClose();
+
+    setIsSubmitting(true);
+    try {
+      await onSubmitComplete({
+        beforePhotos,
+        afterPhotos,
+        notes,
+        checklist,
+      });
+      toast.success("🎉 কাজের ছবি ও ভেরিফিকেশন সফলভাবে সাবমিট হয়েছে!");
+      onClose();
+    } catch (err: any) {
+      console.error("Proof submission error:", err);
+      toast.error(err?.message || "ভেরিফিকেশন সাবমিট করতে সমস্যা হয়েছে");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150 overflow-hidden">
+      <div 
+        ref={scrollContainerRef}
+        className="bg-white rounded-3xl p-6 sm:p-8 max-w-4xl lg:max-w-5xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[88vh] overflow-y-auto overscroll-contain"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
@@ -303,17 +359,28 @@ export default function ProofOfWorkModal({
           <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={onClose}
-              className="py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
+              className="py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center gap-2 border border-emerald-500 shadow-xs"
+              disabled={isSubmitting}
+              className="py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center gap-2 border border-emerald-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-              <span>Submit Proof & Mark Completed</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>সাবমিট হচ্ছে ও প্রসেস চলছে...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                  <span>Submit Proof & Mark Completed</span>
+                </>
+              )}
             </button>
           </div>
         </form>

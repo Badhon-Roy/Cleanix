@@ -5,6 +5,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import CtaBanner from "@/components/CtaBanner";
 import { fetchBlogsServer } from "@/services/blogServerService";
 import { fetchBlogCMSServer } from "@/services/cmsServerService";
+import { fetchFeaturedReviewsServer } from "@/services/reviewServerService";
 
 export const metadata: Metadata = {
   title: "Cleaning Blog & Expert Insights | Cleanix Bangladesh",
@@ -22,12 +23,13 @@ export const metadata: Metadata = {
 export default async function BlogPage() {
   const blogsList = await fetchBlogsServer();
   const blogCMSData = await fetchBlogCMSServer();
+  const reviewsList = await fetchFeaturedReviewsServer();
 
   return (
     <>
       <BlogHero initialData={blogCMSData} />
       <BlogGrid initialBlogs={blogsList} />
-      <TestimonialsSection />
+      <TestimonialsSection initialReviews={reviewsList} />
       <CtaBanner />
     </>
   );

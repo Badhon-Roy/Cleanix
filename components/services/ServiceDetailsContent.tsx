@@ -17,12 +17,15 @@ import {
   Home,
 } from "lucide-react";
 import { ServiceDetail } from "@/lib/servicesData";
+import ServiceReviewsSection from "./ServiceReviewsSection";
+import { ReviewItem } from "@/services/reviewService";
 
 interface Props {
   service: ServiceDetail;
+  initialReviews?: ReviewItem[];
 }
 
-export default function ServiceDetailsContent({ service }: Props) {
+export default function ServiceDetailsContent({ service, initialReviews }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const toggleFaq = (index: number) => {
@@ -244,6 +247,13 @@ export default function ServiceDetailsContent({ service }: Props) {
           })}
         </div>
       </div>
+
+      {/* 7. VERIFIED CUSTOMER REVIEWS SECTION */}
+      <ServiceReviewsSection
+        serviceSlug={service.slug}
+        serviceTitle={service.title}
+        initialReviews={initialReviews}
+      />
     </article>
   );
 }

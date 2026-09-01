@@ -62,6 +62,7 @@ export default function TeamBookingsView({ teamSlug }: Props) {
     loadMyTeamAssignments(assignments.length === 0);
 
     const socketUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL ||
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
       "http://localhost:5000";
 
@@ -78,13 +79,20 @@ export default function TeamBookingsView({ teamSlug }: Props) {
       loadMyTeamAssignments(false);
     };
 
+    socket.on("team_assignment_updated", handleSilentRefresh);
     socket.on("booking_updated", handleSilentRefresh);
     socket.on("booking_created", handleSilentRefresh);
     socket.on("team_updated", handleSilentRefresh);
     socket.on("cleaner_updated", handleSilentRefresh);
     socket.on("leader_request_updated", handleSilentRefresh);
 
+    const syncInterval = setInterval(() => {
+      loadMyTeamAssignments(false);
+    }, 8000);
+
     return () => {
+      clearInterval(syncInterval);
+      socket.off("team_assignment_updated", handleSilentRefresh);
       socket.off("booking_updated", handleSilentRefresh);
       socket.off("booking_created", handleSilentRefresh);
       socket.off("team_updated", handleSilentRefresh);
@@ -97,7 +105,9 @@ export default function TeamBookingsView({ teamSlug }: Props) {
   const openDispatchModal = (item: any) => {
     setSelectedAssignmentForDispatch(item);
     const existingCleanerIds = Array.isArray(item.assignedCleaners)
-      ? item.assignedCleaners.map((c: any) => (typeof c === "object" ? c._id || c.id : c))
+      ? item.assignedCleaners
+          .filter((c: any) => c != null)
+          .map((c: any) => (typeof c === "object" ? c._id || c.id || c.name : c))
       : [];
     setSelectedCleanerIds(existingCleanerIds);
   };
@@ -116,7 +126,7 @@ export default function TeamBookingsView({ teamSlug }: Props) {
     setIsUpdatingDispatch(true);
     try {
       const assignmentId = selectedAssignmentForDispatch._id || selectedAssignmentForDispatch.id;
-      const targetStatus = selectedCleanerIds.length > 0 ? "IN_PROGRESS" : "ASSIGNED";
+      const targetStatus = "ASSIGNED";
 
       const res = await updateTeamAssignmentAPI(assignmentId, {
         assignedCleaners: selectedCleanerIds,
@@ -285,16 +295,28 @@ export default function TeamBookingsView({ teamSlug }: Props) {
                     <span
                       className={`text-xs font-extrabold px-3 py-1 rounded-full uppercase ${
                         item.status === "ASSIGNED"
-                          ? "bg-amber-100 text-amber-800 border border-amber-200"
+                          ? assignedCleaners.length > 0
+                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            : "bg-amber-100 text-amber-800 border border-amber-200"
+                          : item.status === "EN_ROUTE"
+                          ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
                           : item.status === "IN_PROGRESS"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          ? "bg-cyan-100 text-cyan-800 border border-cyan-200"
+                          : item.status === "COMPLETION_REQUESTED"
+                          ? "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
                           : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                       }`}
                     >
                       {item.status === "ASSIGNED"
-                        ? "Pending Allocation"
+                        ? assignedCleaners.length > 0
+                          ? "Cleaners Assigned"
+                          : "Pending Allocation"
+                        : item.status === "EN_ROUTE"
+                        ? "En Route"
                         : item.status === "IN_PROGRESS"
                         ? "In Progress"
+                        : item.status === "COMPLETION_REQUESTED"
+                        ? "Awaiting Confirmation"
                         : "Completed"}
                     </span>
                   </div>

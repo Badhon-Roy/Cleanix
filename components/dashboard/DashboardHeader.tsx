@@ -24,6 +24,7 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({ user, onToggleMobileMenu }: DashboardHeaderProps) {
+  const [currentUser, setCurrentUser] = useState<any>(user);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -31,9 +32,45 @@ export default function DashboardHeader({ user, onToggleMobileMenu }: DashboardH
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const avatarSrc = user?.avatar || user?.profile?.avatar;
-  const userName = user?.name || "Customer";
-  const userEmail = user?.email || "";
+  // Sync prop changes & listen for real-time client-side profile updates
+  useEffect(() => {
+    setCurrentUser(user);
+    if (typeof window !== "undefined") {
+      try {
+        const savedAvatar = localStorage.getItem("cleanix_user_avatar");
+        if (savedAvatar) {
+          setCurrentUser((prev: any) => ({ ...prev, avatar: savedAvatar }));
+        }
+      } catch {}
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleProfileUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const updated = customEvent.detail;
+      if (updated) {
+        setCurrentUser((prev: any) => {
+          const nextAvatar = updated.avatar !== undefined ? updated.avatar : (prev?.avatar || prev?.profile?.avatar);
+          return {
+            ...prev,
+            ...updated,
+            avatar: nextAvatar,
+            name: updated.name || prev?.name,
+          };
+        });
+      }
+    };
+
+    window.addEventListener("user-profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("user-profile-updated", handleProfileUpdated);
+    };
+  }, []);
+
+  const avatarSrc = currentUser?.avatar || currentUser?.profile?.avatar;
+  const userName = currentUser?.name || "Customer";
+  const userEmail = currentUser?.email || "";
   const userInitials = userName.slice(0, 2).toUpperCase();
 
   // Close dropdowns automatically when clicking outside

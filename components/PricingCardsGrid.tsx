@@ -93,7 +93,13 @@ export default function PricingCardsGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
       {plans.map((plan) => {
-        const isCurrentPlan = currentPlanId === plan.id;
+        const normCurrent = (currentPlanId || "").toLowerCase();
+        const normPlanId = (plan.id || "").toLowerCase();
+        const normPlanTitle = (plan.title || "").toLowerCase();
+
+        const isCurrentPlan =
+          normCurrent !== "" &&
+          (normCurrent === normPlanId || normCurrent === normPlanTitle);
         const isPopular = plan.isPopular;
 
         return (

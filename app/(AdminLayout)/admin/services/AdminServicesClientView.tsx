@@ -45,6 +45,9 @@ export interface ServiceFormValues {
   offersDesc: string;
   whyChooseTitle: string;
   whyChooseDesc: string;
+  adminShare: number;
+  teamLeaderShare: number;
+  cleanerPoolShare: number;
   status: "ACTIVE" | "INACTIVE";
 }
 import {
@@ -119,6 +122,9 @@ export default function AdminServicesClientView({
       offersDesc: "ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।",
       whyChooseTitle: "WHY CHOOSE OUR SERVICE",
       whyChooseDesc: "",
+      adminShare: 50,
+      teamLeaderShare: 10,
+      cleanerPoolShare: 40,
       status: "ACTIVE",
     },
   });
@@ -126,6 +132,11 @@ export default function AdminServicesClientView({
   // Watch live image values for preview
   const heroImageVal = watch("heroImage");
   const contentImageVal = watch("contentImage");
+  const adminShareVal = Number(watch("adminShare") ?? 50);
+  const teamLeaderShareVal = Number(watch("teamLeaderShare") ?? 10);
+  const cleanerPoolShareVal = Number(watch("cleanerPoolShare") ?? 40);
+  const totalCommissionSplit = adminShareVal + teamLeaderShareVal + cleanerPoolShareVal;
+  const isSplitValid = totalCommissionSplit === 100;
 
   const handleHeroFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -487,6 +498,9 @@ export default function AdminServicesClientView({
       offersDesc: "ঢাকার অ্যাপার্টমেন্ট ও কমার্শিয়াল ফ্লোরের জন্য ডিপ রিসেট সার্ভিস।",
       whyChooseTitle: "WHY CHOOSE OUR SERVICE",
       whyChooseDesc: "Cleanix-এর ভেরিফাইড ক্লিনার টিম ও আধুনিক ভ্যাকুয়াম প্রযুক্তিতে শতভাগ নিশ্চিন্তি।",
+      adminShare: 50,
+      teamLeaderShare: 10,
+      cleanerPoolShare: 40,
       status: "ACTIVE",
     });
     setFormOffers([
@@ -540,6 +554,9 @@ export default function AdminServicesClientView({
       offersDesc: activeItem.offersDesc || "",
       whyChooseTitle: activeItem.whyChooseTitle || "WHY CHOOSE OUR SERVICE",
       whyChooseDesc: activeItem.whyChooseDesc || "",
+      adminShare: Number(activeItem.adminShare ?? 50),
+      teamLeaderShare: Number(activeItem.teamLeaderShare ?? 10),
+      cleanerPoolShare: Number(activeItem.cleanerPoolShare ?? 40),
       status: activeItem.status || "ACTIVE",
     });
     setFormOffers(Array.isArray(activeItem.offers) ? activeItem.offers : []);
@@ -567,6 +584,20 @@ export default function AdminServicesClientView({
       const numPrice = Number(String(data.price).replace(/[^0-9]/g, "")) || 3500;
       const formattedPrice = `৳${numPrice.toLocaleString()}`;
 
+      const adminShareNum = Number(data.adminShare ?? 50);
+      const teamLeaderShareNum = Number(data.teamLeaderShare ?? 10);
+      const cleanerPoolShareNum = Number(data.cleanerPoolShare ?? 40);
+
+      if (adminShareNum + teamLeaderShareNum + cleanerPoolShareNum !== 100) {
+        toast.error(
+          `Commission split percentages must equal 100%! Currently: ${
+            adminShareNum + teamLeaderShareNum + cleanerPoolShareNum
+          }% (Admin: ${adminShareNum}%, Leader: ${teamLeaderShareNum}%, Cleaner: ${cleanerPoolShareNum}%)`
+        );
+        setIsSubmittingService(false);
+        return;
+      }
+
       const serviceObj: any = {
         slug: computedSlug,
         title: data.title,
@@ -586,6 +617,9 @@ export default function AdminServicesClientView({
         whyChooseDesc: data.whyChooseDesc,
         whyChoosePoints: formWhyChoosePoints,
         faqs: formFaqs,
+        adminShare: adminShareNum,
+        teamLeaderShare: teamLeaderShareNum,
+        cleanerPoolShare: cleanerPoolShareNum,
         status: data.status,
         fields: formFields,
       };
@@ -1022,9 +1056,23 @@ export default function AdminServicesClientView({
                     </h3>
                   </div>
 
-                  <p className="text-xs font-black text-[#007eff]">
-                    Starting Rate: {item.price ? item.price.replace(/\s*BDT\s*/gi, "") : "৳3,500"}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-xs font-black text-[#007eff]">
+                      Starting Rate: {item.price ? item.price.replace(/\s*BDT\s*/gi, "") : "৳3,500"}
+                    </p>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        🏢 Admin: {item.adminShare ?? 50}%
+                      </span>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                        👑 Leader: {item.teamLeaderShare ?? 10}%
+                      </span>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
+                        🧹 Cleaners: {item.cleanerPoolShare ?? 40}%
+                      </span>
+                    </div>
+                  </div>
 
                   <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed pt-1">
                     {item.shortDesc}
@@ -1450,6 +1498,156 @@ export default function AdminServicesClientView({
                       <option value="ACTIVE">ACTIVE (Accepting Bookings)</option>
                       <option value="INACTIVE">INACTIVE (Temporarily Disabled)</option>
                     </select>
+                  </div>
+
+                  {/* REVENUE COMMISSION SPLIT (REQUIRED: ADMIN 50%, LEADER 10%, CLEANER 40%) */}
+                  <div className="pt-4 border-t border-slate-100 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h5 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-emerald-600" />
+                          <span>
+                            Revenue Commission Split (রেভিনিউ শেয়ার মডেল) <span className="text-red-500">*</span>
+                          </span>
+                        </h5>
+                        <p className="text-xs text-slate-500 font-medium">
+                          সার্ভিস বুকিং ও আয়ের টাকা বন্টনের জন্য শতকরা হার নির্ধারণ করুন (মোট ১০০% হতে হবে)।
+                        </p>
+                      </div>
+
+                      {isSplitValid ? (
+                        <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>মোট ১০০% শেয়ার বরাদ্দ সম্পন্ন</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs font-black px-3 py-1 rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1.5 shadow-2xs animate-pulse">
+                          <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                          <span>মোট শেয়ার {totalCommissionSplit}% (অবশ্যই ১০০% হতে হবে)</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Admin Share % */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
+                        <label className="font-extrabold text-slate-800 text-xs block">
+                          🏢 Admin Platform Share (%) <span className="text-red-500">*</span>:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            placeholder="50"
+                            {...register("adminShare", {
+                              required: "Admin share is required",
+                              min: { value: 0, message: "Min 0%" },
+                              max: { value: 100, message: "Max 100%" },
+                              valueAsNumber: true,
+                            })}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">
+                            %
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium block">
+                          মার্জিন, কেমিক্যাল কিটস ও প্ল্যাটফর্ম নেট
+                        </span>
+                      </div>
+
+                      {/* Team Leader Share % */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
+                        <label className="font-extrabold text-slate-800 text-xs block">
+                          👑 Team Leader Share (%) <span className="text-red-500">*</span>:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            placeholder="10"
+                            {...register("teamLeaderShare", {
+                              required: "Team Leader share is required",
+                              min: { value: 0, message: "Min 0%" },
+                              max: { value: 100, message: "Max 100%" },
+                              valueAsNumber: true,
+                            })}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">
+                            %
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium block">
+                          টিম লিডার সুপারভিশন কমিশন
+                        </span>
+                      </div>
+
+                      {/* Cleaner Squad Pool Share % */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
+                        <label className="font-extrabold text-slate-800 text-xs block">
+                          🧹 Cleaner Squad Pool (%) <span className="text-red-500">*</span>:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            placeholder="40"
+                            {...register("cleanerPoolShare", {
+                              required: "Cleaner Pool share is required",
+                              min: { value: 0, message: "Min 0%" },
+                              max: { value: 100, message: "Max 100%" },
+                              valueAsNumber: true,
+                            })}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-black text-sm focus:outline-none focus:border-[#007eff]"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">
+                            %
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium block">
+                          ক্লিনারদের মধ্যে সমান ভাগে বন্টনযোগ্য
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Live Simulation Card */}
+                    <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="font-extrabold text-blue-950 block">
+                          💡 লাইভ বন্টন সিমুলেশন (ধরি ৳১০,০০০ টাকার সার্ভিস):
+                        </span>
+                        <span className="text-slate-600 font-medium">
+                          Admin পাবে:{" "}
+                          <strong className="text-slate-900">
+                            ৳{((10000 * adminShareVal) / 100).toLocaleString()}
+                          </strong>{" "}
+                          ({adminShareVal}%) • Leader পাবে:{" "}
+                          <strong className="text-emerald-700">
+                            ৳{((10000 * teamLeaderShareVal) / 100).toLocaleString()}
+                          </strong>{" "}
+                          ({teamLeaderShareVal}%) • Cleaners Pool:{" "}
+                          <strong className="text-blue-700">
+                            ৳{((10000 * cleanerPoolShareVal) / 100).toLocaleString()}
+                          </strong>{" "}
+                          ({cleanerPoolShareVal}%)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setValue("adminShare", 50);
+                          setValue("teamLeaderShare", 10);
+                          setValue("cleanerPoolShare", 40);
+                        }}
+                        className="text-[11px] font-extrabold text-[#007eff] hover:underline cursor-pointer flex-shrink-0"
+                      >
+                        Reset to 50% - 10% - 40%
+                      </button>
+                    </div>
                   </div>
 
                   {/* ⚡ BOOKING FIELD CONFIGURATION (PREDEFINED & CUSTOM FIELDS) */}

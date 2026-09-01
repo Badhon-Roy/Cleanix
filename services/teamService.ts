@@ -28,6 +28,19 @@ export interface RegisteredCleaner {
   rating: number;
 }
 
+export interface ITeamDashboardStats {
+  teamMembersCount: number;
+  activeOnDutyCount: number;
+  pendingDispatchCount: number;
+  leaderCommissionWallet: number;
+  pendingLeaderCommission?: number;
+  cleanerPoolEarnings: number;
+  totalAssignedJobs: number;
+  completedJobsCount: number;
+  averageTeamRating: string;
+  totalReviewsCount: number;
+}
+
 export interface TeamSquad {
   id: string;
   teamCode: string;
@@ -55,6 +68,7 @@ export interface TeamSquad {
   status: "ACTIVE" | "INACTIVE";
   completedJobsCount: number;
   createdAt?: string;
+  dashboardStats?: ITeamDashboardStats;
 }
 
 export interface CreateTeamPayload {
@@ -113,6 +127,17 @@ export const mapTeamSquad = (t: any): TeamSquad => {
     status: ((t.leaderRequestStatus || "PENDING") === "ACCEPTED" ? (t.status || "ACTIVE") : "INACTIVE") as "ACTIVE" | "INACTIVE",
     completedJobsCount: t.completedJobsCount ?? 0,
     createdAt: t.createdAt || t.created_at || undefined,
+    dashboardStats: t.dashboardStats || {
+      teamMembersCount: Array.isArray(t.members) ? t.members.length : 0,
+      activeOnDutyCount: 0,
+      pendingDispatchCount: 0,
+      leaderCommissionWallet: 0,
+      cleanerPoolEarnings: 0,
+      totalAssignedJobs: 0,
+      completedJobsCount: t.completedJobsCount ?? 0,
+      averageTeamRating: "5.0",
+      totalReviewsCount: 0,
+    },
   };
 };
 export const mapRegisteredCleaner = (c: any): RegisteredCleaner => ({
