@@ -93,8 +93,9 @@ export default function DashboardClientView({
   useEffect(() => {
     loadDashboardData();
 
-    // Socket.io Real-time Event Listener
+    // Socket.io Real-time Event Listener for instant on-the-fly updates
     const socketUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL ||
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
       "http://localhost:5000";
 
@@ -104,14 +105,40 @@ export default function DashboardClientView({
     });
     socketRef.current = socket;
 
-    socket.on("booking_created", () => loadDashboardData());
-    socket.on("booking_updated", () => loadDashboardData());
+    const handleBookingRealtimeEvent = (data?: any) => {
+      if (data && data._id) {
+        setBookings((prev) => {
+          const exists = prev.some((b) => b._id === data._id);
+          if (exists) {
+            return prev.map((b) => (b._id === data._id ? { ...b, ...data } : b));
+          } else {
+            return [data, ...prev];
+          }
+        });
+        setAdminBookings((prev) => {
+          const exists = prev.some((b) => b._id === data._id);
+          if (exists) {
+            return prev.map((b) => (b._id === data._id ? { ...b, ...data } : b));
+          } else {
+            return [data, ...prev];
+          }
+        });
+      }
+      loadDashboardData();
+    };
+
+    socket.on("booking_created", handleBookingRealtimeEvent);
+    socket.on("booking_updated", handleBookingRealtimeEvent);
+    socket.on("team_updated", handleBookingRealtimeEvent);
+    socket.on("cleaner_updated", handleBookingRealtimeEvent);
     socket.on("subscription_created", () => loadDashboardData());
     socket.on("subscription_updated", () => loadDashboardData());
 
     return () => {
-      socket.off("booking_created");
-      socket.off("booking_updated");
+      socket.off("booking_created", handleBookingRealtimeEvent);
+      socket.off("booking_updated", handleBookingRealtimeEvent);
+      socket.off("team_updated", handleBookingRealtimeEvent);
+      socket.off("cleaner_updated", handleBookingRealtimeEvent);
       socket.off("subscription_created");
       socket.off("subscription_updated");
       socket.disconnect();
@@ -153,10 +180,20 @@ export default function DashboardClientView({
     (s) => s.status === "ACTIVE" && !s.isDeleted
   ) || subscriptions[0];
 
-  // Active Live Tracker Booking
-  const activeTrackerBooking = bookings.find(
-    (b) => (b.status === "ASSIGNED" || b.status === "IN_PROGRESS" || b.status === "CONFIRMED") && !b.isDeleted
-  ) || bookings[0];
+  // Active Running Bookings list (for all active jobs tracking!)
+  const activeRunningBookings = bookings.filter(
+    (b) =>
+      (b.status === "PENDING" ||
+        b.status === "SCHEDULED" ||
+        b.status === "CONFIRMED" ||
+        b.status === "ASSIGNED" ||
+        b.status === "EN_ROUTE" ||
+        b.status === "IN_PROGRESS" ||
+        b.status === "COMPLETION_REQUESTED") &&
+      !b.isDeleted
+  );
+
+  const activeTrackerBooking = activeRunningBookings[0] || bookings[0];
 
   const totalBookingsCount = isAdmin ? adminBookings.length : bookings.length;
   const activePlanTitle = activeSubscription
@@ -306,16 +343,53 @@ export default function DashboardClientView({
         </Link>
       </div>
 
-      {/* CUSTOMER LIVE JOB TRACKER */}
-      {!isAdmin && activeTrackerBooking && (
-        <LiveJobTracker
-          bookingNumber={activeTrackerBooking.bookingRef || `#CLN-${String(activeTrackerBooking._id).slice(-6).toUpperCase()}`}
-          serviceName={
-            activeTrackerBooking.serviceType?.title ||
-            "Standard Home Deep Cleaning & Anti-Bacterial Sanitization"
-          }
-          address={activeTrackerBooking.address || "Dhaka Coverage Zone"}
-        />
+      {/* CUSTOMER LIVE JOB TRACKER SECTION FOR ALL ACTIVE JOBS */}
+      {!isAdmin && activeRunningBookings.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <span>Active Job Real-Time Tracker ({activeRunningBookings.length} Running)</span>
+            </h2>
+
+            {activeRunningBookings.length > 1 && (
+              <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-blue-50 text-[#007eff] border border-blue-200 tracking-wider">
+                ⚡ MULTIPLE ACTIVE JOBS TRACKING ({activeRunningBookings.length} LIVE)
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-8">
+            {activeRunningBookings.map((b) => {
+              const serviceTitle =
+                typeof b.serviceType === "object"
+                  ? b.serviceType?.title || b.serviceType?.name || "Cleaning Care"
+                  : "Cleaning Care";
+              const ref = b.bookingRef || `#CLN-${String(b._id).slice(-6).toUpperCase()}`;
+
+              return (
+                <LiveJobTracker
+                  key={b._id}
+                  bookingId={b._id}
+                  bookingNumber={ref}
+                  serviceName={serviceTitle}
+                  address={b.address || "Dhaka Coverage Zone"}
+                  status={b.status}
+                  cleanerTeam={b.cleanerTeam}
+                  assignedTeam={b.assignedTeam}
+                  assignedCleaners={b.assignedCleaners}
+                  scheduledDate={b.scheduledDate}
+                  timeSlot={b.timeSlot}
+                  proofOfWork={b.proofOfWork}
+                  onRefresh={loadDashboardData}
+                />
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* TEAM LEADER / CLEANER WORKSPACE OPERATIONS */}

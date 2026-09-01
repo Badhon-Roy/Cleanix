@@ -64,7 +64,7 @@ interface TeamBooking {
   timeSlot: string;
   specs: string;
   assignedCleaners: string[];
-  status: "PENDING_DISPATCH" | "IN_PROGRESS" | "COMPLETED";
+  status: "PENDING_DISPATCH" | "ASSIGNED" | "EN_ROUTE" | "IN_PROGRESS" | "COMPLETION_REQUESTED" | "COMPLETED";
   totalPrice: number;
   leaderCommission: number;
   cleanerPoolShare: number;
@@ -116,9 +116,11 @@ export default function TeamLeaderDashboardView({
             const specs = specParts.join(" • ") || "Residential Cleaning";
 
             const assignedCleaners = Array.isArray(item.assignedCleaners)
-              ? item.assignedCleaners.map((c: any) =>
-                  typeof c === "object" ? c.name : c
-                )
+              ? item.assignedCleaners
+                  .filter((c: any) => c != null)
+                  .map((c: any) =>
+                    typeof c === "object" ? c.name || c._id : c
+                  )
               : [];
 
             const totalPrice = b.totalAmount || 0;
@@ -144,8 +146,14 @@ export default function TeamLeaderDashboardView({
               status:
                 item.status === "COMPLETED"
                   ? "COMPLETED"
-                  : item.status === "IN_PROGRESS" || (assignedCleaners.length > 0 && item.status !== "COMPLETED")
+                  : item.status === "COMPLETION_REQUESTED"
+                  ? "COMPLETION_REQUESTED"
+                  : item.status === "IN_PROGRESS"
                   ? "IN_PROGRESS"
+                  : item.status === "EN_ROUTE"
+                  ? "EN_ROUTE"
+                  : assignedCleaners.length > 0 || item.status === "ASSIGNED"
+                  ? "ASSIGNED"
                   : "PENDING_DISPATCH",
               totalPrice,
               leaderCommission,
@@ -196,6 +204,7 @@ export default function TeamLeaderDashboardView({
     loadTeamMembers();
 
     const socketUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL ||
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
       "http://localhost:5000";
 
@@ -209,13 +218,22 @@ export default function TeamLeaderDashboardView({
       loadTeamMembers();
     };
 
+    socket.on("team_assignment_updated", handleSilentRefresh);
     socket.on("booking_updated", handleSilentRefresh);
     socket.on("booking_created", handleSilentRefresh);
     socket.on("team_updated", handleSilentRefresh);
     socket.on("cleaner_updated", handleSilentRefresh);
     socket.on("leader_request_updated", handleSilentRefresh);
 
+    // Auto-sync interval fallback every 8 seconds for 100% on-time real-time guarantee
+    const syncInterval = setInterval(() => {
+      loadDashboardAssignments(false);
+      loadTeamMembers();
+    }, 8000);
+
     return () => {
+      clearInterval(syncInterval);
+      socket.off("team_assignment_updated", handleSilentRefresh);
       socket.off("booking_updated", handleSilentRefresh);
       socket.off("booking_created", handleSilentRefresh);
       socket.off("team_updated", handleSilentRefresh);
@@ -231,12 +249,28 @@ export default function TeamLeaderDashboardView({
 
   const openDispatchModal = (booking: TeamBooking) => {
     setDispatchModalBooking(booking);
-    setSelectedCleanerNames(booking.assignedCleaners);
+    const initialSelected: string[] = [];
+    if (Array.isArray(booking.assignedCleaners)) {
+      booking.assignedCleaners.forEach((nameOrId) => {
+        if (!nameOrId) return;
+        const matchedMember = teamMembers.find(
+          (m) => m.name === nameOrId || m.id === nameOrId
+        );
+        if (matchedMember) {
+          initialSelected.push(matchedMember.id || matchedMember.name);
+        } else {
+          initialSelected.push(nameOrId);
+        }
+      });
+    }
+    setSelectedCleanerNames(initialSelected);
   };
 
-  const toggleCleanerInModal = (name: string) => {
+  const toggleCleanerInModal = (cleanerIdentifier: string) => {
     setSelectedCleanerNames((prev) =>
-      prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]
+      prev.includes(cleanerIdentifier)
+        ? prev.filter((c) => c !== cleanerIdentifier)
+        : [...prev, cleanerIdentifier]
     );
   };
 
@@ -246,7 +280,7 @@ export default function TeamLeaderDashboardView({
     setIsUpdatingDispatch(true);
     try {
       const assignmentId = dispatchModalBooking._assignmentId;
-      const targetStatus = selectedCleanerNames.length > 0 ? "IN_PROGRESS" : "ASSIGNED";
+      const targetStatus = "ASSIGNED";
 
       const res = await updateTeamAssignmentAPI(assignmentId, {
         assignedCleaners: selectedCleanerNames,
@@ -524,11 +558,32 @@ export default function TeamLeaderDashboardView({
               teamBookings.map((job) => {
                 const getStatusBadge = () => {
                   switch (job.status) {
-                    case "IN_PROGRESS":
+                    case "ASSIGNED":
                       return (
                         <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1.5">
-                          <Truck className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                          <UserCheck className="w-3.5 h-3.5 text-[#007eff]" />
+                          CLEANERS ASSIGNED
+                        </span>
+                      );
+                    case "EN_ROUTE":
+                      return (
+                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5 text-indigo-600 animate-bounce" />
+                          EN ROUTE
+                        </span>
+                      );
+                    case "IN_PROGRESS":
+                      return (
+                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300 flex items-center gap-1.5 animate-pulse">
+                          <Clock className="w-3.5 h-3.5 text-cyan-600 animate-pulse" />
                           IN PROGRESS
+                        </span>
+                      );
+                    case "COMPLETION_REQUESTED":
+                      return (
+                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 animate-pulse">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          AWAITING CONFIRMATION
                         </span>
                       );
                     case "COMPLETED":
@@ -551,10 +606,12 @@ export default function TeamLeaderDashboardView({
                   <div
                     key={job.id}
                     className={`p-6 rounded-3xl border transition-all space-y-5 ${
-                      job.status === "IN_PROGRESS"
+                      job.status === "IN_PROGRESS" || job.status === "EN_ROUTE"
                         ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-xs"
                         : job.status === "COMPLETED"
                         ? "bg-slate-50/70 border-slate-200"
+                        : job.status === "ASSIGNED"
+                        ? "bg-white border-blue-200 shadow-xs"
                         : "bg-white border-amber-300 shadow-xs"
                     }`}
                   >
@@ -706,11 +763,30 @@ export default function TeamLeaderDashboardView({
               <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Team Cleaners for Dispatch (40% Pool Shared):</p>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {teamMembers.map((cleaner) => {
-                  const isChecked = selectedCleanerNames.includes(cleaner.name);
+                  const cleanerKey = cleaner.id || cleaner.name;
+                  const isChecked =
+                    selectedCleanerNames.includes(cleanerKey) ||
+                    selectedCleanerNames.includes(cleaner.name) ||
+                    (cleaner.id ? selectedCleanerNames.includes(cleaner.id) : false);
+
                   return (
-                    <label key={cleaner.id} onClick={() => toggleCleanerInModal(cleaner.name)} className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${isChecked ? "bg-blue-50/80 border-[#007eff] shadow-xs" : "bg-slate-50 border-slate-200 hover:border-slate-300"}`}>
+                    <div
+                      key={cleanerKey}
+                      onClick={() => toggleCleanerInModal(cleanerKey)}
+                      className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
+                        isChecked
+                          ? "bg-blue-50/80 border-[#007eff] shadow-xs"
+                          : "bg-slate-50 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isChecked ? "bg-[#007eff] border-[#007eff] text-white" : "border-slate-300 bg-white"}`}>
+                        <div
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                            isChecked
+                              ? "bg-[#007eff] border-[#007eff] text-white"
+                              : "border-slate-300 bg-white"
+                          }`}
+                        >
                           {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                         <div>
@@ -718,8 +794,18 @@ export default function TeamLeaderDashboardView({
                           <span className="text-xs text-slate-500 font-medium">⭐ {cleaner.rating} • {cleaner.completedJobs} Jobs</span>
                         </div>
                       </div>
-                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${cleaner.status === "ON_DUTY" ? "bg-emerald-100 text-emerald-800" : cleaner.status === "IN_SERVICE" ? "bg-blue-100 text-blue-800" : "bg-slate-200 text-slate-600"}`}>{cleaner.status}</span>
-                    </label>
+                      <span
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                          cleaner.status === "ON_DUTY"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : cleaner.status === "IN_SERVICE"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-slate-200 text-slate-600"
+                        }`}
+                      >
+                        {cleaner.status}
+                      </span>
+                    </div>
                   );
                 })}
               </div>

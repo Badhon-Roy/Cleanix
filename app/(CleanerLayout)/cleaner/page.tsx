@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Truck,
@@ -16,10 +16,11 @@ import {
   Check,
   X,
   Sparkles,
-  Award,
-  ShieldCheck,
   Calendar,
   Loader2,
+  CalendarCheck,
+  AlertCircle,
+  FileCheck,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
@@ -27,6 +28,8 @@ import ProofOfWorkModal from "@/components/cleaner/ProofOfWorkModal";
 import {
   fetchAllTeamsAPI,
   respondLeaderRequestAPI,
+  fetchMyTeamAssignmentsAPI,
+  updateTeamAssignmentAPI,
   TeamSquad,
 } from "@/services/teamService";
 import {
@@ -37,12 +40,16 @@ import {
 import {
   fetchCleanerProfileMeAPI,
   toggleCleanerDutyStatusAPI,
+  ICleanerProfile,
 } from "@/services/cleanerService";
+import { updateBookingProgressAPI } from "@/services/bookingService";
 import { getAuthUser, setAuthUser, setAuthRole } from "@/utils/cookie";
 import { slugifyTeamName } from "@/utils/slug";
 
 interface JobItem {
   id: string;
+  _assignmentId: string;
+  bookingId: string;
   customerName: string;
   customerPhone: string;
   address: string;
@@ -50,22 +57,131 @@ interface JobItem {
   serviceType: string;
   specs: string;
   timeSlot: string;
-  status: "ASSIGNED" | "EN_ROUTE" | "IN_PROGRESS" | "COMPLETED";
-  payout: string;
+  scheduledDate?: string;
+  status: "ASSIGNED" | "EN_ROUTE" | "IN_PROGRESS" | "COMPLETION_REQUESTED" | "COMPLETED";
+  payout: number;
   addons: string[];
+  teamName?: string;
+  teamCode?: string;
+  dispatchNotes?: string;
 }
 
 export default function CleanerDashboardPage() {
   const [isOnDuty, setIsOnDuty] = useState(false);
   const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(null);
+  const [jobs, setJobs] = useState<JobItem[]>([]);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
+  const [activeTeamInfo, setActiveTeamInfo] = useState<{ teamName: string; teamCode: string } | null>(null);
 
-  const loadCleanerDutyProfile = async () => {
-    const prof = await fetchCleanerProfileMeAPI();
-    if (prof) {
-      setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
+  // Active Selected Job for Proof Upload Modal
+  const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(null);
+
+  // Pending Team Leader Appointment Invitation State
+  const [pendingAppointment, setPendingAppointment] = useState<LeaderAppointmentItem | null>(null);
+  const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(null);
+  const [isResponding, setIsResponding] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    action: "ACCEPT" | "DECLINE";
+  }>({
+    isOpen: false,
+    action: "ACCEPT",
+  });
+
+  // Load Cleaner Profile & Duty Status
+  const loadCleanerDutyProfile = useCallback(async () => {
+    try {
+      const prof = await fetchCleanerProfileMeAPI();
+      if (prof) {
+        setCleanerProfile(prof);
+        setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
+      }
+    } catch (err) {
+      console.error("Failed to load cleaner profile:", err);
     }
-  };
+  }, []);
 
+  // Load Real Assigned Jobs for this cleaner / team
+  const loadAssignedJobs = useCallback(async () => {
+    try {
+      setIsLoadingJobs(true);
+      const assignments = await fetchMyTeamAssignmentsAPI();
+      if (Array.isArray(assignments)) {
+        if (assignments.length > 0 && assignments[0].team) {
+          setActiveTeamInfo({
+            teamName: assignments[0].team.teamName || "Squad Active",
+            teamCode: assignments[0].team.teamCode || "",
+          });
+        }
+
+        const mapped: JobItem[] = assignments.map((item: any) => {
+          const booking = item.booking || {};
+          const user = booking.user || {};
+          const serviceType = booking.serviceType || {};
+          const location = booking.locationId || {};
+          const team = item.team || {};
+
+          // Dynamic specs calculation
+          const cFields = booking.customFields || {};
+          const specsParts: string[] = [];
+          if (cFields.sqft) specsParts.push(`${cFields.sqft} SqFt`);
+          if (cFields.bedrooms) specsParts.push(`${cFields.bedrooms} Bedrooms`);
+          if (cFields.bathrooms) specsParts.push(`${cFields.bathrooms} Bathrooms`);
+          const specsString =
+            specsParts.length > 0
+              ? specsParts.join(" • ")
+              : serviceType.category
+              ? `${serviceType.category} Standard Clean`
+              : "Standard Cleaning Visit";
+
+          // Extract addons
+          const addonsList: string[] = [];
+          if (Array.isArray(booking.selectedAddons)) {
+            booking.selectedAddons.forEach((ad: any) => {
+              if (typeof ad === "string") addonsList.push(ad);
+              else if (ad?.title) addonsList.push(ad.title);
+              else if (ad?.name) addonsList.push(ad.name);
+            });
+          }
+
+          const fullAddress =
+            booking.address || location.address || "Customer location specified in booking";
+          const area = location.city || team.zone?.zoneName || "Dhaka Zone";
+
+          return {
+            id: booking.bookingRef || item._id,
+            _assignmentId: item._id,
+            bookingId: booking._id || "",
+            customerName: user.name || "Customer",
+            customerPhone: user.phone || "+880 1700-000000",
+            address: fullAddress,
+            area: area,
+            serviceType: serviceType.title || "Professional Cleaning Service",
+            specs: specsString,
+            timeSlot: booking.timeSlot || "Scheduled Slot",
+            scheduledDate: booking.scheduledDate || "",
+            status: (item.status || booking.status || "ASSIGNED") as any,
+            payout: Number(item.cleanerPoolPayout) || 1200,
+            addons: addonsList,
+            teamName: team.teamName,
+            teamCode: team.teamCode,
+            dispatchNotes: item.dispatchNotes || booking.notes || "",
+          };
+        });
+
+        setJobs(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to load assigned jobs:", err);
+    } finally {
+      setIsLoadingJobs(false);
+    }
+  }, []);
+
+  // Duty Toggle Handler
   const handleToggleDuty = async () => {
     setIsTogglingDuty(true);
     try {
@@ -79,6 +195,7 @@ export default function CleanerDashboardPage() {
             ? "অন-ডিউটি চালু হয়েছে! আপনার নাম স্কোয়াডে অন-ডিউটিতে প্রদর্শিত হচ্ছে।"
             : "ডিউটি বন্ধ করা হয়েছে! সিস্টেমে আপনি এখন অফ-ডিউটিতে আছেন।"
         );
+        await loadCleanerDutyProfile();
       } else {
         toast.error(res?.message || "ডিউটি স্ট্যাটাস পরিবর্তন করা যায়নি");
       }
@@ -90,85 +207,52 @@ export default function CleanerDashboardPage() {
     }
   };
 
-  // Active Selected Job for Proof Upload Modal
-  const [selectedProofJob, setSelectedProofJob] = useState<JobItem | null>(
-    null,
-  );
+  // Dynamic Status Update Handler (En Route, Check In, Completion Request, Complete)
+  const updateJobStatus = async (
+    job: JobItem,
+    newStatus: JobItem["status"],
+    proofData?: any,
+  ) => {
+    setUpdatingJobId(job.id);
+    try {
+      // Optimistic state update
+      setJobs((prev) =>
+        prev.map((j) => (j.id === job.id ? { ...j, status: newStatus } : j))
+      );
 
-  // Pending Team Leader Appointment Invitation State
-  const [pendingAppointment, setPendingAppointment] =
-    useState<LeaderAppointmentItem | null>(null);
-  const [pendingLeaderTeam, setPendingLeaderTeam] = useState<TeamSquad | null>(
-    null,
-  );
-  const [isResponding, setIsResponding] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    action: "ACCEPT" | "DECLINE";
-  }>({
-    isOpen: false,
-    action: "ACCEPT",
-  });
+      if (job._assignmentId) {
+        await updateTeamAssignmentAPI(job._assignmentId, { status: newStatus });
+      }
+      if (job.bookingId) {
+        await updateBookingProgressAPI(job.bookingId, {
+          status: newStatus,
+          ...(proofData ? { proofOfWork: proofData } : {}),
+        });
+      }
 
-  // Daily Assigned Jobs State
-  const [jobs, setJobs] = useState<JobItem[]>([
-    {
-      id: "CLN-2026-8891",
-      customerName: "Tanvir Hasan",
-      customerPhone: "+880 1711-223344",
-      address: "House 42, Road 11, Block D, Gulshan-2",
-      area: "Gulshan-2",
-      serviceType: "VIP Standard Deep Cleaning",
-      specs: "2,400 SqFt • 3 Bedrooms • 3 Bathrooms",
-      timeSlot: "10:00 AM - 12:30 PM",
-      status: "EN_ROUTE",
-      payout: "৳2,200",
-      addons: ["Oven Wash", "Sofa Shampoo"],
-    },
-    {
-      id: "CLN-2026-8892",
-      customerName: "Sabrina Rahman",
-      customerPhone: "+880 1819-998877",
-      address: "Level 4, City Tower, Commercial Avenue, Motijheel",
-      area: "Motijheel C/A",
-      serviceType: "Commercial Office Cleaning",
-      specs: "4,500 SqFt • Open Floor & Chimney",
-      timeSlot: "02:00 PM - 04:30 PM",
-      status: "ASSIGNED",
-      payout: "৳3,500",
-      addons: ["Floor Shine Treatment", "Glass Polish"],
-    },
-    {
-      id: "CLN-2026-8890",
-      customerName: "Anisur Rahman",
-      customerPhone: "+880 1912-334455",
-      address: "Apartment 5B, Navana Tower, Banani",
-      area: "Banani",
-      serviceType: "Move-In / Move-Out Deep Clean",
-      specs: "1,800 SqFt • 2 Bedrooms • 2 Bathrooms",
-      timeSlot: "08:00 AM - 09:45 AM",
-      status: "COMPLETED",
-      payout: "৳1,800",
-      addons: ["Fridge Deep Clean"],
-    },
-    {
-      id: "CLN-2026-8893",
-      customerName: "Kazi Farhan",
-      customerPhone: "+880 1611-001122",
-      address: "Villa 12, Sector 4, Uttara",
-      area: "Uttara",
-      serviceType: "Post-Construction Cleaning",
-      specs: "3,200 SqFt • Heavy Debris Scrub",
-      timeSlot: "05:00 PM - 07:30 PM",
-      status: "ASSIGNED",
-      payout: "৳2,800",
-      addons: ["Dust Repellent Spray"],
-    },
-  ]);
+      if (newStatus === "EN_ROUTE") {
+        toast.success("🚗 স্ট্যাটাস আপডেট: আপনি কাস্টমারের ঠিকানায় রওনা দিয়েছেন!");
+      } else if (newStatus === "IN_PROGRESS") {
+        toast.success("⏱️ স্ট্যাটাস আপডেট: ক্লিনিং কাজ শুরু হয়েছে (In Progress)!");
+      } else if (newStatus === "COMPLETION_REQUESTED") {
+        toast.success("📤 কাজের ছবি আপলোড হয়েছে ও কাস্টমারের অনুমোদনের জন্য রিকোয়েস্ট পাঠানো হয়েছে!");
+      } else if (newStatus === "COMPLETED") {
+        toast.success("🎉 কাজ সফলভাবে সম্পন্ন হয়েছে ও ভেরিফিকেশন জমা দেওয়া হয়েছে!");
+      }
+
+      await loadAssignedJobs();
+      await loadCleanerDutyProfile();
+    } catch (err: any) {
+      console.error("Failed to update status:", err);
+      toast.error(err?.message || "স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে");
+      await loadAssignedJobs();
+    } finally {
+      setUpdatingJobId(null);
+    }
+  };
 
   // Check if current cleaner has a pending Team Leader assignment request
-  const checkPendingLeaderRequest = async () => {
+  const checkPendingLeaderRequest = useCallback(async () => {
     try {
       const user = getAuthUser();
       if (user) {
@@ -265,12 +349,13 @@ export default function CleanerDashboardPage() {
     } catch (err) {
       console.error("Failed to check pending leader request:", err);
     }
-  };
+  }, [userProfile?.name]);
 
-  // Subscribe to real-time Socket.IO team and appointment updates
+  // Initial Load and Socket.IO Subscriptions
   useEffect(() => {
     checkPendingLeaderRequest();
     loadCleanerDutyProfile();
+    loadAssignedJobs();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -281,8 +366,18 @@ export default function CleanerDashboardPage() {
       withCredentials: true,
     });
 
+    socket.on("booking_updated", () => {
+      loadAssignedJobs();
+      loadCleanerDutyProfile();
+    });
+
+    socket.on("team_assignment_updated", () => {
+      loadAssignedJobs();
+    });
+
     socket.on("team_updated", () => {
       checkPendingLeaderRequest();
+      loadAssignedJobs();
     });
 
     socket.on("leader_request_updated", () => {
@@ -299,13 +394,15 @@ export default function CleanerDashboardPage() {
     });
 
     return () => {
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
       socket.off("team_updated");
       socket.off("leader_request_updated");
       socket.off("leader_appointment_updated");
       socket.off("cleaner_updated");
       socket.disconnect();
     };
-  }, []);
+  }, [checkPendingLeaderRequest, loadAssignedJobs, loadCleanerDutyProfile]);
 
   // Respond to Leader Assignment Request (ACCEPT / DECLINE)
   const handleRespondRequest = async (action: "ACCEPT" | "DECLINE") => {
@@ -355,23 +452,20 @@ export default function CleanerDashboardPage() {
     }
   };
 
-  // One-Tap Status Update Handler
-  const updateJobStatus = (id: string, newStatus: JobItem["status"]) => {
-    setJobs((prev) =>
-      prev.map((j) => (j.id === id ? { ...j, status: newStatus } : j)),
-    );
-  };
-
+  // Dynamic KPI Metric Calculations
+  const totalJobsCount = jobs.length;
   const completedCount = jobs.filter((j) => j.status === "COMPLETED").length;
+  const totalEstimatedEarnings = jobs.reduce((sum, j) => sum + (Number(j.payout) || 0), 0);
+  const ratingValue = cleanerProfile?.rating ? Number(cleanerProfile.rating).toFixed(2) : "4.95";
 
   return (
     <div className="space-y-8 pb-12 w-full">
       {/* 👑 Team Leader Appointment Request Banner */}
       {pendingLeaderTeam && (
-        <div className="bg-[#F2D701] rounded-3xl p-6 sm:p-8 text-slate-900 space-y-5 animate-in fade-in border border-yellow-500/30">
+        <div className="bg-[#F2D701] rounded-3xl p-6 sm:p-8 text-slate-900 space-y-5 animate-in fade-in border border-yellow-500/30 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900/15 pb-5">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-slate-900 text-[#F2D701] flex items-center justify-center font-black text-2xl flex-shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-slate-900 text-[#F2D701] flex items-center justify-center font-black text-2xl flex-shrink-0 shadow-md">
                 👑
               </div>
 
@@ -397,7 +491,7 @@ export default function CleanerDashboardPage() {
                 type="button"
                 disabled={isResponding}
                 onClick={() => setModalState({ isOpen: true, action: "ACCEPT" })}
-                className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
               >
                 <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
                 <span>Accept Leader Role & Redirect</span>
@@ -445,15 +539,27 @@ export default function CleanerDashboardPage() {
       )}
 
       {/* Duty Status & Shift Banner */}
-      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl">
-        <div className="space-y-2">
+      <div className="bg-gradient-to-r from-[#0d274c] via-slate-900 to-[#007eff] text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 shadow-xl relative overflow-hidden">
+        <div className="space-y-2 relative z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              DISPATCH ACTIVE
+            <span
+              className={`text-xs font-extrabold px-3 py-1 rounded-full flex items-center gap-1.5 border ${
+                isOnDuty
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                  : "bg-amber-500/20 text-amber-300 border-amber-400/30"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isOnDuty ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                }`}
+              />
+              {isOnDuty ? "DISPATCH ACTIVE" : "OFFLINE SHIFT"}
             </span>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-slate-200 border border-white/10">
-              TEAM DELTA • UNIT #04
+              {activeTeamInfo
+                ? `${activeTeamInfo.teamName.toUpperCase()} • ${activeTeamInfo.teamCode || "FIELD SQUAD"}`
+                : "CLEANIX FIELD SQUAD • ACTIVE"}
             </span>
           </div>
 
@@ -462,20 +568,29 @@ export default function CleanerDashboardPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-            স্বাগতম ক্লিনার {userProfile?.name || "স্টাফ"}! আজকের অ্যাসাইন করা
-            ক্লিনিং ডিউটি ম্যানেজ করুন, জিপিএস ট্র্যাকিং আপডেট দিন এবং কাজের ছবি
-            আপলোড করুন।
+            স্বাগতম {cleanerProfile?.name || userProfile?.name || "ক্লিনার স্টাফ"}! আজকের অ্যাসাইন করা
+            ক্লিনিং ডিউটি ম্যানেজ করুন, রিয়েল-টাইম স্ট্যাটাস আপডেট দিন এবং কাজের ছবি আপলোড করুন।
           </p>
         </div>
 
         {/* Shift Toggle CTA Box */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl flex items-center gap-4 self-start md:self-auto">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl flex items-center gap-4 self-start md:self-auto relative z-10">
           <div>
             <p className="text-xs text-slate-300 font-bold uppercase">
               বর্তমান ডিউটি অবস্থা
             </p>
-            <p className="text-sm font-extrabold text-white mt-0.5">
-              {isOnDuty ? "অন-ডিউটি চালু" : "অফ-ডিউটি বন্ধ"}
+            <p className="text-sm font-extrabold text-white mt-0.5 flex items-center gap-1.5">
+              {isOnDuty ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  অন-ডিউটি চালু
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-slate-400" />
+                  অফ-ডিউটি বন্ধ
+                </>
+              )}
             </p>
           </div>
 
@@ -498,7 +613,7 @@ export default function CleanerDashboardPage() {
       {/* KPI Cards Overview Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Today's Jobs Card */}
-        <div className="bg-gradient-to-br from-blue-50/70 via-white to-slate-50/40 border border-blue-200 rounded-3xl p-6 sm:p-7 space-y-4">
+        <div className="bg-gradient-to-br from-blue-50/70 via-white to-slate-50/40 border border-blue-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
               আজকের মোট ডিউটি কাজ
@@ -510,7 +625,7 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              {jobs.length}{" "}
+              {totalJobsCount}{" "}
               <span className="text-xl font-bold text-slate-600">টি</span>
             </p>
             <div className="pt-2">
@@ -522,7 +637,7 @@ export default function CleanerDashboardPage() {
         </div>
 
         {/* Completed Jobs Card */}
-        <div className="bg-gradient-to-br from-emerald-50/70 via-white to-slate-50/40 border border-emerald-200 rounded-3xl p-6 sm:p-7 space-y-4">
+        <div className="bg-gradient-to-br from-emerald-50/70 via-white to-slate-50/40 border border-emerald-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
               সম্পন্নকৃত কাজ
@@ -546,7 +661,7 @@ export default function CleanerDashboardPage() {
         </div>
 
         {/* Daily Payout Card */}
-        <div className="bg-gradient-to-br from-amber-50/70 via-white to-slate-50/40 border border-amber-200 rounded-3xl p-6 sm:p-7 space-y-4">
+        <div className="bg-gradient-to-br from-amber-50/70 via-white to-slate-50/40 border border-amber-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
               আজকের আনুমানিক আয়
@@ -558,18 +673,18 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              ৳৬,৫০০
+              ৳{totalEstimatedEarnings.toLocaleString()}
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-full border border-amber-300 inline-block">
-                💰 কমিশন ও পারফরম্যান্স বোনাস
+                💰 স্কোয়াড পুল শেয়ার
               </span>
             </div>
           </div>
         </div>
 
         {/* Customer Rating Card */}
-        <div className="bg-gradient-to-br from-purple-50/70 via-white to-slate-50/40 border border-purple-200 rounded-3xl p-6 sm:p-7 space-y-4">
+        <div className="bg-gradient-to-br from-purple-50/70 via-white to-slate-50/40 border border-purple-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
               পারফরম্যান্স রেটিং
@@ -581,11 +696,11 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              4.95 <span className="text-amber-500">★</span>
+              {ratingValue} <span className="text-amber-500">★</span>
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-purple-800 bg-purple-100/80 px-3 py-1.5 rounded-full border border-purple-300 inline-block">
-                ★ ভিআইপি ৫-স্টার গড় রেটিং
+                ★ প্রফেশনাল গড় রেটিং
               </span>
             </div>
           </div>
@@ -593,212 +708,270 @@ export default function CleanerDashboardPage() {
       </div>
 
       {/* Main Assigned Jobs List Section */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-              <Truck className="w-5 h-5 text-[#007eff]" /> আজকের ডিসপ্যাচ
-              সময়সূচী
+              <Truck className="w-5 h-5 text-[#007eff]" /> আজকের ডিসপ্যাচ সময়সূচী
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              এক ক্লিকে কাজের স্ট্যাটাস আপডেট করুন, গুগল ম্যাপস নেভিগেশন চালু
-              করুন এবং কাজের ছবি আপলোড করুন।
+              এক ক্লিকে কাজের স্ট্যাটাস আপডেট করুন, গুগল ম্যাপস নেভিগেশন চালু করুন এবং কাজের ছবি আপলোড করুন।
             </p>
           </div>
 
-          <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 self-start sm:self-auto">
-            {jobs.length} টির মধ্যে {completedCount} টি কাজ সম্পন্ন
+          <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 self-start sm:self-auto">
+            {totalJobsCount} টির মধ্যে {completedCount} টি কাজ সম্পন্ন
           </span>
         </div>
 
-        {/* Jobs List Grid */}
-        <div className="space-y-5">
-          {jobs.map((job) => {
-            const getStatusBadge = () => {
-              switch (job.status) {
-                case "EN_ROUTE":
-                  return (
-                    <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-blue-600" />
-                      EN ROUTE (ON THE WAY)
-                    </span>
-                  );
-                case "IN_PROGRESS":
-                  return (
-                    <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 animate-pulse">
-                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                      IN PROGRESS (CLEANING)
-                    </span>
-                  );
-                case "COMPLETED":
-                  return (
-                    <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      JOB COMPLETED & VERIFIED
-                    </span>
-                  );
-                default:
-                  return (
-                    <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                      ASSIGNED (UPCOMING)
-                    </span>
-                  );
-              }
-            };
+        {/* Loading State Skeleton */}
+        {isLoadingJobs ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <Loader2 className="w-8 h-8 animate-spin text-[#007eff]" />
+            <p className="text-sm font-bold text-slate-600">
+              আপনার অ্যাসাইন করা কাজসমূহ লোড হচ্ছে...
+            </p>
+          </div>
+        ) : jobs.length === 0 ? (
+          /* Empty State */
+          <div className="py-16 text-center space-y-4 max-w-md mx-auto">
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center mx-auto">
+              <CalendarCheck className="w-8 h-8 stroke-[2.2]" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-extrabold text-slate-900">
+                বর্তমানে কোনো অ্যাসাইন করা কাজ নেই
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                টিম লিডার বা অ্যাডমিন আপনার স্কোয়াডে কাজ বরাদ্দ করলে এখানে রিয়েল-টাইমে শো করবে। ডিউটি অন রাখুন যাতে নতুন নোটিফিকেশন পান।
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Jobs List Grid */
+          <div className="space-y-5">
+            {jobs.map((job) => {
+              const isJobUpdating = updatingJobId === job.id;
 
-            return (
-              <div
-                key={job.id}
-                className={`p-6 rounded-3xl border transition-all space-y-5 ${
-                  job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
-                    ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-sm"
-                    : job.status === "COMPLETED"
+              const getStatusBadge = () => {
+                switch (job.status) {
+                  case "EN_ROUTE":
+                    return (
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-blue-600 animate-bounce" />
+                        EN ROUTE (ON THE WAY)
+                      </span>
+                    );
+                  case "IN_PROGRESS":
+                    return (
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 animate-pulse">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        IN PROGRESS (CLEANING)
+                      </span>
+                    );
+                  case "COMPLETION_REQUESTED":
+                    return (
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 animate-pulse">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        AWAITING CUSTOMER APPROVAL (কাস্টমার অনুমোদনের অপেক্ষায়)
+                      </span>
+                    );
+                  case "COMPLETED":
+                    return (
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        JOB COMPLETED & VERIFIED
+                      </span>
+                    );
+                  default:
+                    return (
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        ASSIGNED (UPCOMING)
+                      </span>
+                    );
+                }
+              };
+
+              return (
+                <div
+                  key={job.id}
+                  className={`p-6 rounded-3xl border transition-all space-y-5 ${
+                    job.status === "EN_ROUTE" || job.status === "IN_PROGRESS"
+                      ? "bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-blue-300 shadow-xs"
+                      : job.status === "COMPLETION_REQUESTED"
+                      ? "bg-amber-50/50 border-amber-300 shadow-xs"
+                      : job.status === "COMPLETED"
                       ? "bg-slate-50/70 border-slate-200"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                {/* Row Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-extrabold text-[#007eff] bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
-                      #{job.id}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                      {job.serviceType}
-                    </h3>
+                      : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
+                  }`}
+                >
+                  {/* Row Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-extrabold text-[#007eff] bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
+                        #{job.id}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                        {job.serviceType}
+                      </h3>
+                    </div>
+
+                    {getStatusBadge()}
                   </div>
 
-                  {getStatusBadge()}
-                </div>
+                  {/* Job Specs & Client Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
+                    {/* Column 1: Client & Phone */}
+                    <div className="space-y-1">
+                      <span className="font-bold text-slate-400 uppercase text-[11px]">
+                        Customer & Phone
+                      </span>
+                      <p className="font-extrabold text-slate-900 flex items-center gap-2">
+                        <User className="w-4 h-4 text-[#007eff]" /> {job.customerName}
+                      </p>
+                      <a
+                        href={`tel:${job.customerPhone}`}
+                        className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1.5 mt-0.5"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> {job.customerPhone}
+                      </a>
+                    </div>
 
-                {/* Job Specs & Client Info Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
-                  {/* Column 1: Client & Phone */}
-                  <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">
-                      Customer & Phone
-                    </span>
-                    <p className="font-extrabold text-slate-900 flex items-center gap-2">
-                      <User className="w-4 h-4 text-[#007eff]" />{" "}
-                      {job.customerName}
-                    </p>
-                    <a
-                      href={`tel:${job.customerPhone}`}
-                      className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1.5 mt-0.5"
-                    >
-                      <Phone className="w-3.5 h-3.5" /> {job.customerPhone}
-                    </a>
+                    {/* Column 2: Location & Maps Navigation */}
+                    <div className="space-y-1">
+                      <span className="font-bold text-slate-400 uppercase text-[11px]">
+                        Service Address
+                      </span>
+                      <p className="font-bold text-slate-900 leading-snug flex items-start gap-1.5">
+                        <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>{job.address}</span>
+                      </p>
+                      <a
+                        href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#007eff] hover:underline mt-1"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Navigate via Google Maps ➔</span>
+                      </a>
+                    </div>
+
+                    {/* Column 3: Specs & Time Slot */}
+                    <div className="space-y-1">
+                      <span className="font-bold text-slate-400 uppercase text-[11px]">
+                        Time Slot & Payout
+                      </span>
+                      <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-amber-500" /> {job.timeSlot}
+                        {job.scheduledDate && (
+                          <span className="text-slate-500 font-medium">({job.scheduledDate})</span>
+                        )}
+                      </p>
+                      <p className="font-extrabold text-emerald-700 text-sm mt-0.5">
+                        Job Payout: ৳{job.payout.toLocaleString()}
+                      </p>
+                      {job.addons.length > 0 && (
+                        <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+                          {job.addons.map((addon, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200"
+                            >
+                              + {addon}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Column 2: Location & Maps Navigation */}
-                  <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">
-                      Service Address
-                    </span>
-                    <p className="font-bold text-slate-900 leading-snug flex items-start gap-1.5">
-                      <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <span>{job.address}</span>
-                    </p>
-                    <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#007eff] hover:underline mt-1"
-                    >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span>Navigate via Google Maps ➔</span>
-                    </a>
-                  </div>
+                  {/* Status Update CTA Buttons */}
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                    <div className="text-xs text-slate-500 font-medium">
+                      Property Specs:{" "}
+                      <span className="font-bold text-slate-800">
+                        {job.specs}
+                      </span>
+                    </div>
 
-                  {/* Column 3: Specs & Time Slot */}
-                  <div className="space-y-1">
-                    <span className="font-bold text-slate-400 uppercase text-[11px]">
-                      Time Slot & Payout
-                    </span>
-                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-amber-500" />{" "}
-                      {job.timeSlot}
-                    </p>
-                    <p className="font-extrabold text-emerald-700 text-sm mt-0.5">
-                      Job Payout: {job.payout}
-                    </p>
-                    <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                      {job.addons.map((addon, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200"
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Status Button 1: En Route */}
+                      {job.status === "ASSIGNED" && (
+                        <button
+                          type="button"
+                          disabled={isJobUpdating}
+                          onClick={() => updateJobStatus(job, "EN_ROUTE")}
+                          className="bg-blue-50 hover:bg-blue-100 text-[#007eff] font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-blue-200 flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                         >
-                          + {addon}
-                        </span>
-                      ))}
+                          {isJobUpdating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Truck className="w-4 h-4" />
+                          )}
+                          <span>রওয়ানা হয়েছি</span>
+                        </button>
+                      )}
+
+                      {/* Status Button 2: Check in / In Progress */}
+                      {job.status === "EN_ROUTE" && (
+                        <button
+                          type="button"
+                          disabled={isJobUpdating}
+                          onClick={() => updateJobStatus(job, "IN_PROGRESS")}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-amber-300 flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {isJobUpdating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Clock className="w-4 h-4" />
+                          )}
+                          <span>কাজে উপস্থিত হয়েছি</span>
+                        </button>
+                      )}
+
+                      {/* Status Button 3: Upload Proof & Complete */}
+                      {(job.status === "IN_PROGRESS" || job.status === "EN_ROUTE") && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProofJob(job)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-2xl border border-emerald-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span>ছবি আপলোড ও কাজ সম্পূর্ণ করুন</span>
+                        </button>
+                      )}
+
+                      {/* Status Button 4: Awaiting Customer Approval */}
+                      {job.status === "COMPLETION_REQUESTED" && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProofJob(job)}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-amber-300 flex items-center gap-2 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                          <span>কাস্টমার অনুমোদনের অপেক্ষায় (ছবি দেখুন)</span>
+                        </button>
+                      )}
+
+                      {job.status === "COMPLETED" && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProofJob(job)}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-2xl border border-slate-200 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>কাজের ছবি দেখুন</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                {/* Status Update CTA Buttons */}
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
-                  <div className="text-xs text-slate-500 font-medium">
-                    Property Specs:{" "}
-                    <span className="font-bold text-slate-800">
-                      {job.specs}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Status Button 1: En Route */}
-                    {job.status === "ASSIGNED" && (
-                      <button
-                        type="button"
-                        onClick={() => updateJobStatus(job.id, "EN_ROUTE")}
-                        className="bg-blue-50 hover:bg-blue-100 text-[#007eff] font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-blue-200 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Truck className="w-4 h-4" />
-                        <span>রওয়ানা হয়েছি</span>
-                      </button>
-                    )}
-
-                    {/* Status Button 2: Check in / In Progress */}
-                    {job.status === "EN_ROUTE" && (
-                      <button
-                        type="button"
-                        onClick={() => updateJobStatus(job.id, "IN_PROGRESS")}
-                        className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-amber-300 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>কাজে উপস্থিত হয়েছি</span>
-                      </button>
-                    )}
-
-                    {/* Status Button 3: Upload Proof & Complete */}
-                    {(job.status === "IN_PROGRESS" ||
-                      job.status === "EN_ROUTE") && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedProofJob(job)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-2xl border border-emerald-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>ছবি আপলোড ও কাজ সম্পূর্ণ করুন</span>
-                      </button>
-                    )}
-
-                    {job.status === "COMPLETED" && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedProofJob(job)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-2xl border border-slate-200 flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>কাজের ছবি দেখুন</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Proof of Work Modal */}
@@ -809,12 +982,12 @@ export default function CleanerDashboardPage() {
           jobId={selectedProofJob.id}
           jobTitle={selectedProofJob.serviceType}
           customerAddress={selectedProofJob.address}
-          onSubmitComplete={() => {
-            updateJobStatus(selectedProofJob.id, "COMPLETED");
-            alert(`Job #${selectedProofJob.id} completed & proof submitted!`);
+          onSubmitComplete={async (proofData) => {
+            await updateJobStatus(selectedProofJob, "COMPLETION_REQUESTED", proofData);
           }}
         />
       )}
+
       {/* Confirmation Modal for Accept & Decline */}
       {modalState.isOpen && pendingLeaderTeam && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -836,7 +1009,7 @@ export default function CleanerDashboardPage() {
                     : "Decline Appointment Request?"}
                 </h3>
                 <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                  Squad: {pendingLeaderTeam.teamName} (##{pendingLeaderTeam.teamCode})
+                  Squad: {pendingLeaderTeam.teamName} (#{pendingLeaderTeam.teamCode})
                 </p>
               </div>
             </div>

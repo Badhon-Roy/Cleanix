@@ -24,6 +24,7 @@ import {
 import LiveJobTracker from "@/components/dashboard/LiveJobTracker";
 import InvoiceModal, { InvoiceData } from "@/components/dashboard/InvoiceModal";
 import RateServiceModal from "@/components/dashboard/RateServiceModal";
+import { io } from "socket.io-client";
 import { fetchMyBookingsAPI, cancelBookingAPI } from "@/services/bookingService";
 
 export default function BookingsClientView({
@@ -66,6 +67,43 @@ export default function BookingsClientView({
 
   useEffect(() => {
     loadBookings();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    const handleBookingRealtimeEvent = (data?: any) => {
+      if (data && data._id) {
+        setBookingsList((prev) => {
+          const exists = prev.some((b) => b._id === data._id);
+          if (exists) {
+            return prev.map((b) => (b._id === data._id ? { ...b, ...data } : b));
+          } else {
+            return [data, ...prev];
+          }
+        });
+      }
+      loadBookings();
+    };
+
+    socket.on("booking_created", handleBookingRealtimeEvent);
+    socket.on("booking_updated", handleBookingRealtimeEvent);
+    socket.on("team_updated", handleBookingRealtimeEvent);
+    socket.on("cleaner_updated", handleBookingRealtimeEvent);
+
+    return () => {
+      socket.off("booking_created", handleBookingRealtimeEvent);
+      socket.off("booking_updated", handleBookingRealtimeEvent);
+      socket.off("team_updated", handleBookingRealtimeEvent);
+      socket.off("cleaner_updated", handleBookingRealtimeEvent);
+      socket.disconnect();
+    };
   }, [loadBookings]);
 
   // Status mapping helper
@@ -80,18 +118,35 @@ export default function BookingsClientView({
           cardBg: "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-[#007eff] ring-2 ring-blue-200",
           isLive: true,
         };
+      case "COMPLETION_REQUESTED":
+        return {
+          key: "ACTIVE",
+          label: "Awaiting Review",
+          badgeClass: "bg-amber-100 text-amber-900 border-amber-300 font-extrabold",
+          cardBg: "bg-amber-50/70 hover:bg-white border border-amber-300 text-slate-900",
+          isLive: true,
+        };
+      case "EN_ROUTE":
+        return {
+          key: "ACTIVE",
+          label: "Team En Route",
+          badgeClass: "bg-cyan-100 text-cyan-800 border-cyan-300 font-extrabold",
+          cardBg: "bg-cyan-50/70 hover:bg-white border border-cyan-200 text-slate-900",
+          isLive: true,
+        };
       case "ASSIGNED":
         return {
           key: "ACTIVE",
-          label: "Team Assigned",
+          label: "Cleaner Assigned",
           badgeClass: "bg-indigo-100 text-indigo-800 border-indigo-300 font-extrabold",
           cardBg: "bg-indigo-50/70 hover:bg-white border border-indigo-200 text-slate-900",
           isLive: true,
         };
+      case "SCHEDULED":
       case "CONFIRMED":
         return {
           key: "SCHEDULED",
-          label: "Confirmed",
+          label: "Team Scheduled",
           badgeClass: "bg-blue-100 text-blue-800 border-blue-300 font-extrabold",
           cardBg: "bg-slate-50 hover:bg-white border border-slate-200 text-slate-900",
           isLive: false,
@@ -99,7 +154,7 @@ export default function BookingsClientView({
       case "PENDING":
         return {
           key: "SCHEDULED",
-          label: "Pending Confirmation",
+          label: "Pending Allocation",
           badgeClass: "bg-amber-100 text-amber-800 border-amber-300 font-extrabold",
           cardBg: "bg-amber-50/40 hover:bg-white border border-amber-200 text-slate-900",
           isLive: false,
@@ -235,9 +290,16 @@ export default function BookingsClientView({
     };
   });
 
-  // Active Job Tracker Target (First IN_PROGRESS or ASSIGNED)
+  // Active Job Tracker Target (First active/running booking)
   const activeJob = formattedBookings.find(
-    (b) => b.statusRaw === "IN_PROGRESS" || b.statusRaw === "ASSIGNED"
+    (b) =>
+      b.statusRaw === "IN_PROGRESS" ||
+      b.statusRaw === "COMPLETION_REQUESTED" ||
+      b.statusRaw === "EN_ROUTE" ||
+      b.statusRaw === "ASSIGNED" ||
+      b.statusRaw === "SCHEDULED" ||
+      b.statusRaw === "CONFIRMED" ||
+      b.statusRaw === "PENDING"
   );
 
   // Dynamic Invoice Builder
@@ -320,8 +382,19 @@ export default function BookingsClientView({
 
   // Filter items based on active tab
   const filteredBookings = formattedBookings.filter((b) => {
-    if (filter === "ACTIVE") return b.statusRaw === "IN_PROGRESS" || b.statusRaw === "ASSIGNED";
-    if (filter === "SCHEDULED") return b.statusRaw === "CONFIRMED" || b.statusRaw === "PENDING";
+    if (filter === "ACTIVE")
+      return (
+        b.statusRaw === "IN_PROGRESS" ||
+        b.statusRaw === "EN_ROUTE" ||
+        b.statusRaw === "ASSIGNED" ||
+        b.statusRaw === "COMPLETION_REQUESTED"
+      );
+    if (filter === "SCHEDULED")
+      return (
+        b.statusRaw === "SCHEDULED" ||
+        b.statusRaw === "CONFIRMED" ||
+        b.statusRaw === "PENDING"
+      );
     if (filter === "COMPLETED") return b.statusRaw === "COMPLETED";
     if (filter === "CANCELLED") return b.statusRaw === "CANCELLED";
     return true;
@@ -378,9 +451,18 @@ export default function BookingsClientView({
             <Truck className="w-4 h-4" /> Active Job Real-Time Tracker
           </h2>
           <LiveJobTracker
+            bookingId={activeJob.mongoId}
             bookingNumber={activeJob.id}
             serviceName={activeJob.title}
             address={activeJob.address}
+            status={activeJob.statusRaw}
+            cleanerTeam={activeJob.cleanerTeam}
+            assignedTeam={activeJob.raw?.assignedTeam}
+            assignedCleaners={activeJob.raw?.assignedCleaners}
+            scheduledDate={activeJob.raw?.scheduledDate}
+            timeSlot={activeJob.raw?.timeSlot}
+            proofOfWork={activeJob.raw?.proofOfWork}
+            onRefresh={loadBookings}
           />
         </div>
       ) : (

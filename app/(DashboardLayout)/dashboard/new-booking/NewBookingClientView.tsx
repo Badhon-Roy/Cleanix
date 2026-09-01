@@ -72,7 +72,12 @@ export default function NewBookingClientView({
   const [sqft, setSqft] = useState<number>(1200);
   const [bedrooms, setBedrooms] = useState<number>(3);
   const [bathrooms, setBathrooms] = useState<number>(2);
-  const [scheduledDate, setScheduledDate] = useState<string>("2026-08-25");
+  const [scheduledDate, setScheduledDate] = useState<string>(() => {
+    const d = new Date();
+    const mStr = String(d.getMonth() + 1).padStart(2, "0");
+    const dStr = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mStr}-${dStr}`;
+  });
   const [timeSlot, setTimeSlot] = useState<string>("09:00 AM - 11:00 AM");
   const [paymentMethod, setPaymentMethod] = useState<string>("BKASH");
   const [address, setAddress] = useState<string>("");
@@ -122,8 +127,8 @@ export default function NewBookingClientView({
   const [timeDropdownOpen, setTimeDropdownOpen] = useState<boolean>(false);
   const [coverageDropdownOpen, setCoverageDropdownOpen] = useState<boolean>(false);
   const [zoneSearchQuery, setZoneSearchQuery] = useState<string>("");
-  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(2026);
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(7); // 0-indexed (7 = August)
+  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(() => new Date().getFullYear());
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(() => new Date().getMonth()); // 0-indexed (7 = August)
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
@@ -767,10 +772,12 @@ export default function NewBookingClientView({
   };
 
   const handleQuickPreset = (offsetDays: number) => {
-    const target = new Date(2026, 7, 21 + offsetDays);
+    const today = new Date();
+    const target = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
     const mStr = String(target.getMonth() + 1).padStart(2, "0");
     const dStr = String(target.getDate()).padStart(2, "0");
-    setScheduledDate(`${target.getFullYear()}-${mStr}-${dStr}`);
+    const dateFormatted = `${target.getFullYear()}-${mStr}-${dStr}`;
+    setScheduledDate(dateFormatted);
     setCurrentCalendarYear(target.getFullYear());
     setCurrentCalendarMonth(target.getMonth());
     setCalendarOpen(false);
@@ -1456,9 +1463,10 @@ export default function NewBookingClientView({
                           ).padStart(2, "0");
                           const dStr = String(dayNum).padStart(2, "0");
                           const thisDateFormatted = `${currentCalendarYear}-${mStr}-${dStr}`;
-                          const isSelected =
-                            scheduledDate === thisDateFormatted;
-                          const isToday = thisDateFormatted === "2026-08-21";
+                          const isSelected = scheduledDate === thisDateFormatted;
+                          const now = new Date();
+                          const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                          const isToday = thisDateFormatted === todayISO;
 
                           return (
                             <button

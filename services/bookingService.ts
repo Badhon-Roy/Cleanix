@@ -156,7 +156,16 @@ export const downloadBookingPDFAPI = async (bookingId: string, filename = "Clean
 
 export const updateBookingProgressAPI = async (
   bookingId: string,
-  payload: { status?: string; notes?: string }
+  payload: {
+    status?: string;
+    notes?: string;
+    proofOfWork?: {
+      beforePhotos?: string[];
+      afterPhotos?: string[];
+      notes?: string;
+      checklist?: { id: number; text: string; done: boolean }[];
+    };
+  }
 ) => {
   try {
     const baseUrl = getBaseUrl();
@@ -170,6 +179,25 @@ export const updateBookingProgressAPI = async (
   } catch (error: any) {
     console.error("Error updating booking progress:", error);
     return { success: false, message: error.message || "Failed to update booking progress" };
+  }
+};
+
+export const confirmBookingCompletionAPI = async (
+  bookingId: string,
+  payload?: { rating?: number; feedback?: string }
+) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/confirm-completion`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error confirming booking completion:", error);
+    return { success: false, message: error.message || "Failed to confirm completion" };
   }
 };
 
