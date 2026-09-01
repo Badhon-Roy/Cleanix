@@ -651,13 +651,26 @@ export default function NewBookingClientView({
       return;
     }
 
+    // Filter custom fields by enabled fields in selectedServiceObj
+    const enabledFields = Array.isArray(selectedServiceObj?.fields)
+      ? selectedServiceObj.fields.filter((f: any) => f.enabled !== false)
+      : [];
+    const enabledFieldIds = new Set(enabledFields.map((f: any) => f.id));
+
+    const finalCustomValues: Record<string, any> = {};
+    for (const fieldId of Object.keys(customFieldValues)) {
+      if (enabledFieldIds.size === 0 || enabledFieldIds.has(fieldId)) {
+        finalCustomValues[fieldId] = customFieldValues[fieldId];
+      }
+    }
+
     const payload = {
       serviceType: selectedServiceObj._id, // ObjectId
       coverageArea: selectedCoverageId, // ObjectId
-      sqft: customFieldValues["sqft"] ?? sqft,
-      bedrooms: customFieldValues["bedrooms"] ?? bedrooms,
-      bathrooms: customFieldValues["bathrooms"] ?? bathrooms,
-      customFieldValues: customFieldValues,
+      sqft: enabledFieldIds.size === 0 || enabledFieldIds.has("sqft") ? (customFieldValues["sqft"] ?? sqft) : undefined,
+      bedrooms: enabledFieldIds.has("bedrooms") ? (customFieldValues["bedrooms"] ?? bedrooms) : undefined,
+      bathrooms: enabledFieldIds.has("bathrooms") ? (customFieldValues["bathrooms"] ?? bathrooms) : undefined,
+      customFieldValues: finalCustomValues,
       selectedAddons: activeAddonsList,
       scheduledDate,
       timeSlot,
