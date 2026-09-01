@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import Lenis from "lenis";
 import {
   Camera,
   X,
@@ -13,6 +14,7 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { confirmBookingCompletionAPI } from "@/services/bookingService";
@@ -49,10 +51,37 @@ export default function CustomerProofReviewModal({
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Initialize Lenis Smooth Scrolling on the modal scroll container
+  useEffect(() => {
+    if (!isOpen || !mounted || !scrollContainerRef.current) return;
+
+    const lenis = new Lenis({
+      wrapper: scrollContainerRef.current,
+      content: (scrollContainerRef.current.firstElementChild as HTMLElement) || scrollContainerRef.current,
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let animationFrameId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      animationFrameId = requestAnimationFrame(raf);
+    }
+    animationFrameId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      lenis.destroy();
+    };
+  }, [isOpen, mounted]);
 
   if (!isOpen || !mounted) return null;
 
@@ -92,51 +121,55 @@ export default function CustomerProofReviewModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-slate-900">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                  কাজের মান যাচাই ও সার্ভিস সম্পন্ন নিশ্চিতকরণ
-                </h3>
-                <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                  {bookingRef}
-                </span>
+    <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150 overflow-hidden">
+      <div
+        ref={scrollContainerRef}
+        className="bg-white rounded-3xl p-6 sm:p-8 max-w-4xl lg:max-w-5xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[88vh] overflow-y-auto overscroll-contain text-slate-900"
+      >
+        <div>
+          {/* Header */}
+          <div className="flex items-start justify-between border-b border-slate-100 pb-4 mb-6">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
               </div>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                {serviceTitle} • {customerAddress}
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    কাজের মান যাচাই ও সার্ভিস সম্পন্ন নিশ্চিতকরণ
+                  </h3>
+                  <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-mono">
+                    {bookingRef}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-0.5">
+                  {serviceTitle} • {customerAddress}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isConfirming}
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0 ml-2"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Notice Banner */}
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-blue-50/90 border border-blue-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 mb-6">
+            <Sparkles className="w-5 h-5 text-[#007eff] flex-shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+              <p className="font-extrabold text-slate-900">
+                ক্লিনার আপনার প্রপার্টির ক্লিনিং কাজ শেষ করে প্রমাণস্বরূপ ছবি আপলোড করেছেন।
+              </p>
+              <p className="mt-0.5 text-slate-600">
+                অনুগ্রহ করে নিচের বিফোর/আফটার ছবি ও চেকলিস্ট পর্যালোচনা করে আপনার রেটিং দিয়ে সার্ভিসটি সম্পন্ন করুন।
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            disabled={isConfirming}
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Notice Banner */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
-          <Sparkles className="w-5 h-5 text-[#007eff] flex-shrink-0 mt-0.5" />
-          <div className="text-xs text-slate-700 leading-relaxed font-medium">
-            <p className="font-extrabold text-slate-900">
-              ক্লিনার আপনার প্রপার্টির ক্লিনিং কাজ শেষ করে প্রমাণস্বরূপ ছবি আপলোড করেছেন।
-            </p>
-            <p className="mt-0.5 text-slate-600">
-              অনুগ্রহ করে নিচের বিফোর/আফটার ছবি ও চেকলিস্ট পর্যালোচনা করে আপনার রেটিং দিয়ে সার্ভিসটি সম্পন্ন করুন।
-            </p>
-          </div>
-        </div>
 
         {/* Section 1: Before & After Photos */}
         <div className="space-y-4">
@@ -328,7 +361,8 @@ export default function CustomerProofReviewModal({
           </button>
         </div>
       </div>
-    </div>,
-    document.body
-  );
+    </div>
+  </div>,
+  document.body
+);
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import Lenis from "lenis";
 import {
   Camera,
   X,
@@ -40,6 +41,7 @@ export default function ProofOfWorkModal({
 }: ProofOfWorkModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Photos State
   const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
@@ -62,6 +64,32 @@ export default function ProofOfWorkModal({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Initialize Lenis Smooth Scrolling on the modal scroll container
+  useEffect(() => {
+    if (!isOpen || !mounted || !scrollContainerRef.current) return;
+
+    const lenis = new Lenis({
+      wrapper: scrollContainerRef.current,
+      content: (scrollContainerRef.current.firstElementChild as HTMLElement) || scrollContainerRef.current,
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let animationFrameId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      animationFrameId = requestAnimationFrame(raf);
+    }
+    animationFrameId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      lenis.destroy();
+    };
+  }, [isOpen, mounted]);
 
   if (!isOpen || !mounted) return null;
 
@@ -133,8 +161,11 @@ export default function ProofOfWorkModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-y-auto">
-      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150 overflow-hidden">
+      <div 
+        ref={scrollContainerRef}
+        className="bg-white rounded-3xl p-6 sm:p-8 max-w-4xl lg:max-w-5xl w-full border border-slate-200 shadow-2xl relative space-y-6 animate-in zoom-in-95 duration-200 max-h-[88vh] overflow-y-auto overscroll-contain"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
