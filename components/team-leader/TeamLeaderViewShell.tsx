@@ -28,6 +28,7 @@ import TeamBookingsView from "./views/TeamBookingsView";
 import TeamEarningsView from "./views/TeamEarningsView";
 import TeamProofsView from "./views/TeamProofsView";
 import MyTeamView from "./views/MyTeamView";
+import TeamReviewsView from "./views/TeamReviewsView";
 
 export default function TeamLeaderViewShell() {
   const pathname = usePathname();
@@ -48,6 +49,7 @@ export default function TeamLeaderViewShell() {
     if (pathname.endsWith("/available-bookings")) return "available-bookings";
     if (pathname.endsWith("/earnings")) return "earnings";
     if (pathname.endsWith("/proofs")) return "proofs";
+    if (pathname.endsWith("/reviews")) return "reviews";
     return "overview"; // default: overview & roster
   }, [pathname]);
 
@@ -84,6 +86,10 @@ export default function TeamLeaderViewShell() {
 
       <div style={{ display: activeView === "proofs" ? "block" : "none" }}>
         <TeamProofsView teamSlug={teamSlug} />
+      </div>
+
+      <div style={{ display: activeView === "reviews" ? "block" : "none" }}>
+        <TeamReviewsView teamSlug={teamSlug} />
       </div>
     </div>
   );

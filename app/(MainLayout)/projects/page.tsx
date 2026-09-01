@@ -6,6 +6,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import FaqSection from "@/components/FaqSection";
 import { fetchProjectsCMSServer } from "@/services/cmsServerService";
 import { fetchProjectsServer } from "@/services/projectServerService";
+import { fetchFeaturedReviewsServer } from "@/services/reviewServerService";
 
 export const metadata: Metadata = {
   title: "Completed Projects & Portfolio | Cleanix - Pioneer Cleaning SaaS",
@@ -23,13 +24,14 @@ export const metadata: Metadata = {
 export default async function ProjectsPage() {
   const projectsData = await fetchProjectsCMSServer();
   const projectsList = await fetchProjectsServer();
+  const reviewsList = await fetchFeaturedReviewsServer();
 
   return (
     <>
       <ProjectsHero initialData={projectsData} />
       <ProjectsOverview initialData={projectsData} />
       <ProjectsGrid initialProjects={projectsList} />
-      <TestimonialsSection />
+      <TestimonialsSection initialReviews={reviewsList} />
       <FaqSection />
     </>
   );

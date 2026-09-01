@@ -43,9 +43,20 @@ export interface BookingDetailRecord {
   paymentStatus: string;
   date: string;
   time: string;
-  status: "PENDING" | "CONFIRMED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  status:
+    | "PENDING"
+    | "SCHEDULED"
+    | "ASSIGNED"
+    | "EN_ROUTE"
+    | "IN_PROGRESS"
+    | "COMPLETION_REQUESTED"
+    | "COMPLETED"
+    | "CANCELLED"
+    | string;
   cleanerTeam: string;
   teamRequests?: any[];
+  rating?: number;
+  feedback?: string;
 }
 
 interface BookingDetailsModalProps {
@@ -72,10 +83,14 @@ export default function BookingDetailsModal({
   if (!isOpen || !mounted || !booking) return null;
 
   const stages = [
-    { key: "PENDING", label: "Pending", desc: "Waiting for confirmation" },
-    { key: "ASSIGNED", label: "Assigned", desc: "Team assigned" },
-    { key: "IN_PROGRESS", label: "In Progress", desc: "Cleaners on site" },
-    { key: "COMPLETED", label: "Completed", desc: "Work completed" },
+    { key: "PENDING", label: "1. Pending", desc: "Awaiting team allocation" },
+    { key: "SCHEDULED", label: "2. Scheduled", desc: "Team allocated" },
+    { key: "ASSIGNED", label: "3. Assigned", desc: "Cleaners assigned" },
+    { key: "EN_ROUTE", label: "4. En Route", desc: "Traveling to location" },
+    { key: "IN_PROGRESS", label: "5. In Progress", desc: "Cleaning active" },
+    { key: "COMPLETION_REQUESTED", label: "6. Review Ready", desc: "Awaiting confirmation" },
+    { key: "COMPLETED", label: "7. Completed", desc: "Work completed" },
+    { key: "CANCELLED", label: "Cancelled", desc: "Booking cancelled" },
   ];
 
   const currentStageIndex = stages.findIndex((s) => s.key === booking.status);

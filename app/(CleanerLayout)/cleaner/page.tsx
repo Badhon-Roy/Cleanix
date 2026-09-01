@@ -64,6 +64,13 @@ interface JobItem {
   teamName?: string;
   teamCode?: string;
   dispatchNotes?: string;
+  review?: {
+    rating: number;
+    feedback?: string;
+    isApproved?: boolean;
+    isFeatured?: boolean;
+    createdAt?: string;
+  } | null;
 }
 
 export default function CleanerDashboardPage() {
@@ -169,6 +176,7 @@ export default function CleanerDashboardPage() {
             teamName: team.teamName,
             teamCode: team.teamCode,
             dispatchNotes: item.dispatchNotes || booking.notes || "",
+            review: item.review || booking.review || null,
           };
         });
 
@@ -393,6 +401,16 @@ export default function CleanerDashboardPage() {
       loadCleanerDutyProfile();
     });
 
+    socket.on("review_created", () => {
+      loadAssignedJobs();
+      loadCleanerDutyProfile();
+    });
+
+    socket.on("review_updated", () => {
+      loadAssignedJobs();
+      loadCleanerDutyProfile();
+    });
+
     return () => {
       socket.off("booking_updated");
       socket.off("team_assignment_updated");
@@ -400,6 +418,8 @@ export default function CleanerDashboardPage() {
       socket.off("leader_request_updated");
       socket.off("leader_appointment_updated");
       socket.off("cleaner_updated");
+      socket.off("review_created");
+      socket.off("review_updated");
       socket.disconnect();
     };
   }, [checkPendingLeaderRequest, loadAssignedJobs, loadCleanerDutyProfile]);
@@ -456,7 +476,16 @@ export default function CleanerDashboardPage() {
   const totalJobsCount = jobs.length;
   const completedCount = jobs.filter((j) => j.status === "COMPLETED").length;
   const totalEstimatedEarnings = jobs.reduce((sum, j) => sum + (Number(j.payout) || 0), 0);
-  const ratingValue = cleanerProfile?.rating ? Number(cleanerProfile.rating).toFixed(2) : "4.95";
+  const reviewedJobs = jobs.filter((j) => j.review && j.review.rating);
+  const ratingValue =
+    reviewedJobs.length > 0
+      ? (
+          reviewedJobs.reduce((sum, j) => sum + Number(j.review!.rating), 0) /
+          reviewedJobs.length
+        ).toFixed(1)
+      : cleanerProfile?.rating
+      ? Number(cleanerProfile.rating).toFixed(1)
+      : "5.0";
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -886,6 +915,70 @@ export default function CleanerDashboardPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Customer Review & Rating Block (Always visible to cleaner as soon as submitted) */}
+                  {job.review ? (
+                    <div className="bg-gradient-to-r from-amber-50/90 via-yellow-50/60 to-orange-50/70 border border-amber-300 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-amber-950 bg-amber-200/90 px-3 py-1 rounded-xl border border-amber-300 flex items-center gap-1.5 shadow-2xs">
+                            <Star className="w-3.5 h-3.5 fill-amber-600 text-amber-600" />
+                            <span>কাস্টমার রেটিং ও মূল্যায়ন</span>
+                          </span>
+                          <span className="text-xs font-black text-slate-900 bg-white px-2.5 py-1 rounded-xl border border-amber-200 shadow-2xs">
+                            ★ {Number(job.review.rating).toFixed(1)} / 5.0
+                          </span>
+                        </div>
+
+                        {/* Star visual icons */}
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < Math.round(Number(job.review?.rating || 5))
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-slate-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {job.review.feedback && job.review.feedback.trim().length > 0 ? (
+                        <p className="text-xs sm:text-sm text-slate-800 font-medium italic bg-white/90 p-3 rounded-xl border border-amber-200/80 leading-relaxed">
+                          &ldquo;{job.review.feedback}&rdquo;
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-600 font-medium italic bg-white/70 p-2.5 rounded-xl border border-amber-200/50">
+                          কাস্টমার কোনো লিখিত মন্তব্য দেননি, ★ {Number(job.review.rating).toFixed(1)} রেটিং দিয়েছেন।
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold pt-1 border-t border-amber-200/60">
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          ভেরিফাইড কাস্টমার ফিডব্যাক
+                        </span>
+                        {job.review.createdAt && (
+                          <span>
+                            {new Date(job.review.createdAt).toLocaleDateString("en-US", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : job.status === "COMPLETED" ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between text-xs text-slate-500 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        কাজ সম্পন্ন হয়েছে — কাস্টমারের রিভিউ ও রেটিংয়ের অপেক্ষায় আছে...
+                      </span>
+                    </div>
+                  ) : null}
 
                   {/* Status Update CTA Buttons */}
                   <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">

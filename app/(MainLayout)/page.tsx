@@ -14,11 +14,13 @@ import CtaBanner from "@/components/CtaBanner";
 import { fetchHomeCMSServer } from "@/services/cmsServerService";
 import { fetchBlogsServer } from "@/services/blogServerService";
 import { fetchProjectsServer } from "@/services/projectServerService";
+import { fetchFeaturedReviewsServer } from "@/services/reviewServerService";
 
 export default async function Home() {
   const cmsData = await fetchHomeCMSServer();
   const blogsList = await fetchBlogsServer();
   const projectsList = await fetchProjectsServer();
+  const reviewsList = await fetchFeaturedReviewsServer();
 
   return (
     <>
@@ -31,7 +33,7 @@ export default async function Home() {
       <ProjectsSection initialProjects={projectsList} />
       <PricingSection />
       <HowItWorks />
-      <TestimonialsSection />
+      <TestimonialsSection initialReviews={reviewsList} />
       <FaqSection initialData={cmsData} />
       <BlogSection initialBlogs={blogsList} />
       <CtaBanner initialData={cmsData} />

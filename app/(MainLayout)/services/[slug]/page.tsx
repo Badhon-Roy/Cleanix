@@ -6,6 +6,7 @@ import ServiceDetailsSidebar from "@/components/services/ServiceDetailsSidebar";
 import ServiceDetailsContent from "@/components/services/ServiceDetailsContent";
 import CtaBanner from "@/components/CtaBanner";
 import { fetchSingleServiceBySlugServer } from "@/services/serviceCategoryServerService";
+import { fetchServiceReviewsServer } from "@/services/reviewServerService";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -36,6 +37,8 @@ export default async function ServiceDetailsPage({ params }: Props) {
     notFound();
   }
 
+  const serviceReviews = await fetchServiceReviewsServer(slug);
+
   return (
     <>
       <ServiceDetailsHeader service={service} />
@@ -50,7 +53,7 @@ export default async function ServiceDetailsPage({ params }: Props) {
 
             {/* Right Main Content (col-span-8) */}
             <div className="lg:col-span-8">
-              <ServiceDetailsContent service={service} />
+              <ServiceDetailsContent service={service} initialReviews={serviceReviews} />
             </div>
           </div>
         </div>
