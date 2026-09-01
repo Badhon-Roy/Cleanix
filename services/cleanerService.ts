@@ -13,6 +13,14 @@ const getHeaders = () => {
 export type TCleanerStatus = "PENDING_APPROVAL" | "APPROVED" | "BLOCKED";
 export type TDutyStatus = "ON_DUTY" | "OFF_DUTY" | "IN_SERVICE";
 
+export interface ICleanerDashboardStats {
+  totalJobsCount: number;
+  completedCount: number;
+  totalEstimatedEarnings: number;
+  ratingValue: string;
+  totalReviewsCount: number;
+}
+
 export interface ICleanerProfile {
   id: string;
   userId: string;
@@ -35,6 +43,7 @@ export interface ICleanerProfile {
   totalEarnings: number;
   coverageArea?: string[];
   createdAt?: string;
+  dashboardStats?: ICleanerDashboardStats;
 }
 
 export const mapCleanerProfile = (c: any): ICleanerProfile => ({
@@ -59,6 +68,13 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
   totalEarnings: c.totalEarnings ?? 0,
   coverageArea: Array.isArray(c.coverageArea) ? c.coverageArea : [],
   createdAt: c.createdAt || new Date().toISOString(),
+  dashboardStats: c.dashboardStats || {
+    totalJobsCount: c.totalJobsDone ?? 0,
+    completedCount: c.totalJobsDone ?? 0,
+    totalEstimatedEarnings: c.totalEarnings ?? 0,
+    ratingValue: Number(c.rating || 5).toFixed(1),
+    totalReviewsCount: 0,
+  },
 });
 
 export const fetchAllCleanersAPI = async (statusQuery?: string): Promise<ICleanerProfile[]> => {

@@ -472,20 +472,11 @@ export default function CleanerDashboardPage() {
     }
   };
 
-  // Dynamic KPI Metric Calculations
-  const totalJobsCount = jobs.length;
-  const completedCount = jobs.filter((j) => j.status === "COMPLETED").length;
-  const totalEstimatedEarnings = jobs.reduce((sum, j) => sum + (Number(j.payout) || 0), 0);
-  const reviewedJobs = jobs.filter((j) => j.review && j.review.rating);
-  const ratingValue =
-    reviewedJobs.length > 0
-      ? (
-          reviewedJobs.reduce((sum, j) => sum + Number(j.review!.rating), 0) /
-          reviewedJobs.length
-        ).toFixed(1)
-      : cleanerProfile?.rating
-      ? Number(cleanerProfile.rating).toFixed(1)
-      : "5.0";
+  // KPI Metrics passed directly from Backend (Zero Frontend Calculation)
+  const totalJobsCount = cleanerProfile?.dashboardStats?.totalJobsCount ?? 0;
+  const completedCount = cleanerProfile?.dashboardStats?.completedCount ?? 0;
+  const totalEstimatedEarnings = cleanerProfile?.dashboardStats?.totalEstimatedEarnings ?? 0;
+  const ratingValue = cleanerProfile?.dashboardStats?.ratingValue ?? "5.0";
 
   return (
     <div className="space-y-8 pb-12 w-full">

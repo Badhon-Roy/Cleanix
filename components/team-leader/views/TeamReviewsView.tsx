@@ -306,35 +306,34 @@ export default function TeamReviewsView({ teamSlug }: TeamReviewsViewProps) {
                   </div>
                 </div>
 
-                {/* Team Leader Moderation Button */}
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                  <span className="text-xs text-slate-500 font-medium">
-                    You can approve/hide this review from the public service page.
-                  </span>
+                  {/* Team Leader Moderation Button */}
+                  <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                    <span className="text-xs text-slate-500 font-medium">
+                      You can approve/hide this review from the public service page.
+                    </span>
 
-                  <button
-                    type="button"
-                    onClick={() => handleToggleApproval(rev)}
-                    disabled={isBusy}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 ${
-                      rev.isApproved
-                        ? "bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    }`}
-                  >
                     {rev.isApproved ? (
-                      <>
-                        <XCircle className="w-4 h-4" />
-                        <span>Hide from Service Page (isApproved: False)</span>
-                      </>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleApproval(rev)}
+                        disabled={isBusy}
+                        className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 disabled:opacity-50"
+                      >
+                        <XCircle className="w-4 h-4 text-amber-700" />
+                        <span>Hide from Service Page (Make Hidden)</span>
+                      </button>
                     ) : (
-                      <>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleApproval(rev)}
+                        disabled={isBusy}
+                        className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 disabled:opacity-50"
+                      >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Approve for Service Page (isApproved: True)</span>
-                      </>
+                        <span>Approve (Make Public on Service Page)</span>
+                      </button>
                     )}
-                  </button>
-                </div>
+                  </div>
               </div>
             );
           })

@@ -463,55 +463,58 @@ export default function AdminReviewsClientView({
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Toggle isApproved Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleApproval(rev)}
-                        disabled={isBusy}
-                        className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 ${
-                          rev.isApproved
-                            ? "bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300"
-                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        }`}
-                      >
-                        {rev.isApproved ? (
-                          <>
-                            <XCircle className="w-4 h-4" />
-                            <span>Hide from Service Page (isApproved: False)</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Approve for Service Page (isApproved: True)</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Toggle isApproved Button: Clear Approve vs Hide actions */}
+                      {rev.isApproved ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleApproval(rev)}
+                          disabled={isBusy}
+                          className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 disabled:opacity-50"
+                        >
+                          <XCircle className="w-4 h-4 text-amber-700" />
+                          <span>Hide from Service Page (Make Hidden)</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleApproval(rev)}
+                          disabled={isBusy}
+                          className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Approve (Make Public on Service Page)</span>
+                        </button>
+                      )}
 
-                      {/* Toggle isFeatured Button (Admin Only) */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleFeatured(rev)}
-                        disabled={isBusy}
-                        className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 ${
-                          rev.isFeatured
-                            ? "bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border border-indigo-300"
-                            : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        }`}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span>
-                          {rev.isFeatured
-                            ? "Remove from Homepage Testimonials"
-                            : "Feature on Homepage Testimonials (isFeatured: True)"}
-                        </span>
-                      </button>
+                      {/* Toggle isFeatured Button (Admin Only): Clear Feature vs Unfeature actions */}
+                      {rev.isFeatured ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFeatured(rev)}
+                          disabled={isBusy}
+                          className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border border-indigo-300 disabled:opacity-50"
+                        >
+                          <XCircle className="w-4 h-4 text-indigo-700" />
+                          <span>Remove from Homepage Testimonials</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFeatured(rev)}
+                          disabled={isBusy}
+                          className="px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20 disabled:opacity-50"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Feature on Homepage Testimonials (Make Featured)</span>
+                        </button>
+                      )}
 
                       {/* Delete Review Button */}
                       <button
                         type="button"
                         onClick={() => handleDeleteReview(rev._id)}
                         disabled={isBusy}
-                        className="p-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                        className="p-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
                         title="Delete Review"
                       >
                         <Trash2 className="w-4 h-4" />
