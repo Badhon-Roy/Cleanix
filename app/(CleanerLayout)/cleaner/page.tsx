@@ -475,7 +475,11 @@ export default function CleanerDashboardPage() {
   // KPI Metrics passed directly from Backend (Zero Frontend Calculation)
   const totalJobsCount = cleanerProfile?.dashboardStats?.totalJobsCount ?? 0;
   const completedCount = cleanerProfile?.dashboardStats?.completedCount ?? 0;
-  const totalEstimatedEarnings = cleanerProfile?.dashboardStats?.totalEstimatedEarnings ?? 0;
+  const totalEarnedWallet =
+    cleanerProfile?.dashboardStats?.totalEarnedWallet ??
+    cleanerProfile?.dashboardStats?.totalEstimatedEarnings ??
+    0;
+  const pendingEstimatedEarnings = cleanerProfile?.dashboardStats?.pendingEstimatedEarnings ?? 0;
   const ratingValue = cleanerProfile?.dashboardStats?.ratingValue ?? "5.0";
 
   return (
@@ -680,11 +684,11 @@ export default function CleanerDashboardPage() {
           </div>
         </div>
 
-        {/* Daily Payout Card */}
+        {/* Daily Payout / Credited Wallet Card */}
         <div className="bg-gradient-to-br from-amber-50/70 via-white to-slate-50/40 border border-amber-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight">
-              আজকের আনুমানিক আয়
+              অর্জিত ওয়ালেট আয়
             </span>
             <div className="w-12 h-12 rounded-2xl bg-amber-100/80 text-amber-700 border border-amber-200 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-6 h-6 stroke-[2.5]" />
@@ -693,11 +697,13 @@ export default function CleanerDashboardPage() {
 
           <div className="space-y-1">
             <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              ৳{totalEstimatedEarnings.toLocaleString()}
+              ৳{totalEarnedWallet.toLocaleString()}
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-full border border-amber-300 inline-block">
-                💰 স্কোয়াড পুল শেয়ার
+                {pendingEstimatedEarnings > 0
+                  ? `+৳${pendingEstimatedEarnings.toLocaleString()} পেন্ডিং (চলতি কাজ)`
+                  : "✓ সম্পন্ন কাজের জমা ব্যালেন্স"}
               </span>
             </div>
           </div>
@@ -889,9 +895,17 @@ export default function CleanerDashboardPage() {
                           <span className="text-slate-500 font-medium">({job.scheduledDate})</span>
                         )}
                       </p>
-                      <p className="font-extrabold text-emerald-700 text-sm mt-0.5">
-                        Job Payout: ৳{job.payout.toLocaleString()}
-                      </p>
+                      {job.status === "COMPLETED" ? (
+                        <p className="font-extrabold text-emerald-700 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>আপনার অর্জিত শেয়ার: ৳{job.payout.toLocaleString()} (ওয়ালেটে জমা)</span>
+                        </p>
+                      ) : (
+                        <p className="font-extrabold text-amber-700 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <span>আপনার আনুমানিক শেয়ার: ৳{job.payout.toLocaleString()} (কাজ শেষে পাবেন)</span>
+                        </p>
+                      )}
                       {job.addons.length > 0 && (
                         <div className="pt-1 flex items-center gap-1.5 flex-wrap">
                           {job.addons.map((addon, idx) => (

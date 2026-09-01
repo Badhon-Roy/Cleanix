@@ -83,6 +83,7 @@ export default function TeamLeaderDashboardView({
   const basePath = `/team/${teamSlug}`;
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teamSquad, setTeamSquad] = useState<any>(null);
 
   const [teamBookings, setTeamBookings] = useState<TeamBooking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
@@ -175,24 +176,27 @@ export default function TeamLeaderDashboardView({
   const loadTeamMembers = useCallback(async () => {
     try {
       const teamData = await fetchTeamByIdOrSlugAPI(teamSlug);
-      if (teamData && Array.isArray(teamData.members)) {
-        const mappedMembers: TeamMember[] = teamData.members.map((m: any) => ({
-          id: m.id || m._id || "",
-          name: m.name || "Cleaner Staff",
-          phone: m.phone || "N/A",
-          status:
-            m.dutyStatus === "IN_SERVICE"
-              ? "IN_SERVICE"
-              : m.dutyStatus === "ON_DUTY"
-              ? "ON_DUTY"
-              : "OFF_DUTY",
-          dutyStartedAt: m.dutyStartedAt || null,
-          totalDutyMinutes: m.totalDutyMinutes || 0,
-          rating: m.rating ?? 4.9,
-          completedJobs: m.completedJobs ?? 0,
-          singleTeamVerified: true,
-        }));
-        setTeamMembers(mappedMembers);
+      if (teamData) {
+        setTeamSquad(teamData);
+        if (Array.isArray(teamData.members)) {
+          const mappedMembers: TeamMember[] = teamData.members.map((m: any) => ({
+            id: m.id || m._id || "",
+            name: m.name || "Cleaner Staff",
+            phone: m.phone || "N/A",
+            status:
+              m.dutyStatus === "IN_SERVICE"
+                ? "IN_SERVICE"
+                : m.dutyStatus === "ON_DUTY"
+                ? "ON_DUTY"
+                : "OFF_DUTY",
+            dutyStartedAt: m.dutyStartedAt || null,
+            totalDutyMinutes: m.totalDutyMinutes || 0,
+            rating: m.rating ?? 4.9,
+            completedJobs: m.completedJobs ?? 0,
+            singleTeamVerified: true,
+          }));
+          setTeamMembers(mappedMembers);
+        }
       }
     } catch (err) {
       console.error("Failed to load team roster members:", err);
@@ -243,9 +247,13 @@ export default function TeamLeaderDashboardView({
     };
   }, [loadDashboardAssignments, loadTeamMembers]);
 
-  const activeOnDutyCount = teamMembers.filter((m) => m.status !== "OFF_DUTY").length;
-  const pendingDispatchCount = teamBookings.filter((b) => b.status === "PENDING_DISPATCH").length;
-  const completedCount = teamBookings.filter((b) => b.status === "COMPLETED").length;
+  // KPI Metrics passed directly from Backend (Zero Frontend Calculation)
+  const teamMembersCount = teamSquad?.dashboardStats?.teamMembersCount ?? teamMembers.length;
+  const activeOnDutyCount = teamSquad?.dashboardStats?.activeOnDutyCount ?? 0;
+  const pendingDispatchCount = teamSquad?.dashboardStats?.pendingDispatchCount ?? 0;
+  const leaderCommissionWallet = teamSquad?.dashboardStats?.leaderCommissionWallet ?? 0;
+  const completedCount = teamSquad?.dashboardStats?.completedJobsCount ?? 0;
+  const totalAssignedJobs = teamSquad?.dashboardStats?.totalAssignedJobs ?? teamBookings.length;
 
   const openDispatchModal = (booking: TeamBooking) => {
     setDispatchModalBooking(booking);
@@ -357,7 +365,7 @@ export default function TeamLeaderDashboardView({
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{teamMembers.length} <span className="text-xl font-bold text-slate-600">জন</span></p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{teamMembersCount} <span className="text-xl font-bold text-slate-600">জন</span></p>
             <div className="pt-2"><span className="text-xs font-bold text-blue-800 bg-blue-100/80 px-3 py-1.5 rounded-full border border-blue-300 inline-block">🛡️ 1-Team সিঙ্গেল ভেরিফাইড</span></div>
           </div>
         </div>
@@ -370,7 +378,7 @@ export default function TeamLeaderDashboardView({
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{activeOnDutyCount} / {teamMembers.length} <span className="text-xl font-bold text-slate-600">প্রস্তুত</span></p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{activeOnDutyCount} / {teamMembersCount} <span className="text-xl font-bold text-slate-600">প্রস্তুত</span></p>
             <div className="pt-2"><span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-full border border-emerald-300 inline-block">✓ কাজ গ্রহণের জন্য রেডি</span></div>
           </div>
         </div>
@@ -396,7 +404,7 @@ export default function TeamLeaderDashboardView({
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳১৮,৪৫০</p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳{leaderCommissionWallet.toLocaleString()}</p>
             <div className="pt-2"><span className="text-xs font-bold text-purple-800 bg-purple-100/80 px-3 py-1.5 rounded-full border border-purple-300 inline-block">💰 ৫০%-১০%-৪০% কমিশন</span></div>
           </div>
         </div>
@@ -528,7 +536,7 @@ export default function TeamLeaderDashboardView({
               <p className="text-xs text-slate-500 font-medium">অ্যাডমিন কর্তৃক {displayTeamName}য় নিয়োজিত সার্ভিস</p>
             </div>
             <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-              {teamBookings.length} টির মধ্যে {completedCount} টি সম্পূর্ণ
+              {totalAssignedJobs} টির মধ্যে {completedCount} টি সম্পূর্ণ
             </span>
           </div>
 

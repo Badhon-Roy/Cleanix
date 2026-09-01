@@ -17,6 +17,8 @@ export interface ICleanerDashboardStats {
   totalJobsCount: number;
   completedCount: number;
   totalEstimatedEarnings: number;
+  totalEarnedWallet: number;
+  pendingEstimatedEarnings: number;
   ratingValue: string;
   totalReviewsCount: number;
 }
@@ -72,6 +74,8 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
     totalJobsCount: c.totalJobsDone ?? 0,
     completedCount: c.totalJobsDone ?? 0,
     totalEstimatedEarnings: c.totalEarnings ?? 0,
+    totalEarnedWallet: c.totalEarnings ?? 0,
+    pendingEstimatedEarnings: 0,
     ratingValue: Number(c.rating || 5).toFixed(1),
     totalReviewsCount: 0,
   },
