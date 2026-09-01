@@ -4,6 +4,9 @@ import React from "react";
 import { X, Download, Printer, CheckCircle, ShieldCheck } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 
+import { downloadBookingPDFAPI } from "@/services/bookingService";
+import { downloadSubscriptionPDFAPI } from "@/services/subscriptionService";
+
 export interface InvoiceData {
   id: string;
   invoiceNumber: string;
@@ -34,8 +37,20 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
     window.print();
   };
 
-  const handleDownload = () => {
-    alert(`Downloading Invoice ${invoice.invoiceNumber}.pdf ...`);
+  const handleDownload = async () => {
+    if (!invoice.id) {
+      alert("Invoice ID not found");
+      return;
+    }
+
+    const cleanRef = (invoice.invoiceNumber || invoice.bookingNumber || "INVOICE").replace(/#/g, "");
+    const filename = `Cleanix-Invoice-${cleanRef}.pdf`;
+
+    if (invoice.invoiceNumber?.startsWith("INV-SUB") || invoice.invoiceNumber?.startsWith("SUB") || invoice.bookingNumber?.startsWith("#SUB")) {
+      await downloadSubscriptionPDFAPI(invoice.id, filename);
+    } else {
+      await downloadBookingPDFAPI(invoice.id, filename);
+    }
   };
 
   return (

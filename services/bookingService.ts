@@ -125,3 +125,32 @@ export const cancelBookingAPI = async (bookingId: string) => {
     return { success: false, message: error.message || "Failed to cancel booking" };
   }
 };
+
+export const downloadBookingPDFAPI = async (bookingId: string, filename = "Cleanix-Booking-Invoice.pdf") => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/bookings/${bookingId}/pdf`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || "Failed to download PDF invoice");
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error downloading booking PDF:", error);
+    alert(error?.message || "Failed to download PDF invoice. Please ensure you are logged in.");
+    return { success: false, message: error.message };
+  }
+};
+
