@@ -122,7 +122,18 @@ export default function SettingsClientView({
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
+        const newAvatar = reader.result as string;
+        setAvatarUrl(newAvatar);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("cleanix_user_avatar", newAvatar);
+          } catch {}
+          window.dispatchEvent(
+            new CustomEvent("user-profile-updated", {
+              detail: { avatar: newAvatar },
+            })
+          );
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -132,6 +143,16 @@ export default function SettingsClientView({
     setAvatarUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("cleanix_user_avatar");
+      } catch {}
+      window.dispatchEvent(
+        new CustomEvent("user-profile-updated", {
+          detail: { avatar: "" },
+        })
+      );
     }
   };
 
@@ -272,6 +293,25 @@ export default function SettingsClientView({
           phone: data.phone,
           avatar: avatarUrl || currentUser.avatar,
         });
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          if (avatarUrl) {
+            localStorage.setItem("cleanix_user_avatar", avatarUrl);
+          } else {
+            localStorage.removeItem("cleanix_user_avatar");
+          }
+        } catch {}
+        window.dispatchEvent(
+          new CustomEvent("user-profile-updated", {
+            detail: {
+              name: data.name,
+              phone: data.phone,
+              avatar: avatarUrl || "",
+            },
+          })
+        );
       }
 
       setTimeout(() => setSavedSuccess(false), 4000);

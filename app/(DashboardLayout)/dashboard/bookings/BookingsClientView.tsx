@@ -390,7 +390,7 @@ export default function BookingsClientView({
               <Truck className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <h4 className="font-extrabold text-slate-900 text-sm">No Active Field Cleaning Currently In Progress</h4>
+              <h4 className="font-semibold text-slate-900 text-xl mb-2">No Active Field Cleaning Currently In Progress</h4>
               <p className="text-xs text-slate-600 font-medium">আপনার এই মুহূর্তে কোনো রানিং ফিল্ড টিম ডিলিভারি নেই।</p>
             </div>
           </div>
