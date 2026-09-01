@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import LiveMapModal from "@/components/dashboard/LiveMapModal";
 import JobDetailsModal from "@/components/dashboard/JobDetailsModal";
+import CustomerProofReviewModal from "@/components/dashboard/CustomerProofReviewModal";
 
 export interface BookingStatusStep {
   id: "SCHEDULED" | "ASSIGNED" | "EN_ROUTE" | "IN_PROGRESS" | "COMPLETED";
@@ -27,55 +28,151 @@ export interface BookingStatusStep {
 }
 
 interface LiveJobTrackerProps {
+  bookingId?: string;
   bookingNumber?: string;
   serviceName?: string;
   address?: string;
+  status?: string;
+  cleanerTeam?: string;
+  assignedTeam?: any;
+  assignedCleaners?: any[];
+  scheduledDate?: string;
+  timeSlot?: string;
+  proofOfWork?: any;
+  onRefresh?: () => void;
 }
 
 export default function LiveJobTracker({
-  bookingNumber = "CLN-2026-8891",
-  serviceName = "Standard Home Deep Cleaning & Anti-Bacterial Sanitization",
-  address = "House 42, Road 11, Block D, Gulshan-2, Dhaka",
+  bookingId = "",
+  bookingNumber = "",
+  serviceName = "",
+  address = "",
+  status = "CONFIRMED",
+  cleanerTeam,
+  assignedTeam,
+  assignedCleaners,
+  scheduledDate,
+  timeSlot,
+  proofOfWork,
+  onRefresh,
 }: LiveJobTrackerProps) {
-  const [currentStep] = useState<number>(2); // Default to "EN_ROUTE" (index 2)
+  // Calculate step index dynamically based on backend booking status
+  let currentStep = 0; // Default: SCHEDULED
+  const upperStatus = String(status || "CONFIRMED").toUpperCase();
+
+  if (upperStatus === "PENDING") {
+    currentStep = 0; // Step 1: Pending Team Assignment
+  } else if (upperStatus === "SCHEDULED" || upperStatus === "CONFIRMED") {
+    currentStep = 1; // Step 2: Cleaner allocation in progress
+  } else if (upperStatus === "ASSIGNED") {
+    currentStep = 2; // Step 2: Cleaner Assigned completed (DONE ✓ Green), Step 3 (En Route) is active
+  } else if (upperStatus === "EN_ROUTE") {
+    currentStep = 2; // Step 3: En Route is active
+  } else if (upperStatus === "IN_PROGRESS") {
+    currentStep = 3; // Step 4: In Progress is active
+  } else if (upperStatus === "COMPLETION_REQUESTED") {
+    currentStep = 4; // Step 5: Awaiting Customer Approval
+  } else if (upperStatus === "COMPLETED") {
+    currentStep = 5; // Step 5: Completed (All steps done)
+  }
+
   const [mapModalOpen, setMapModalOpen] = useState<boolean>(false);
   const [specsModalOpen, setSpecsModalOpen] = useState<boolean>(false);
+  const [proofReviewOpen, setProofReviewOpen] = useState<boolean>(false);
+
+  const activeTeamName = cleanerTeam || (assignedTeam ? assignedTeam.teamName : null);
+  const cleanerNames = Array.isArray(assignedCleaners) && assignedCleaners.length > 0
+    ? assignedCleaners
+        .filter((c: any) => c != null)
+        .map((c: any) => (typeof c === "object" ? c.name : c))
+        .filter(Boolean)
+        .join(", ")
+    : null;
+
+  const step2Desc = cleanerNames
+    ? `${activeTeamName ? activeTeamName + " • " : ""}Cleaners: ${cleanerNames}`
+    : activeTeamName
+    ? `${activeTeamName} assigned to job`
+    : "Cleaner Team Dispatched";
 
   const steps: BookingStatusStep[] = [
     {
       id: "SCHEDULED",
       label: "Scheduled",
       bnLabel: "বুকিং নিশ্চিত",
-      desc: "Booking locked for 09:00 AM slot",
-      time: "08:30 AM",
+      desc:
+        upperStatus === "PENDING"
+          ? "অ্যাডমিন টিম বরাদ্দের অপেক্ষায় রয়েছে"
+          : scheduledDate
+          ? `Scheduled for ${scheduledDate}`
+          : "Booking confirmed & scheduled",
+      time:
+        upperStatus === "PENDING"
+          ? "Awaiting Team Allocation"
+          : timeSlot || "09:00 AM Slot",
     },
     {
       id: "ASSIGNED",
       label: "Cleaner Assigned",
-      bnLabel: "টিম বরাদ্দকৃত",
-      desc: "Team Delta (3 Cleaners) dispatched",
-      time: "08:45 AM",
+      bnLabel: "টিম ও ক্লিনার বরাদ্দকৃত",
+      desc:
+        upperStatus === "PENDING"
+          ? "ক্লিনার অ্যাসাইনমেন্ট পেন্ডিং"
+          : step2Desc,
+      time:
+        upperStatus === "PENDING"
+          ? "Pending"
+          : upperStatus === "SCHEDULED" || upperStatus === "CONFIRMED"
+          ? cleanerNames
+            ? `Assigned (${cleanerNames}) ✓`
+            : "Allocating Cleaners..."
+          : cleanerNames
+          ? `Assigned (${cleanerNames}) ✓`
+          : "Assigned ✓",
     },
     {
       id: "EN_ROUTE",
       label: "En Route",
       bnLabel: "টিম রওনা দিয়েছে",
-      desc: "Cleaners traveling to Gulshan-2",
-      time: "09:05 AM (ETA 10 mins)",
+      desc:
+        upperStatus === "ASSIGNED"
+          ? "Cleaners allocated • Awaiting departure"
+          : "Cleaners traveling to location",
+      time:
+        upperStatus === "ASSIGNED"
+          ? "Awaiting Departure"
+          : upperStatus === "EN_ROUTE"
+          ? "En Route (ETA 10m)"
+          : currentStep > 2
+          ? "Arrived ✓"
+          : "Pending",
     },
     {
       id: "IN_PROGRESS",
       label: "In Progress",
       bnLabel: "পরিষ্কার কাজ চলছে",
-      desc: "Deep cleaning & steam sanitization active",
-      time: "Expected 09:15 AM - 11:30 AM",
+      desc: "Deep cleaning & sanitization active",
+      time:
+        currentStep === 3
+          ? "Cleaning Active"
+          : upperStatus === "COMPLETION_REQUESTED" || currentStep > 3
+          ? "Cleaned ✓"
+          : "Pending",
     },
     {
       id: "COMPLETED",
-      label: "Completed",
-      bnLabel: "কাজ সম্পন্ন",
-      desc: "Proof of work uploaded & verified",
-      time: "Pending completion",
+      label: upperStatus === "COMPLETION_REQUESTED" ? "Review & Confirm" : "Completed",
+      bnLabel: upperStatus === "COMPLETION_REQUESTED" ? "অনুমোদন করুন" : "কাজ সম্পন্ন",
+      desc:
+        upperStatus === "COMPLETION_REQUESTED"
+          ? "Cleaner uploaded proof photos"
+          : "Proof of work verified",
+      time:
+        upperStatus === "COMPLETION_REQUESTED"
+          ? "Awaiting Your Confirmation"
+          : upperStatus === "COMPLETED"
+          ? "Job Completed ✓"
+          : "Pending Completion",
     },
   ];
 
@@ -105,6 +202,39 @@ export default function LiveJobTracker({
             </p>
           </div>
         </div>
+
+        {/* Completion Confirmation Request Alert Banner for Customer */}
+        {upperStatus === "COMPLETION_REQUESTED" && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-blue-500/10 border-2 border-amber-400 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                <Sparkles className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-black text-slate-900 text-base sm:text-lg">
+                    ক্লিনার কাজ সম্পন্ন করেছেন ও প্রুফ ছবি জমা দিয়েছেন!
+                  </h4>
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                    অ্যাকশন প্রয়োজন
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium">
+                  বিফোর/আফটার ছবি ও চেকলিস্ট পর্যালোচনা করে সার্ভিসটি সম্পন্ন করতে ও রেটিং দিতে নিচের বাটনে ক্লিক করুন।
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setProofReviewOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-2xl border border-emerald-500 shadow-md hover:shadow-lg flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto hover:scale-[1.02]"
+            >
+              <CheckCircle className="w-4 h-4 stroke-[2.5]" />
+              <span>কাজের ছবি যাচাই ও সম্পন্ন করুন</span>
+            </button>
+          </div>
+        )}
 
         {/* Stepper Timeline with Pointed Chevron Arrow Connectors (>) */}
         <div className="py-2">
@@ -277,35 +407,93 @@ export default function LiveJobTracker({
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200">
               {/* Captain Avatar */}
               <div className="relative w-16 h-16 rounded-2xl bg-[#007eff] flex items-center justify-center font-black text-xl text-white flex-shrink-0">
-                RK
+                {assignedTeam?.leader?.name
+                  ? assignedTeam.leader.name.slice(0, 2).toUpperCase()
+                  : cleanerTeam
+                    ? cleanerTeam.slice(0, 2).toUpperCase()
+                    : "CT"}
                 <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
               </div>
 
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center justify-between">
                   <h5 className="font-black text-base sm:text-lg text-slate-900">
-                    Rahat Karim <span className="text-xs font-bold text-slate-500">(টিম ক্যাপ্টেন)</span>
+                    {assignedTeam?.leader?.name || (cleanerTeam && cleanerTeam !== "Unassigned" ? cleanerTeam : "Team Captain Pending")}{" "}
+                    <span className="text-xs font-bold text-slate-500">(টিম ক্যাপ্টেন)</span>
                   </h5>
                   <span className="text-xs sm:text-sm font-extrabold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    ★ 4.9 <span className="text-slate-500 font-normal">(142+ কাজ)</span>
+                    ★ 4.9 <span className="text-slate-500 font-normal">(Verified)</span>
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-semibold">
-                  Team Delta • ৩ জন অভিজ্ঞ পরিচ্ছন্নতা কর্মী • Eco-Chemical Certified
+                  {assignedTeam?.teamName || (cleanerTeam && cleanerTeam !== "Unassigned" ? cleanerTeam : "Cleaner Staff Allocation in Progress")} • Eco-Chemical Certified
                 </p>
-                <div className="flex items-center gap-4 pt-2">
-                  <a
-                    href="tel:+8801711223344"
-                    className="bg-[#007eff] hover:bg-[#0066ee] text-white text-xs sm:text-sm font-extrabold px-4 py-2 rounded-xl flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
-                  >
-                    <Phone className="w-4 h-4" /> <span>Call Captain (কল করুন)</span>
-                  </a>
-                  <span className="text-xs text-slate-500 font-mono font-bold">ID: CLN-STAFF-902</span>
+                <div className="flex items-center gap-4 pt-2 flex-wrap">
+                  {assignedTeam?.leader?.phone ? (
+                    <a
+                      href={`tel:${assignedTeam.leader.phone}`}
+                      className="bg-[#007eff] hover:bg-[#0066ee] text-white text-xs sm:text-sm font-extrabold px-4 py-2 rounded-xl flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
+                    >
+                      <Phone className="w-4 h-4" /> <span>Call Captain ({assignedTeam.leader.phone})</span>
+                    </a>
+                  ) : (
+                    <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5" /> Contact Phone Available on Assign
+                    </span>
+                  )}
+                  {assignedTeam?.teamCode && (
+                    <span className="text-xs text-slate-500 font-mono font-bold">
+                      ID: {assignedTeam.teamCode}
+                    </span>
+                  )}
                 </div>
+
+                {/* Assigned Squad Cleaners Section */}
+                {Array.isArray(assignedCleaners) && assignedCleaners.length > 0 && (
+                  <div className="space-y-2 pt-3 mt-3 border-t border-slate-100">
+                    <span className="text-[11px] uppercase font-extrabold text-slate-700 tracking-wider flex items-center gap-1.5">
+                      <UserCheck className="w-4 h-4 text-[#007eff]" />
+                      নিয়োগকৃত স্কোয়াড পরিচ্ছন্নতাকর্মী ({assignedCleaners.length} জন):
+                    </span>
+                    <div className="flex flex-wrap gap-2.5">
+                      {assignedCleaners.map((c: any, idx: number) => {
+                        const cName = typeof c === "object" ? c.name : c;
+                        const cPhone = typeof c === "object" ? c.phone : null;
+                        const cRating = typeof c === "object" ? c.rating || 4.9 : 4.9;
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2.5 bg-blue-50/80 border border-blue-200 py-1.5 px-3 rounded-xl shadow-2xs"
+                          >
+                            <div className="w-7 h-7 rounded-full bg-[#007eff] text-white flex items-center justify-center font-extrabold text-xs">
+                              {cName ? cName.slice(0, 1).toUpperCase() : "C"}
+                            </div>
+                            <div>
+                              <p className="text-xs font-extrabold text-slate-900 leading-tight">
+                                {cName}
+                              </p>
+                              {cPhone && (
+                                <a
+                                  href={`tel:${cPhone}`}
+                                  className="text-[10px] text-blue-600 font-bold hover:underline"
+                                >
+                                  {cPhone}
+                                </a>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded-md">
+                              ★ {cRating}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Current ETA Banner */}
+            {/* Current Status & ETA Banner */}
             <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-blue-500/20 text-[#007eff] flex items-center justify-center flex-shrink-0">
@@ -313,10 +501,18 @@ export default function LiveJobTracker({
                 </div>
                 <div>
                   <p className="font-extrabold text-slate-900 text-sm">
-                    Status: Cleaners En Route (ক্লিনার টিম রাস্তায় রয়েছে)
+                    Status: {upperStatus === "CONFIRMED" || upperStatus === "PENDING"
+                      ? "Booking Confirmed & Locked (বুকিং নিশ্চিত হয়েছে)"
+                      : upperStatus === "ASSIGNED"
+                        ? "Cleaner Team Assigned (টিম বরাদ্দ হয়েছে)"
+                        : upperStatus === "EN_ROUTE"
+                          ? "Cleaners En Route (ক্লিনার টিম রাস্তায় রয়েছে)"
+                          : upperStatus === "IN_PROGRESS"
+                            ? "Cleaning In Progress (কাজ শুরু হয়েছে)"
+                            : "Job Completed (কাজ সম্পন্ন হয়েছে)"}
                   </p>
                   <p className="text-slate-600 text-xs font-semibold">
-                    Van #Dhaka-Metro-881 • আনুমানিক পৌঁছানোর সময়: ১০ মিনিট (09:05 AM)
+                    Scheduled Date: {scheduledDate || "Today"} • Slot: {timeSlot || "Scheduled Slot"}
                   </p>
                 </div>
               </div>
@@ -392,6 +588,19 @@ export default function LiveJobTracker({
         bookingNumber={bookingNumber}
         serviceTitle={serviceName}
         address={address}
+      />
+
+      <CustomerProofReviewModal
+        isOpen={proofReviewOpen}
+        onClose={() => setProofReviewOpen(false)}
+        bookingId={bookingId}
+        bookingRef={bookingNumber}
+        serviceTitle={serviceName}
+        customerAddress={address}
+        proofOfWork={proofOfWork}
+        onCompletionSuccess={() => {
+          if (onRefresh) onRefresh();
+        }}
       />
     </>
   );

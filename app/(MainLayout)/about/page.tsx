@@ -7,6 +7,7 @@ import OurJourneyStepper from "@/components/about/OurJourneyStepper";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import TrustedClients from "@/components/TrustedClients";
 import { fetchAboutCMSServer } from "@/services/cmsServerService";
+import { fetchFeaturedReviewsServer } from "@/services/reviewServerService";
 
 export const metadata: Metadata = {
   title: "About Us | Cleanix - Pioneer SaaS Cleaning Automation in Bangladesh",
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 
 export default async function AboutPage() {
   const aboutData = await fetchAboutCMSServer();
+  const reviewsList = await fetchFeaturedReviewsServer();
 
   return (
     <>
@@ -33,7 +35,7 @@ export default async function AboutPage() {
       <TrustedClients />
       <TeamSpecialists initialData={aboutData} />
       <OurJourneyStepper initialData={aboutData} />
-      <TestimonialsSection />
+      <TestimonialsSection initialReviews={reviewsList} />
     </>
   );
 }

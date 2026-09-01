@@ -38,6 +38,8 @@ import {
   Sunset,
   HelpCircle,
   Loader2,
+  Search,
+  X,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { createBookingAPI } from "@/services/bookingService";
@@ -47,17 +49,20 @@ import {
   IBookingPriceBreakdown,
 } from "@/services/pricingService";
 import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
+import { fetchAllCoveragesAPI } from "@/services/coverageService";
 
 export default function NewBookingClientView({
   initialLocations = [],
   initialAddons = [],
   initialPricing,
   initialCoreServices = [],
+  initialCoverages = [],
 }: {
   initialLocations?: any[];
   initialAddons?: any[];
   initialPricing?: any;
   initialCoreServices?: any[];
+  initialCoverages?: any[];
 }) {
   const [serviceType, setServiceType] = useState<string>(
     initialCoreServices && initialCoreServices.length > 0
@@ -67,15 +72,40 @@ export default function NewBookingClientView({
   const [sqft, setSqft] = useState<number>(1200);
   const [bedrooms, setBedrooms] = useState<number>(3);
   const [bathrooms, setBathrooms] = useState<number>(2);
-  const [scheduledDate, setScheduledDate] = useState<string>("2026-08-25");
+  const [scheduledDate, setScheduledDate] = useState<string>(() => {
+    const d = new Date();
+    const mStr = String(d.getMonth() + 1).padStart(2, "0");
+    const dStr = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mStr}-${dStr}`;
+  });
   const [timeSlot, setTimeSlot] = useState<string>("09:00 AM - 11:00 AM");
   const [paymentMethod, setPaymentMethod] = useState<string>("BKASH");
   const [address, setAddress] = useState<string>("");
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
+  const [coverageList, setCoverageList] = useState<any[]>(initialCoverages || []);
+  const [selectedCoverageId, setSelectedCoverageId] = useState<string>("");
+  const [coverageError, setCoverageError] = useState<string>("");
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<any>(null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  // Sync Coverage List & Selected Coverage ID
+  useEffect(() => {
+    if (initialCoverages && initialCoverages.length > 0) {
+      setCoverageList(initialCoverages);
+      const activeCov = initialCoverages.find((c: any) => c.isActive !== false) || initialCoverages[0];
+      if (activeCov) setSelectedCoverageId(String(activeCov._id || activeCov.id));
+    } else {
+      fetchAllCoveragesAPI({ isActive: true }).then((data) => {
+        if (data && data.length > 0) {
+          setCoverageList(data);
+          const activeCov = data.find((c: any) => c.isActive !== false) || data[0];
+          if (activeCov) setSelectedCoverageId(String(activeCov._id || activeCov.id));
+        }
+      });
+    }
+  }, [initialCoverages]);
 
   // Pre-fill address from default location if available
   useEffect(() => {
@@ -92,14 +122,30 @@ export default function NewBookingClientView({
     }
   }, [initialLocations]);
 
-  // Custom Calendar & Time Slot Dropdown States
+  // Custom Calendar, Time Slot & Coverage Area Dropdown States
   const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
   const [timeDropdownOpen, setTimeDropdownOpen] = useState<boolean>(false);
-  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(2026);
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(7); // 0-indexed (7 = August)
+  const [coverageDropdownOpen, setCoverageDropdownOpen] = useState<boolean>(false);
+  const [zoneSearchQuery, setZoneSearchQuery] = useState<string>("");
+  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(() => new Date().getFullYear());
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(() => new Date().getMonth()); // 0-indexed (7 = August)
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
+  const coverageRef = useRef<HTMLDivElement>(null);
+
+  const selectedCoverageObj = coverageList.find(
+    (c) => String(c._id || c.id) === selectedCoverageId,
+  );
+
+  const filteredCoverages = coverageList.filter((cov) => {
+    if (!zoneSearchQuery.trim()) return true;
+    const q = zoneSearchQuery.toLowerCase().trim();
+    const nameMatch = (cov.zoneName || "").toLowerCase().includes(q);
+    const districtMatch = (cov.district || "").toLowerCase().includes(q);
+    const areasMatch = Array.isArray(cov.areasIncluded) && cov.areasIncluded.some((a: string) => (a || "").toLowerCase().includes(q));
+    return nameMatch || districtMatch || areasMatch;
+  });
 
   // Time Slot Presets Definition
   const timeSlotOptions = [
@@ -160,6 +206,12 @@ export default function NewBookingClientView({
       }
       if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
         setTimeDropdownOpen(false);
+      }
+      if (
+        coverageRef.current &&
+        !coverageRef.current.contains(event.target as Node)
+      ) {
+        setCoverageDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -579,6 +631,14 @@ export default function NewBookingClientView({
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedCoverageId) {
+      setCoverageError("অনুগ্রহ করে সার্ভিস পাওয়ার জন্য আপনার কাভারেজ এলাকা (Coverage Area / Zone) নির্বাচন করুন।");
+      toast.error("Please select a Coverage Area / Service Zone");
+      return;
+    }
+    setCoverageError("");
+
     if (!address.trim()) {
       toast.error("অনুগ্রহ করে আপনার সার্ভিস ঠিকানা দিন।");
       return;
@@ -596,12 +656,26 @@ export default function NewBookingClientView({
       return;
     }
 
+    // Filter custom fields by enabled fields in selectedServiceObj
+    const enabledFields = Array.isArray(selectedServiceObj?.fields)
+      ? selectedServiceObj.fields.filter((f: any) => f.enabled !== false)
+      : [];
+    const enabledFieldIds = new Set(enabledFields.map((f: any) => f.id));
+
+    const finalCustomValues: Record<string, any> = {};
+    for (const fieldId of Object.keys(customFieldValues)) {
+      if (enabledFieldIds.size === 0 || enabledFieldIds.has(fieldId)) {
+        finalCustomValues[fieldId] = customFieldValues[fieldId];
+      }
+    }
+
     const payload = {
       serviceType: selectedServiceObj._id, // ObjectId
-      sqft: customFieldValues["sqft"] ?? sqft,
-      bedrooms: customFieldValues["bedrooms"] ?? bedrooms,
-      bathrooms: customFieldValues["bathrooms"] ?? bathrooms,
-      customFieldValues: customFieldValues,
+      coverageArea: selectedCoverageId, // ObjectId
+      sqft: enabledFieldIds.size === 0 || enabledFieldIds.has("sqft") ? (customFieldValues["sqft"] ?? sqft) : undefined,
+      bedrooms: enabledFieldIds.has("bedrooms") ? (customFieldValues["bedrooms"] ?? bedrooms) : undefined,
+      bathrooms: enabledFieldIds.has("bathrooms") ? (customFieldValues["bathrooms"] ?? bathrooms) : undefined,
+      customFieldValues: finalCustomValues,
       selectedAddons: activeAddonsList,
       scheduledDate,
       timeSlot,
@@ -698,10 +772,12 @@ export default function NewBookingClientView({
   };
 
   const handleQuickPreset = (offsetDays: number) => {
-    const target = new Date(2026, 7, 21 + offsetDays);
+    const today = new Date();
+    const target = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
     const mStr = String(target.getMonth() + 1).padStart(2, "0");
     const dStr = String(target.getDate()).padStart(2, "0");
-    setScheduledDate(`${target.getFullYear()}-${mStr}-${dStr}`);
+    const dateFormatted = `${target.getFullYear()}-${mStr}-${dStr}`;
+    setScheduledDate(dateFormatted);
     setCurrentCalendarYear(target.getFullYear());
     setCurrentCalendarMonth(target.getMonth());
     setCalendarOpen(false);
@@ -1387,9 +1463,10 @@ export default function NewBookingClientView({
                           ).padStart(2, "0");
                           const dStr = String(dayNum).padStart(2, "0");
                           const thisDateFormatted = `${currentCalendarYear}-${mStr}-${dStr}`;
-                          const isSelected =
-                            scheduledDate === thisDateFormatted;
-                          const isToday = thisDateFormatted === "2026-08-21";
+                          const isSelected = scheduledDate === thisDateFormatted;
+                          const now = new Date();
+                          const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                          const isToday = thisDateFormatted === todayISO;
 
                           return (
                             <button
@@ -1459,7 +1536,10 @@ export default function NewBookingClientView({
                   </div>
 
                   {timeDropdownOpen && (
-                    <div className="absolute bottom-full mb-2 left-0 z-50 w-full bg-white border border-slate-200 rounded-3xl p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150">
+                    <div
+                      data-lenis-prevent="true"
+                      className="absolute bottom-full mb-2 left-0 z-50 w-full bg-white border border-slate-200 rounded-3xl p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150 max-h-72 overflow-y-auto overscroll-contain"
+                    >
                       <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
                         <span>AVAILABLE TIME SLOTS</span>
                         <span className="text-[#007eff]">4 Slots</span>
@@ -1516,6 +1596,156 @@ export default function NewBookingClientView({
                         })}
                       </div>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              {/* COVERAGE AREA / SERVICE ZONE CUSTOM FLOATING SELECTOR */}
+              <div className="space-y-2 text-xs sm:text-sm pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-[#007eff]" /> কাভারেজ এলাকা / সার্ভিস জোন (Coverage Area) <span className="text-red-500">*</span>:
+                  </label>
+                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                    বাধ্যতামূলক নির্বাচন
+                  </span>
+                </div>
+
+                <div className="relative" ref={coverageRef}>
+                  <div
+                    onClick={() => {
+                      setCoverageDropdownOpen(!coverageDropdownOpen);
+                      setCalendarOpen(false);
+                      setTimeDropdownOpen(false);
+                    }}
+                    className={`relative bg-slate-50/90 hover:bg-white border rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all group ${
+                      coverageError ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/30" : "border-slate-200 hover:border-[#007eff]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-8.5 h-8.5 rounded-xl bg-blue-50 text-[#007eff] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border border-blue-100">
+                        <MapPin className="w-4.5 h-4.5 stroke-[2.5]" />
+                      </div>
+                      <div className="truncate">
+                        <span className="font-bold text-slate-900 text-sm block truncate">
+                          {selectedCoverageObj?.zoneName
+                            ? `${selectedCoverageObj.zoneName} (${selectedCoverageObj.district || 'Dhaka'})`
+                            : "কাভারেজ এলাকা নির্বাচন করুন"}
+                        </span>
+                        {selectedCoverageObj?.areasIncluded && selectedCoverageObj.areasIncluded.length > 0 ? (
+                          <span className="text-[11px] text-slate-500 font-medium block truncate">
+                            {selectedCoverageObj.areasIncluded.join(", ")}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium block truncate">
+                            আপনার সার্ভিস জোনের নাম ও এরিয়া সিলেক্ট করুন
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5] flex-shrink-0 transition-transform duration-200 ${coverageDropdownOpen ? "rotate-180 text-[#007eff]" : ""}`} />
+                  </div>
+
+                  {coverageDropdownOpen && (
+                    <div
+                      data-lenis-prevent="true"
+                      className="absolute bottom-full mb-2 left-0 z-50 w-full bg-white border border-slate-200 rounded-3xl p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto overscroll-contain"
+                    >
+                      {/* Sticky Header with Real-Time Zone Search */}
+                      <div className="sticky top-0 z-10 bg-white pt-1 pb-2 space-y-2 border-b border-slate-100">
+                        <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider px-1 flex items-center justify-between">
+                          <span>AVAILABLE SERVICE ZONES</span>
+                          <span className="text-[#007eff]">{filteredCoverages.length} Zones Available</span>
+                        </div>
+
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <Search className="w-3.5 h-3.5 text-[#007eff]" />
+                          </div>
+                          <input
+                            type="text"
+                            value={zoneSearchQuery}
+                            onChange={(e) => setZoneSearchQuery(e.target.value)}
+                            placeholder="সার্ভিস জোন, জেলা বা এলাকা সার্চ করুন..."
+                            className="w-full bg-slate-50 border border-slate-200 focus:border-[#007eff] focus:bg-white focus:outline-none rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 transition-all placeholder-slate-400"
+                          />
+                          {zoneSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setZoneSearchQuery("")}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {filteredCoverages && filteredCoverages.length > 0 ? (
+                        <div className="space-y-1.5 pt-1">
+                          {filteredCoverages.map((cov: any) => {
+                            const covId = String(cov._id || cov.id);
+                            const isSelected = selectedCoverageId === covId;
+                            return (
+                              <button
+                                key={covId}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCoverageId(covId);
+                                  setCoverageError("");
+                                  setCoverageDropdownOpen(false);
+                                }}
+                                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                                  isSelected
+                                    ? "bg-gradient-to-r from-[#007eff] via-blue-600 to-blue-700 text-white border-2 border-blue-400 font-extrabold shadow-md"
+                                    : "border-slate-200 bg-slate-50 hover:bg-blue-50/70 hover:border-blue-200 text-slate-800"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                      isSelected
+                                        ? "bg-white/20 text-white backdrop-blur-md"
+                                        : "bg-white text-[#007eff] border border-slate-200"
+                                    }`}
+                                  >
+                                    <MapPin className="w-4 h-4 stroke-[2.5]" />
+                                  </div>
+                                  <div>
+                                    <p className={`text-xs font-extrabold ${isSelected ? "text-white" : "text-slate-900"}`}>
+                                      {cov.zoneName} ({cov.district || "Dhaka"})
+                                    </p>
+                                    {Array.isArray(cov.areasIncluded) && cov.areasIncluded.length > 0 && (
+                                      <p className={`text-[10px] font-medium line-clamp-1 ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
+                                        {cov.areasIncluded.join(", ")}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {isSelected && (
+                                  <div className="w-5 h-5 rounded-full bg-white text-[#007eff] flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-xs text-amber-800 text-center font-medium my-2">
+                          "{zoneSearchQuery}" নাম বা এরিয়া দিয়ে কোনো জোন খুঁজে পাওয়া যায়নি।
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {coverageError && (
+                    <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1.5 ml-1">
+                      <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-500" />
+                      <span>{coverageError}</span>
+                    </p>
                   )}
                 </div>
               </div>

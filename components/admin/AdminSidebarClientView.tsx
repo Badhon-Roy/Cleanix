@@ -16,6 +16,7 @@ import {
   MessageSquare,
   MapPin,
   Clock,
+  Star,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { fetchAllCleanersAPI } from "@/services/cleanerService";
@@ -85,6 +86,7 @@ export default function AdminSidebarClientView({
   const navItems = [
     { name: "Overview & KPIs", href: "/admin", icon: LayoutDashboard },
     { name: "Bookings & Dispatch", href: "/admin/bookings", icon: Truck, badge: "12 Pending" },
+    { name: "Reviews & Ratings", href: "/admin/reviews", icon: Star, badge: "Moderation" },
     { name: "Teams & Squads", href: "/admin/teams", icon: Users, badge: "4 Squads" },
     {
       name: "Cleaner Requests",

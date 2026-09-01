@@ -1,56 +1,164 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, Sparkles } from "lucide-react";
+import { io } from "socket.io-client";
+import { fetchFeaturedReviewsAPI, ReviewItem } from "@/services/reviewService";
 
-const leftTestimonials = [
+const defaultLeftTestimonials = [
   {
-    id: 1,
+    id: "1",
     quote:
       "I trust them completely for consistent cleaning and careful service. Our home feels fresh every visit, and their attention to detail makes the whole process effortless every time.",
     name: "RAHIM CHOWDHURY",
-    role: "Operations Manager",
+    role: "Property Owner, Gulshan",
     rating: "5.0",
     avatar:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
   },
   {
-    id: 2,
+    id: "2",
     quote:
       "We trust their office cleaning team completely. Desks, washrooms, and shared areas are always ready before staff arrive, helping our workplace feel organized and healthy.",
     name: "MEHEDI HASAN",
-    role: "Office Operations Lead",
+    role: "Office Operations Lead, Banani",
     rating: "5.0",
     avatar:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80",
   },
 ];
 
-const rightTestimonials = [
+const defaultRightTestimonials = [
   {
-    id: 3,
+    id: "3",
     quote:
       "Their deep cleaning service gave our kitchen and bathrooms a complete reset. From booking confirmation to final walkthrough, everything was organized, thorough, and stress-free.",
     name: "SADIA RAHMAN",
-    role: "Distribution Coordinator",
+    role: "Homeowner, Dhanmondi",
     rating: "5.0",
     avatar:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80",
   },
   {
-    id: 4,
+    id: "4",
     quote:
       "Our post-renovation cleanup was handled on schedule. Dust, debris, and hard-to-reach surfaces were managed carefully so the space was ready to use immediately.",
     name: "IMRAN KABIR",
-    role: "Procurement Head",
+    role: "Corporate Client, Uttara",
     rating: "5.0",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80",
   },
 ];
 
-export default function TestimonialsSection() {
+interface TestimonialsSectionProps {
+  initialReviews?: ReviewItem[];
+}
+
+const formatReviewItem = (item: ReviewItem) => ({
+  id: item._id,
+  quote:
+    item.feedback && item.feedback.trim().length > 0
+      ? item.feedback
+      : "Exceptional professional cleaning service! Highly recommended for quality, punctuality, and staff professionalism.",
+  name: item.customer?.name || "Verified Customer",
+  role:
+    (item.booking?.serviceType?.title
+      ? `${item.booking.serviceType.title} Client`
+      : item.serviceType?.title
+      ? `${item.serviceType.title} Client`
+      : "") || "Verified Cleanix Customer",
+  rating: Number(item.rating || 5).toFixed(1),
+  avatar:
+    item.customer?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+      item.customer?.name || item._id
+    )}`,
+});
+
+export default function TestimonialsSection({
+  initialReviews,
+}: TestimonialsSectionProps) {
+  const [reviews, setReviews] = useState<any[]>(() => {
+    if (Array.isArray(initialReviews) && initialReviews.length > 0) {
+      return initialReviews.map(formatReviewItem);
+    }
+    return [];
+  });
+
+  const [totalReviewCount, setTotalReviewCount] = useState<number>(() => {
+    if (Array.isArray(initialReviews) && initialReviews.length > 0) {
+      return 5000 + initialReviews.length;
+    }
+    return 5000;
+  });
+
+  const [avgRating, setAvgRating] = useState<number>(() => {
+    if (Array.isArray(initialReviews) && initialReviews.length > 0) {
+      const sum = initialReviews.reduce(
+        (acc, r) => acc + (Number(r.rating) || 5),
+        0
+      );
+      return Number((sum / initialReviews.length).toFixed(1));
+    }
+    return 4.9;
+  });
+
+  const loadReviews = async () => {
+    try {
+      const data = await fetchFeaturedReviewsAPI();
+      if (Array.isArray(data) && data.length > 0) {
+        const formatted = data.map(formatReviewItem);
+        setReviews(formatted);
+        const sum = data.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        setAvgRating(Number((sum / data.length).toFixed(1)));
+        setTotalReviewCount(5000 + data.length);
+      }
+    } catch (err) {
+      console.error("Failed to load reviews:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!initialReviews || initialReviews.length === 0) {
+      loadReviews();
+    }
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SERVER_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    const handleRefresh = () => {
+      loadReviews();
+    };
+
+    socket.on("review_created", handleRefresh);
+    socket.on("review_updated", handleRefresh);
+
+    return () => {
+      socket.off("review_created", handleRefresh);
+      socket.off("review_updated", handleRefresh);
+      socket.disconnect();
+    };
+  }, []);
+
+  // Split reviews into left and right columns
+  const displayLeft =
+    reviews.length >= 2
+      ? reviews.slice(0, Math.ceil(reviews.length / 2))
+      : defaultLeftTestimonials;
+
+  const displayRight =
+    reviews.length >= 2
+      ? reviews.slice(Math.ceil(reviews.length / 2), reviews.length)
+      : defaultRightTestimonials;
   return (
     <section className="w-full bg-[#F0F2F4] text-[#001837] py-16 md:py-24 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-7xl">
@@ -68,7 +176,7 @@ export default function TestimonialsSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
           {/* Left Column: 2 Stacked Testimonials */}
           <div className="lg:col-span-4 flex flex-col justify-between gap-6">
-            {leftTestimonials.map((item) => (
+            {displayLeft.map((item) => (
               <div
                 key={item.id}
                 className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-full hover:shadow-md transition-shadow"
@@ -94,6 +202,7 @@ export default function TestimonialsSection() {
                         alt={item.name}
                         fill
                         className="object-cover"
+                        unoptimized={item.avatar?.includes("dicebear") || item.avatar?.includes("http")}
                       />
                     </div>
                     <div>
@@ -142,7 +251,7 @@ export default function TestimonialsSection() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-black text-xl sm:text-2xl tracking-tight">
-                      4.9/5.0
+                      {avgRating.toFixed(1)}/5.0
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -152,7 +261,7 @@ export default function TestimonialsSection() {
                       ))}
                     </div>
                     <span className="text-slate-300 font-bold text-[10px] tracking-wider uppercase ml-1">
-                      (5K REVIEWS)
+                      ({totalReviewCount.toLocaleString()} REVIEWS)
                     </span>
                   </div>
                 </div>
@@ -162,7 +271,7 @@ export default function TestimonialsSection() {
 
           {/* Right Column: 2 Stacked Testimonials */}
           <div className="lg:col-span-4 flex flex-col justify-between gap-6">
-            {rightTestimonials.map((item) => (
+            {displayRight.map((item) => (
               <div
                 key={item.id}
                 className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-full hover:shadow-md transition-shadow"
@@ -188,6 +297,7 @@ export default function TestimonialsSection() {
                         alt={item.name}
                         fill
                         className="object-cover"
+                        unoptimized={item.avatar?.includes("dicebear") || item.avatar?.includes("http")}
                       />
                     </div>
                     <div>

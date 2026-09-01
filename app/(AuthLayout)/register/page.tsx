@@ -109,7 +109,8 @@ export default function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
   const [step3Errors, setStep3Errors] = useState<Record<string, string>>({});
 
   // Cleaner Verification Fields (Step 3)
@@ -150,15 +151,21 @@ export default function RegisterPage() {
 
   useEffect(() => {
     let interval: any;
-    if (isOtpModalOpen && timerSeconds > 0) {
+    if (step === 3 && timerSeconds > 0) {
       interval = setInterval(() => {
-        setTimerSeconds((prev) => prev - 1);
+        setTimerSeconds((prev) => {
+          if (prev <= 1) {
+            setCanResendOtp(true);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     } else if (timerSeconds <= 0) {
       setCanResendOtp(true);
     }
     return () => clearInterval(interval);
-  }, [isOtpModalOpen, timerSeconds]);
+  }, [step, timerSeconds]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -283,6 +290,12 @@ export default function RegisterPage() {
 
   // Step 2 Valid Submission Handler (Triggered by React Hook Form)
   const handleStep2Submit = (data: IRegisterStep2Form) => {
+    if (!agreeTerms) {
+      setTermsError("Please accept the Terms of Service and Privacy Policy to proceed.");
+      toast.error("Please accept the Terms of Service and Privacy Policy to proceed.");
+      return;
+    }
+    setTermsError("");
     if (!isEmailVerified) {
       setPendingStep2Data(data);
       handleSendEmailOtp(data.email);
@@ -365,12 +378,21 @@ export default function RegisterPage() {
         return;
       }
 
+      if (!agreeTerms) {
+        toast.error("Please accept the Terms of Service and Privacy Policy to proceed.");
+        setTermsError("Please accept the Terms of Service and Privacy Policy to proceed.");
+        setIsLoading(false);
+        setStep(2);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("name", credentials.fullName);
       formData.append("email", credentials.email);
       formData.append("phone", credentials.phone);
       formData.append("password", credentials.password);
       formData.append("role", accountType);
+      formData.append("agreeTerms", "true");
       if (avatarPreview) formData.append("avatar", avatarPreview);
       if (isCleaner && dob) formData.append("dob", dob);
       if (isCleaner && gender) formData.append("gender", gender);
@@ -1031,29 +1053,38 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Agree Terms Checkbox for Customer */}
-                  {accountType === "CUSTOMER" && (
-                    <div className="pt-1 pl-1">
-                      <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
-                        <input
-                          type="checkbox"
-                          checked={agreeTerms}
-                          onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="w-4 h-4 rounded bg-slate-50 border-slate-300 text-[#007eff] focus:ring-offset-0 focus:ring-blue-500 accent-[#007eff] cursor-pointer"
-                        />
-                        <span>
-                          I agree to the Cleanix{" "}
-                          <Link href="/terms" className="text-blue-600 hover:underline font-bold cursor-pointer">
-                            Terms of Service
-                          </Link>{" "}
-                          and{" "}
-                          <Link href="/privacy" className="text-blue-600 hover:underline font-bold cursor-pointer">
-                            Privacy Policy
-                          </Link>
-                        </span>
-                      </label>
-                    </div>
-                  )}
+                  {/* Agree Terms Checkbox for all users */}
+                  <div className="pt-1 pl-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
+                      <input
+                        type="checkbox"
+                        checked={agreeTerms}
+                        onChange={(e) => {
+                          setAgreeTerms(e.target.checked);
+                          if (e.target.checked) setTermsError("");
+                        }}
+                        className={`w-4 h-4 rounded bg-slate-50 border-slate-300 text-[#007eff] focus:ring-offset-0 focus:ring-blue-500 accent-[#007eff] cursor-pointer ${
+                          termsError ? "ring-2 ring-red-500 border-red-500" : ""
+                        }`}
+                      />
+                      <span>
+                        I agree to the Cleanix{" "}
+                        <Link href="/terms" className="text-blue-600 hover:underline font-bold cursor-pointer">
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/privacy" className="text-blue-600 hover:underline font-bold cursor-pointer">
+                          Privacy Policy
+                        </Link>
+                      </span>
+                    </label>
+                    {termsError && (
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 ml-6 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{termsError}</span>
+                      </p>
+                    )}
+                  </div>
 
                   {/* Step 2 CTA */}
                   <button
@@ -1178,11 +1209,17 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => handleSendEmailOtp(pendingStep2Data?.email || watch("email"))}
-                    disabled={!canResendOtp || isSendingOtp}
+                    disabled={isSendingOtp || (!canResendOtp && timerSeconds > 270)}
                     className="font-bold text-[#007eff] hover:text-blue-700 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
                   >
-                    {isSendingOtp && <RefreshCw className="w-3 h-3 animate-spin" />}
-                    <span>Resend Code</span>
+                    {isSendingOtp ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Resending Code...</span>
+                      </>
+                    ) : (
+                      <span>Resend Code</span>
+                    )}
                   </button>
                 </div>
 

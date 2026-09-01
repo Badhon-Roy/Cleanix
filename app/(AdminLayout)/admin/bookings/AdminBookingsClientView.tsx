@@ -26,6 +26,77 @@ import {
   assignTeamToBookingAPI,
 } from "@/services/bookingService";
 
+const getStatusBadgeConfig = (status: string, rating?: number) => {
+  const s = String(status || "PENDING").toUpperCase();
+  switch (s) {
+    case "PENDING":
+      return {
+        label: "Pending Allocation",
+        stepText: "Step 1/7",
+        bg: "bg-amber-50 text-amber-800 border-amber-300",
+        dot: "bg-amber-500 animate-pulse",
+      };
+    case "SCHEDULED":
+      return {
+        label: "Scheduled (Team Allocated)",
+        stepText: "Step 2/7",
+        bg: "bg-blue-50 text-blue-800 border-blue-300",
+        dot: "bg-blue-600",
+      };
+    case "ASSIGNED":
+      return {
+        label: "Cleaner Assigned",
+        stepText: "Step 3/7",
+        bg: "bg-teal-50 text-teal-800 border-teal-300",
+        dot: "bg-teal-600",
+      };
+    case "EN_ROUTE":
+      return {
+        label: "En Route (Traveling)",
+        stepText: "Step 4/7",
+        bg: "bg-purple-50 text-purple-800 border-purple-300",
+        dot: "bg-purple-600 animate-bounce",
+      };
+    case "IN_PROGRESS":
+      return {
+        label: "In Progress (Cleaning)",
+        stepText: "Step 5/7",
+        bg: "bg-orange-50 text-orange-800 border-orange-300",
+        dot: "bg-orange-600 animate-ping",
+      };
+    case "COMPLETION_REQUESTED":
+      return {
+        label: "Completion Requested (Review Ready)",
+        stepText: "Step 6/7",
+        bg: "bg-sky-50 text-sky-800 border-sky-300",
+        dot: "bg-sky-600",
+      };
+    case "COMPLETED": {
+      const hasRealRating = typeof rating === "number" && rating > 0;
+      return {
+        label: hasRealRating ? `Completed (★ ${Number(rating).toFixed(1)})` : "Completed",
+        stepText: "Done",
+        bg: "bg-emerald-100/90 text-emerald-950 border-emerald-300 font-extrabold",
+        dot: "bg-emerald-600",
+      };
+    }
+    case "CANCELLED":
+      return {
+        label: "Cancelled",
+        stepText: "Cancelled",
+        bg: "bg-rose-50 text-rose-800 border-rose-300",
+        dot: "bg-rose-600",
+      };
+    default:
+      return {
+        label: s,
+        stepText: s,
+        bg: "bg-slate-50 text-slate-800 border-slate-300",
+        dot: "bg-slate-500",
+      };
+  }
+};
+
 interface AdminBookingsClientViewProps {
   initialBookings?: any[];
 }
@@ -64,9 +135,16 @@ export default function AdminBookingsClientView({
 
     const teamRequestsList = Array.isArray(item.teamRequests) ? item.teamRequests : [];
 
+    const rawRef = item.bookingRef || `CLN-${String(item._id).slice(-4)}`;
+    const cleanId = rawRef.startsWith("#") ? rawRef.replace(/^#+/, "") : rawRef;
+    const rawRating = item.customerRating || item.review?.rating || item.proofOfWork?.rating;
+    const ratingVal = rawRating && Number(rawRating) > 0 ? Number(rawRating) : undefined;
+    const feedbackVal =
+      item.customerFeedback || item.review?.feedback || item.proofOfWork?.feedback || "";
+
     return {
       _dbId: item._id,
-      id: item.bookingRef || `#CLN-${String(item._id).slice(-4)}`,
+      id: cleanId,
       customer: item.user?.name || "Customer",
       phone: item.user?.phone || item.phone || "N/A",
       email: item.user?.email || "N/A",
@@ -81,9 +159,11 @@ export default function AdminBookingsClientView({
       paymentStatus: `${item.paymentStatus || "PAID"} (${item.paymentMethod || "bKash"})`,
       date: item.scheduledDate || "N/A",
       time: item.timeSlot || "N/A",
-      status: item.status === "CONFIRMED" ? "PENDING" : item.status || "PENDING",
+      status: item.status || "PENDING",
       cleanerTeam: item.cleanerTeam || "Unassigned",
       teamRequests: teamRequestsList,
+      rating: ratingVal,
+      feedback: feedbackVal,
     };
   };
 
@@ -293,6 +373,10 @@ export default function AdminBookingsClientView({
     }
   };
 
+  const pendingRequestsCount = bookingList.filter(
+    (b) => Array.isArray(b.teamRequests) && b.teamRequests.some((r: any) => r.status === "PENDING")
+  ).length;
+
   const filteredBookings = bookingList.filter((b) => {
     const matchesSearch =
       b.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -310,9 +394,24 @@ export default function AdminBookingsClientView({
     return matchesSearch && matchesStatus;
   });
 
-  const pendingRequestsCount = bookingList.filter(
-    (b) => Array.isArray(b.teamRequests) && b.teamRequests.some((r: any) => r.status === "PENDING")
-  ).length;
+  const statusTabs = [
+    { key: "ALL", label: "ALL" },
+    { key: "REQUESTED", label: "TEAM REQUESTS" },
+    { key: "PENDING", label: "PENDING ALLOCATION" },
+    { key: "SCHEDULED", label: "SCHEDULED" },
+    { key: "ASSIGNED", label: "CLEANER ASSIGNED" },
+    { key: "EN_ROUTE", label: "EN ROUTE" },
+    { key: "IN_PROGRESS", label: "IN PROGRESS" },
+    { key: "COMPLETION_REQUESTED", label: "APPROVAL PENDING" },
+    { key: "COMPLETED", label: "COMPLETED" },
+    { key: "CANCELLED", label: "CANCELLED" },
+  ];
+
+  const getTabCount = (key: string) => {
+    if (key === "ALL") return bookingList.length;
+    if (key === "REQUESTED") return pendingRequestsCount;
+    return bookingList.filter((b) => b.status === key).length;
+  };
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -349,52 +448,76 @@ export default function AdminBookingsClientView({
 
       {/* Main Container */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
-        {/* Controls Row */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          {/* Status Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {["ALL", "REQUESTED", "PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED"].map(
-              (st) => (
+        {/* Controls Section: Search on Top + Full Width Status Filter Pills */}
+        <div className="space-y-4 border-b border-slate-100 pb-6">
+          {/* Top Row: Full Width Search System */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search bookings by Reference (#CLN-...), Customer Name, Phone, Area, or Service..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-10 py-3 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all shadow-xs"
+              />
+              {searchQuery && (
                 <button
-                  key={st}
                   type="button"
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-extrabold cursor-pointer transition-all flex items-center gap-1.5 ${
-                    statusFilter === st
-                      ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
-                      : st === "REQUESTED" && pendingRequestsCount > 0
-                      ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors cursor-pointer text-xs"
                 >
-                  {st === "REQUESTED" ? (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>TEAM REQUESTS</span>
-                      {pendingRequestsCount > 0 && (
-                        <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white">
-                          {pendingRequestsCount}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    st
-                  )}
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              ),
-            )}
+              )}
+            </div>
+
+            {/* Quick Result Summary Indicator */}
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 self-end sm:self-center flex-shrink-0 px-1">
+              <span>Showing:</span>
+              <span className="font-extrabold text-slate-900 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                {filteredBookings.length} of {bookingList.length} Bookings
+              </span>
+            </div>
           </div>
 
-          {/* Search Box */}
-          <div className="relative max-w-xs w-full">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by ID, Name, Area..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-[#007eff] focus:bg-white transition-all"
-            />
+          {/* Bottom Row: Full Width Status Filter Pills */}
+          <div className="w-full pt-1">
+            <div className="flex items-center gap-2 flex-wrap w-full">
+              {statusTabs.map((tab) => {
+                const count = getTabCount(tab.key);
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setStatusFilter(tab.key)}
+                    className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold cursor-pointer transition-all flex items-center gap-1.5 ${
+                      statusFilter === tab.key
+                        ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
+                        : tab.key === "REQUESTED" && pendingRequestsCount > 0
+                        ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {tab.key === "REQUESTED" && (
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    )}
+                    <span>{tab.label}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        statusFilter === tab.key
+                          ? "bg-white/25 text-white"
+                          : tab.key === "REQUESTED" && pendingRequestsCount > 0
+                          ? "bg-amber-500 text-white"
+                          : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -410,12 +533,16 @@ export default function AdminBookingsClientView({
               const pendingReqs = Array.isArray(b.teamRequests)
                 ? b.teamRequests.filter((r: any) => r && (r.status === "PENDING" || !r.status))
                 : [];
+              const isCompleted = b.status === "COMPLETED";
+              const statusCfg = getStatusBadgeConfig(b.status, b.rating);
 
               return (
                 <div
                   key={b._dbId || b.id}
                   className={`p-6 rounded-3xl border transition-all space-y-4 shadow-xs ${
-                    pendingReqs.length > 0
+                    isCompleted
+                      ? "bg-[#F4FDFB] border-emerald-300 hover:border-emerald-400 ring-1 ring-emerald-500/20"
+                      : pendingReqs.length > 0
                       ? "border-amber-300 bg-amber-50/20 hover:border-amber-400 ring-1 ring-amber-400/30"
                       : "border-slate-200 hover:border-slate-300 bg-white"
                   }`}
@@ -423,12 +550,23 @@ export default function AdminBookingsClientView({
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-sm font-black text-[#007eff] bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
+                      <span className="text-sm font-black text-[#007eff] bg-blue-50 px-3 py-1 rounded-xl border border-blue-200 font-mono">
                         #{b.id}
                       </span>
                       <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                         {b.service}
                       </h3>
+                      {/* Prominent Status Badge */}
+                      <span
+                        className={`text-xs font-black px-3.5 py-1 rounded-full border flex items-center gap-1.5 shadow-2xs ${statusCfg.bg}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${statusCfg.dot}`} />
+                        <span>{statusCfg.label}</span>
+                        <span className="text-[10px] font-bold opacity-75">
+                          ({statusCfg.stepText})
+                        </span>
+                      </span>
+
                       {pendingReqs.length > 0 && (
                         <span className="text-xs font-black px-3 py-1 rounded-full bg-[#42990E]/15 text-[#1b3e04] border border-[#42990E]/40 flex items-center gap-1.5 animate-pulse">
                           <Sparkles className="w-3.5 h-3.5 text-[#42990E]" />
@@ -448,12 +586,16 @@ export default function AdminBookingsClientView({
                           onChange={(e) =>
                             handleUpdateBookingStatus(b.id, e.target.value)
                           }
-                          className="bg-transparent font-extrabold text-slate-900 focus:outline-none cursor-pointer"
+                          className="bg-transparent font-extrabold text-slate-900 focus:outline-none cursor-pointer text-xs"
                         >
-                          <option value="PENDING">PENDING DISPATCH</option>
-                          <option value="ASSIGNED">TEAM ASSIGNED</option>
-                          <option value="IN_PROGRESS">IN PROGRESS</option>
-                          <option value="COMPLETED">COMPLETED</option>
+                          <option value="PENDING">1. PENDING (Awaiting Team)</option>
+                          <option value="SCHEDULED">2. SCHEDULED (Team Allocated)</option>
+                          <option value="ASSIGNED">3. CLEANER ASSIGNED</option>
+                          <option value="EN_ROUTE">4. EN ROUTE (Traveling)</option>
+                          <option value="IN_PROGRESS">5. IN PROGRESS (Cleaning)</option>
+                          <option value="COMPLETION_REQUESTED">6. REVIEW READY (Customer Approval)</option>
+                          <option value="COMPLETED">7. COMPLETED (Finished)</option>
+                          <option value="CANCELLED">8. CANCELLED</option>
                         </select>
                       </div>
 
