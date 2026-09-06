@@ -33,6 +33,7 @@ import { fetchAllPlansAPI, IPlan } from "@/services/planService";
 import { fetchActiveAddonsAPI } from "@/services/addonService";
 import { fetchAllCoveragesAPI, ICoverageArea } from "@/services/coverageService";
 import { createSubscriptionAPI, downloadSubscriptionPDFAPI } from "@/services/subscriptionService";
+import { getAuthToken, getAuthUser } from "@/utils/cookie";
 import { io } from "socket.io-client";
 
 export interface ISubscriptionPlanOption {
@@ -244,6 +245,18 @@ export default function SubscriptionWizard({
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [calMonth, setCalMonth] = useState<Date>(() => new Date(2026, 8, 1)); // Default Sep 2026
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Client-Side Authentication Check Safeguard
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = getAuthToken();
+      const user = getAuthUser();
+      if (!token || !user) {
+        const fullPath = window.location.pathname + window.location.search;
+        window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
+      }
+    }
+  }, []);
 
   // Close Popovers when clicking outside
   useEffect(() => {
@@ -467,9 +480,12 @@ export default function SubscriptionWizard({
           (errorMsg.toLowerCase().includes("authentication") ||
             errorMsg.toLowerCase().includes("login") ||
             errorMsg.toLowerCase().includes("401") ||
-            errorMsg.toLowerCase().includes("unauthorized"))
+            errorMsg.toLowerCase().includes("unauthorized") ||
+            errorMsg.toLowerCase().includes("token") ||
+            errorMsg.toLowerCase().includes("forbidden"))
         ) {
-          window.location.href = `/login?redirect=/subscribe`;
+          const fullPath = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
         }
       }
     } catch (err: any) {

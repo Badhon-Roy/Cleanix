@@ -431,6 +431,9 @@ export default function RegisterPage() {
       setAuthUser(userData);
       setAuthRole(userData.role);
 
+      const searchParamsObj = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const redirectUrl = searchParamsObj.get("redirect");
+
       // Auto-login: Redirect directly to application pages based on role
       if (userData.role === "ADMIN") {
         setTimeout(() => {
@@ -441,8 +444,12 @@ export default function RegisterPage() {
           router.push("/waiting-approval");
         }, 800);
       } else {
+        const targetPath =
+          redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+            ? redirectUrl
+            : "/dashboard";
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push(targetPath);
         }, 800);
       }
     } catch (error: any) {
@@ -458,8 +465,11 @@ export default function RegisterPage() {
       description: "Connecting to Google OAuth 2.0 service",
     });
     try {
+      const searchParamsObj = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const redirectUrl = searchParamsObj.get("redirect");
       const googleUrl = await getGoogleAuthUrl();
-      window.location.href = `${googleUrl}?role=${accountType}`;
+      const redirectQuery = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : "";
+      window.location.href = `${googleUrl}?role=${accountType}${redirectQuery}`;
     } catch (error) {
       console.error("Failed to get Google Auth URL:", error);
       toast.error("Failed to connect to Google OAuth service.");
@@ -488,7 +498,11 @@ export default function RegisterPage() {
 
         <div className="flex items-center gap-4">
           <Link
-            href="/login"
+            href={
+              typeof window !== "undefined" && new URLSearchParams(window.location.search).get("redirect")
+                ? `/login?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirect")!)}`
+                : "/login"
+            }
             className="text-slate-600 hover:text-[#11233F] text-xs sm:text-sm font-medium transition-colors hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-slate-100 cursor-pointer"
           >
             <span>Already have an account?</span>

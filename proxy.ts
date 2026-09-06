@@ -39,7 +39,7 @@ function getRoleAndApprovalFromJwt(token: string): { role: string | null; isAppr
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   // 1. Get Auth Token from cookies
@@ -77,10 +77,16 @@ export function middleware(request: NextRequest) {
   const isCleanerRoute = pathname === "/cleaner" || pathname.startsWith("/cleaner/");
   const isTeamRoute = pathname === "/team" || pathname.startsWith("/team/");
   const isCustomerDashboardRoute = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const isSubscribeRoute = pathname === "/subscribe" || pathname.startsWith("/subscribe/");
 
-  const isProtectedRoute = isAdminRoute || isCleanerRoute || isTeamRoute || isCustomerDashboardRoute;
+  const isProtectedRoute =
+    isAdminRoute ||
+    isCleanerRoute ||
+    isTeamRoute ||
+    isCustomerDashboardRoute ||
+    isSubscribeRoute;
 
-  // 3. CASE A: Unauthenticated user trying to access protected dashboard routes
+  // 3. CASE A: Unauthenticated user trying to access protected routes
   if (!isAuthenticated && isProtectedRoute) {
     const fullRequestedPath = `${pathname}${search}`;
     const loginUrl = new URL("/login", request.url);
@@ -90,15 +96,15 @@ export function middleware(request: NextRequest) {
 
   // 4. CASE B: Authenticated user trying to access Auth routes (/login, /register)
   if (isAuthenticated && isAuthRoute) {
+    // Check if there is a valid redirect query param first
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+      return NextResponse.redirect(new URL(redirectParam, request.url));
+    }
+
     let defaultDashboard = ROLE_DEFAULT_DASHBOARDS[userRole!] || "/dashboard";
     if (userRole === "CLEANER" && isApproved === false) {
       defaultDashboard = "/waiting-approval";
-    }
-
-    // Check if there is a valid redirect query param
-    const redirectParam = request.nextUrl.searchParams.get("redirect");
-    if (redirectParam && redirectParam.startsWith("/")) {
-      return NextResponse.redirect(new URL(redirectParam, request.url));
     }
 
     return NextResponse.redirect(new URL(defaultDashboard, request.url));
@@ -145,6 +151,8 @@ export const config = {
     "/admin/:path*",
     "/cleaner/:path*",
     "/team/:path*",
+    "/subscribe",
+    "/subscribe/:path*",
     "/login",
     "/register",
   ],

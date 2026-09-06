@@ -75,7 +75,10 @@ function CallbackContent() {
       } else if (role === "TEAM_LEADER") {
         targetPath = redirectUrl && redirectUrl.startsWith("/team") ? redirectUrl : "/team";
       } else {
-        targetPath = redirectUrl && redirectUrl.startsWith("/dashboard") ? redirectUrl : "/dashboard";
+        targetPath =
+          redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+            ? redirectUrl
+            : "/dashboard";
       }
 
       setTimeout(() => router.push(targetPath), 800);
