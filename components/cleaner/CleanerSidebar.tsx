@@ -28,6 +28,7 @@ import {
   fetchCleanerProfileMeAPI,
   toggleCleanerDutyStatusAPI,
 } from "@/services/cleanerService";
+import { fetchMyTeamAssignmentsAPI, fetchAvailableBookingsAPI } from "@/services/teamService";
 
 interface CleanerSidebarProps {
   mobileOpen?: boolean;
@@ -42,6 +43,8 @@ export default function CleanerSidebar({
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isOnDuty, setIsOnDuty] = useState(false);
   const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+  const [activeJobsCount, setActiveJobsCount] = useState<number>(0);
+  const [availableJobsCount, setAvailableJobsCount] = useState<number>(0);
 
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -78,8 +81,30 @@ export default function CleanerSidebar({
     }
   };
 
+  const loadCleanerJobs = async () => {
+    try {
+      const [assignments, available] = await Promise.all([
+        fetchMyTeamAssignmentsAPI(),
+        fetchAvailableBookingsAPI(),
+      ]);
+      if (Array.isArray(assignments)) {
+        const active = assignments.filter((item: any) => {
+          const st = (item.status || item.booking?.status || "").toUpperCase();
+          return st !== "CANCELLED" && st !== "REJECTED";
+        }).length;
+        setActiveJobsCount(active);
+      }
+      if (Array.isArray(available)) {
+        setAvailableJobsCount(available.length);
+      }
+    } catch (err) {
+      console.error("Error loading cleaner sidebar counts:", err);
+    }
+  };
+
   useEffect(() => {
     loadDutyProfile();
+    loadCleanerJobs();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -92,10 +117,26 @@ export default function CleanerSidebar({
 
     socket.on("cleaner_updated", () => {
       loadDutyProfile();
+      loadCleanerJobs();
+    });
+
+    socket.on("booking_created", () => {
+      loadCleanerJobs();
+    });
+
+    socket.on("booking_updated", () => {
+      loadCleanerJobs();
+    });
+
+    socket.on("team_assignment_updated", () => {
+      loadCleanerJobs();
     });
 
     return () => {
       socket.off("cleaner_updated");
+      socket.off("booking_created");
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
       socket.disconnect();
     };
   }, []);
@@ -125,9 +166,20 @@ export default function CleanerSidebar({
   };
 
   const navItems = [
-    { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
+    {
+      name: "Today's Jobs",
+      href: "/cleaner",
+      icon: Truck,
+      badge: activeJobsCount > 0 ? `${activeJobsCount} Active` : "0 Active",
+      isUrgent: activeJobsCount > 0,
+    },
     { name: "Appointment Notice", href: "/cleaner/appointments", icon: Crown, badge: "NOTICE" },
-    { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
+    {
+      name: "Available Jobs",
+      href: "/cleaner/available-jobs",
+      icon: Sparkles,
+      badge: availableJobsCount > 0 ? `${availableJobsCount} New` : "0 New",
+    },
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
     { name: "Profile & Settings", href: "/cleaner/profile", icon: UserCheck },

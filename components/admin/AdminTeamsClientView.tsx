@@ -42,6 +42,7 @@ import {
   ICoverageArea,
   fetchAllCoveragesAPI,
 } from "@/services/coverageService";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 interface AdminTeamsClientViewProps {
   initialTeams: TeamSquad[];
@@ -71,6 +72,7 @@ export default function AdminTeamsClientView({
 
   // Teams State (Dynamic API state via Props Drilling)
   const [teams, setTeams] = useState<TeamSquad[]>(initialTeams);
+  const [teamToDelete, setTeamToDelete] = useState<TeamSquad | null>(null);
 
   // UI & Form States
   const [isLoading, setIsLoading] = useState(false);
@@ -547,8 +549,9 @@ export default function AdminTeamsClientView({
     }
   };
 
-  const handleDeleteTeam = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this Team Squad?")) return;
+  const handleDeleteTeam = async () => {
+    if (!teamToDelete) return;
+    const id = teamToDelete.id;
 
     try {
       const res = await deleteTeamAPI(id);
@@ -561,6 +564,8 @@ export default function AdminTeamsClientView({
     } catch (err: any) {
       console.error("Failed to delete team:", err);
       toast.error(err?.message || "Failed to delete team squad");
+    } finally {
+      setTeamToDelete(null);
     }
   };
 
@@ -834,7 +839,7 @@ export default function AdminTeamsClientView({
                       {/* Delete Button */}
                       <button
                         type="button"
-                        onClick={() => handleDeleteTeam(team.id)}
+                        onClick={() => setTeamToDelete(team)}
                         className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                         title="Delete Squad"
                       >
@@ -1473,6 +1478,18 @@ export default function AdminTeamsClientView({
             </form>
           </div>
         </div>
+      )}
+      {/* Delete Team Squad Confirmation Modal */}
+      {teamToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!teamToDelete}
+          title="Delete Team Squad?"
+          message="Are you sure you want to delete this operational cleaning squad? Cleaners and supervisors will be unassigned."
+          itemTitle={`👥 ${teamToDelete.teamName} (${teamToDelete.teamCode})`}
+          confirmText="Yes, Delete Squad"
+          onClose={() => setTeamToDelete(null)}
+          onConfirm={handleDeleteTeam}
+        />
       )}
     </div>
   );

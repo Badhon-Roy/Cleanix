@@ -34,6 +34,7 @@ import {
   updateCoverageAPI,
   deleteCoverageAPI,
 } from "@/services/coverageService";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 interface AdminCoverageClientViewProps {
   initialCoverages: ICoverageArea[];
@@ -58,6 +59,7 @@ export default function AdminCoverageClientView({
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [coverageToDelete, setCoverageToDelete] = useState<ICoverageArea | null>(null);
 
   // React Hook Form Integration
   const {
@@ -263,9 +265,9 @@ export default function AdminCoverageClientView({
     }
   };
 
-  const handleDeleteCoverage = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this coverage area zone?"))
-      return;
+  const handleDeleteCoverage = async () => {
+    if (!coverageToDelete) return;
+    const id = coverageToDelete.id;
 
     try {
       const res = await deleteCoverageAPI(id);
@@ -278,6 +280,8 @@ export default function AdminCoverageClientView({
     } catch (err: any) {
       console.error("Failed to delete coverage area:", err);
       toast.error(err?.message || "Failed to delete coverage area");
+    } finally {
+      setCoverageToDelete(null);
     }
   };
 
@@ -557,7 +561,7 @@ export default function AdminCoverageClientView({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeleteCoverage(coverage.id)}
+                    onClick={() => setCoverageToDelete(coverage)}
                     className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors cursor-pointer"
                     title="Delete Coverage Zone"
                   >
@@ -792,6 +796,18 @@ export default function AdminCoverageClientView({
             </form>
           </div>
         </div>
+      )}
+      {/* Delete Coverage Zone Confirmation Popup Modal */}
+      {coverageToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!coverageToDelete}
+          title="Delete Coverage Area Zone?"
+          message="Are you sure you want to permanently delete this coverage area zone? All related service location bindings in this area will be affected."
+          itemTitle={`📍 ${coverageToDelete.zoneName} (${coverageToDelete.district})`}
+          confirmText="Yes, Delete Zone"
+          onClose={() => setCoverageToDelete(null)}
+          onConfirm={handleDeleteCoverage}
+        />
       )}
     </div>
   );

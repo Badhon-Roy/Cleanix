@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import Lenis from "lenis";
+import { io } from "socket.io-client";
+import { fetchMyBookingsAPI } from "@/services/bookingService";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -30,6 +32,7 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const [activeBookingsCount, setActiveBookingsCount] = useState<number>(0);
 
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -62,6 +65,45 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
   const isMobileOpen = externalSetMobileOpen ? externalMobileOpen : internalMobileOpen;
   const setMobileOpen = externalSetMobileOpen || setInternalMobileOpen;
 
+  const loadUserBookings = async () => {
+    try {
+      const res = await fetchMyBookingsAPI();
+      if (res?.success && Array.isArray(res?.data)) {
+        const active = res.data.filter((b: any) => {
+          const st = (b.status || "").toUpperCase();
+          return st !== "CANCELLED" && st !== "REJECTED";
+        }).length;
+        setActiveBookingsCount(active);
+      }
+    } catch (err) {
+      console.error("Failed to load user bookings for sidebar:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadUserBookings();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("booking_created", loadUserBookings);
+    socket.on("booking_updated", loadUserBookings);
+    socket.on("team_assignment_updated", loadUserBookings);
+
+    return () => {
+      socket.off("booking_created");
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
+      socket.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     const handleToggle = () => {
       setInternalMobileOpen((prev) => !prev);
@@ -72,11 +114,16 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Bookings", href: "/dashboard/bookings", icon: CalendarCheck, badge: "Live" },
+    {
+      name: "My Bookings",
+      href: "/dashboard/bookings",
+      icon: CalendarCheck,
+      badge: activeBookingsCount > 0 ? `${activeBookingsCount} Active` : "0 Active",
+    },
     { name: "Subscription", href: "/dashboard/subscription", icon: CreditCard, badge: "Standard" },
     { name: "New Booking", href: "/dashboard/new-booking", icon: PlusCircle, highlight: true },
     { name: "Invoices & Receipts", href: "/dashboard/invoices", icon: FileText },
-    { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: "3" },
+    { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
     { name: "Account Settings", href: "/dashboard/settings", icon: Settings },
   ];
 

@@ -43,6 +43,7 @@ import PricingCMSManager from "@/components/admin/PricingCMSManager";
 import CoverageCMSManager from "@/components/admin/CoverageCMSManager";
 import ContactCMSManager from "@/components/admin/ContactCMSManager";
 import HomeCMSManager from "@/components/admin/HomeCMSManager";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 import GalleryCMSManager from "@/components/admin/GalleryCMSManager";
 
 export default function AdminContentCMSPage() {
@@ -54,6 +55,7 @@ export default function AdminContentCMSPage() {
   const [blogSearchQuery, setBlogSearchQuery] = useState("");
   const [selectedBlogForEdit, setSelectedBlogForEdit] = useState<BlogDetail | null>(null);
   const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState<BlogDetail | null>(null);
 
   const loadBlogs = () => {
     fetchBlogsAPI().then((res) => {
@@ -100,21 +102,23 @@ export default function AdminContentCMSPage() {
     setTimeout(() => setSavedSuccess(false), 3500);
   };
 
-  const handleDeleteBlog = async (slug: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this blog article?");
-    if (confirmDelete) {
-      try {
-        const res = await deleteBlogAPI(slug);
-        if (res && res.success) {
-          toast.success("Blog article deleted live from MongoDB database!");
-          setBlogsList((prev) => prev.filter((b) => b.slug !== slug));
-        } else {
-          toast.error(res?.message || "Failed to delete blog article");
-        }
-      } catch (err) {
-        console.error("Error deleting blog article:", err);
-        toast.error("Failed to delete blog article");
+  const handleDeleteBlog = async () => {
+    if (!blogToDelete) return;
+    const slug = blogToDelete.slug;
+
+    try {
+      const res = await deleteBlogAPI(slug);
+      if (res && res.success) {
+        toast.success("Blog article deleted live from MongoDB database!");
+        setBlogsList((prev) => prev.filter((b) => b.slug !== slug));
+      } else {
+        toast.error(res?.message || "Failed to delete blog article");
       }
+    } catch (err) {
+      console.error("Error deleting blog article:", err);
+      toast.error("Failed to delete blog article");
+    } finally {
+      setBlogToDelete(null);
     }
   };
 
@@ -324,7 +328,7 @@ export default function AdminContentCMSPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleDeleteBlog(blog.slug)}
+                      onClick={() => setBlogToDelete(blog)}
                       className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                       title="Delete Article"
                     >
@@ -377,6 +381,19 @@ export default function AdminContentCMSPage() {
           }}
           blogData={selectedBlogForEdit}
           onSave={handleSaveBlog}
+        />
+      )}
+
+      {/* Delete Blog Article Confirmation Modal */}
+      {blogToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!blogToDelete}
+          title="Delete Blog Article?"
+          message="Are you sure you want to permanently delete this published article? It will be removed from all search indexing and blog feeds."
+          itemTitle={`📰 ${blogToDelete.title} (${blogToDelete.category})`}
+          confirmText="Yes, Delete Article"
+          onClose={() => setBlogToDelete(null)}
+          onConfirm={handleDeleteBlog}
         />
       )}
     </div>

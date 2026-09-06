@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -18,9 +18,12 @@ import {
   Star,
 } from "lucide-react";
 import Lenis from "lenis";
+import { io } from "socket.io-client";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
-import { fetchMyTeamAssignmentsAPI } from "@/services/teamService";
+import { fetchMyTeamAssignmentsAPI, fetchAvailableBookingsAPI } from "@/services/teamService";
+import { fetchReviewsAPI } from "@/services/reviewService";
+import { fetchAllCleanersAPI } from "@/services/cleanerService";
 import { getAuthUser } from "@/utils/cookie";
 import { slugifyTeamName } from "@/utils/slug";
 
@@ -36,7 +39,13 @@ export default function TeamLeaderSidebar({
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isOnDuty, setIsOnDuty] = useState(true);
-  const [assignedCount, setAssignedCount] = useState<number | null>(null);
+
+  // Dynamic live count states
+  const [assignedCount, setAssignedCount] = useState<number>(0);
+  const [availableCount, setAvailableCount] = useState<number>(0);
+  const [requestsCount, setRequestsCount] = useState<number>(0);
+  const [proofsCount, setProofsCount] = useState<number>(0);
+  const [reviewsCount, setReviewsCount] = useState<number>(0);
 
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -76,28 +85,123 @@ export default function TeamLeaderSidebar({
 
   const effectiveSlug = teamSlugFromUrl || authTeamSlug || "";
 
-  useEffect(() => {
-    const loadAssignmentsCount = async () => {
-      try {
-        const data = await fetchMyTeamAssignmentsAPI(effectiveSlug);
-        if (Array.isArray(data)) {
-          const seen = new Set<string>();
-          const unique = data.filter((item) => {
-            if (!item.booking) return false;
-            const bKey = item.booking?.bookingRef || item.booking?._id || item._id;
-            if (seen.has(bKey)) return false;
-            seen.add(bKey);
-            return true;
-          });
-          setAssignedCount(unique.length);
-        }
-      } catch (err) {
-        console.error("Error fetching assigned count for sidebar:", err);
-      }
-    };
+  // 1. Sync Assigned Services & Proofs Count
+  const loadAssignmentsCount = useCallback(async () => {
+    try {
+      const data = await fetchMyTeamAssignmentsAPI(effectiveSlug);
+      if (Array.isArray(data)) {
+        const seen = new Set<string>();
+        let proofsPending = 0;
 
+        const unique = data.filter((item) => {
+          if (!item.booking) return false;
+          const bKey = item.booking?.bookingRef || item.booking?._id || item._id;
+          if (seen.has(bKey)) return false;
+          seen.add(bKey);
+
+          // Check if proof is pending review
+          if (item.status === "IN_PROGRESS" || item.status === "COMPLETED") {
+            proofsPending++;
+          }
+          return true;
+        });
+
+        setAssignedCount(unique.length);
+        setProofsCount(proofsPending);
+      }
+    } catch (err) {
+      console.error("Error fetching assigned count for sidebar:", err);
+    }
+  }, [effectiveSlug]);
+
+  // 2. Sync Available Bookings Count
+  const loadAvailableCount = useCallback(async () => {
+    try {
+      const avail = await fetchAvailableBookingsAPI();
+      if (Array.isArray(avail)) {
+        setAvailableCount(avail.length);
+      }
+    } catch (err) {
+      console.error("Error fetching available bookings for sidebar:", err);
+    }
+  }, []);
+
+  // 3. Sync Pending Requests Count
+  const loadRequestsCount = useCallback(async () => {
+    try {
+      const cleaners = await fetchAllCleanersAPI("PENDING_APPROVAL");
+      if (Array.isArray(cleaners)) {
+        setRequestsCount(cleaners.length);
+      }
+    } catch (err) {
+      console.error("Error fetching requests count for sidebar:", err);
+    }
+  }, []);
+
+  // 4. Sync Reviews Count
+  const loadReviewsCount = useCallback(async () => {
+    try {
+      const reviews = await fetchReviewsAPI();
+      if (Array.isArray(reviews)) {
+        setReviewsCount(reviews.length);
+      }
+    } catch (err) {
+      console.error("Error fetching reviews count for sidebar:", err);
+    }
+  }, []);
+
+  // Sync all live counts
+  const syncAllLeaderCounts = useCallback(() => {
     loadAssignmentsCount();
-  }, [effectiveSlug, pathname]);
+    loadAvailableCount();
+    loadRequestsCount();
+    loadReviewsCount();
+  }, [loadAssignmentsCount, loadAvailableCount, loadRequestsCount, loadReviewsCount]);
+
+  // Real-time Socket.IO Live Data Synchronization
+  useEffect(() => {
+    syncAllLeaderCounts();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+
+    socket.on("booking_created", () => {
+      loadAvailableCount();
+      loadAssignmentsCount();
+    });
+
+    socket.on("booking_updated", () => {
+      loadAssignmentsCount();
+      loadAvailableCount();
+    });
+
+    socket.on("team_assignment_updated", loadAssignmentsCount);
+    socket.on("team_updated", loadAssignmentsCount);
+
+    socket.on("leader_request_updated", loadRequestsCount);
+    socket.on("cleaner_updated", loadRequestsCount);
+
+    socket.on("review_created", loadReviewsCount);
+    socket.on("review_updated", loadReviewsCount);
+
+    return () => {
+      socket.off("booking_created");
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
+      socket.off("team_updated");
+      socket.off("leader_request_updated");
+      socket.off("cleaner_updated");
+      socket.off("review_created");
+      socket.off("review_updated");
+      socket.disconnect();
+    };
+  }, [syncAllLeaderCounts, loadAssignmentsCount, loadAvailableCount, loadRequestsCount, loadReviewsCount]);
 
   const navItems = [
     { name: "Overview & Roster", key: "", icon: LayoutDashboard },
@@ -106,12 +210,34 @@ export default function TeamLeaderSidebar({
       name: "Assigned Team Services",
       key: "bookings",
       icon: Truck,
-      badge: assignedCount !== null ? `${assignedCount} Active` : "Active",
+      badge: assignedCount > 0 ? `${assignedCount} Active` : "0 Active",
+      isUrgent: assignedCount > 0,
     },
-    { name: "Cleaner Requests", key: "requests", icon: UserCheck, badge: "Requests" },
-    { name: "Request New Bookings", key: "available-bookings", icon: CheckSquare, badge: "Available" },
-    { name: "Proof of Work Monitor", key: "proofs", icon: FileCheck, badge: "Quality" },
-    { name: "Squad Reviews & Ratings", key: "reviews", icon: Star, badge: "Ratings" },
+    {
+      name: "Cleaner Requests",
+      key: "requests",
+      icon: UserCheck,
+      badge: requestsCount > 0 ? `${requestsCount}` : "0",
+      isUrgent: requestsCount > 0,
+    },
+    {
+      name: "Request New Bookings",
+      key: "available-bookings",
+      icon: CheckSquare,
+      badge: availableCount > 0 ? `${availableCount} Available` : "0 Available",
+    },
+    {
+      name: "Proof of Work Monitor",
+      key: "proofs",
+      icon: FileCheck,
+      badge: proofsCount > 0 ? `${proofsCount} Active` : "Quality",
+    },
+    {
+      name: "Squad Reviews & Ratings",
+      key: "reviews",
+      icon: Star,
+      badge: reviewsCount > 0 ? `${reviewsCount} Ratings` : "Ratings",
+    },
     { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
     { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
@@ -215,8 +341,12 @@ export default function TeamLeaderSidebar({
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 transition-all ${
+                      item.isUrgent
+                        ? isActive
+                          ? "bg-white text-red-600 font-extrabold shadow-xs"
+                          : "bg-red-500 text-white shadow-xs animate-pulse font-black"
+                        : isActive
                         ? "bg-white/20 text-white"
                         : "bg-blue-100 text-blue-700 border border-blue-200"
                     }`}
