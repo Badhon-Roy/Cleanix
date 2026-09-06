@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,6 +19,7 @@ import {
   Star,
 } from "lucide-react";
 import { io } from "socket.io-client";
+import Lenis from "lenis";
 import { fetchAllCleanersAPI } from "@/services/cleanerService";
 
 interface AdminSidebarClientViewProps {
@@ -34,6 +35,36 @@ export default function AdminSidebarClientView({
 }: AdminSidebarClientViewProps) {
   const pathname = usePathname();
   const [pendingCleanerCount, setPendingCleanerCount] = useState<number>(initialPendingCount);
+
+  // Dedicated Lenis instance refs for ultra-smooth sidebar scrolling
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollContentRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Lenis smooth scroll on the sidebar navigation container
+  useEffect(() => {
+    if (!scrollWrapperRef.current || !scrollContentRef.current) return;
+
+    const sidebarLenis = new Lenis({
+      wrapper: scrollWrapperRef.current,
+      content: scrollContentRef.current,
+      duration: 0.8,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      sidebarLenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      sidebarLenis.destroy();
+    };
+  }, []);
 
   // Fetch pending cleaner requests count
   const loadPendingCount = async () => {
@@ -112,9 +143,9 @@ export default function AdminSidebarClientView({
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
+    <div className="flex flex-col h-full max-h-screen bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none overflow-hidden">
       {/* Brand Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-5 border-b border-slate-100 flex-shrink-0">
         <Link href="/admin" className="flex items-center gap-3 group">
           {/* Swirl Logo */}
           <div className="relative w-10 h-10 rounded-2xl bg-[#007eff] text-white flex items-center justify-center font-black text-xl shadow-xs">
@@ -134,75 +165,70 @@ export default function AdminSidebarClientView({
         </Link>
       </div>
 
-      {/* System Health Status Indicator Box */}
-      <div className="mt-5 p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            System Status
-          </span>
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500 text-white border border-emerald-600">
-            ONLINE
-          </span>
+      {/* Navigation Links with Lenis Smooth Scrolling Container */}
+      <div
+        ref={scrollWrapperRef}
+        data-lenis-prevent="true"
+        data-lenis-prevent-wheel="true"
+        data-lenis-prevent-touch="true"
+        className="flex-1 min-h-0 overflow-y-auto py-4 pr-1 mt-2 overscroll-contain select-none"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#cbd5e1 transparent",
+        }}
+      >
+        <div ref={scrollContentRef} className="space-y-1.5 pb-6">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = checkIsActive(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen?.(false)}
+                className={`flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 gap-2 ${
+                  isActive
+                    ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 stroke-[2.5] flex-shrink-0 ${
+                      isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+                    }`}
+                  />
+                  <span className="truncate">{item.name}</span>
+                </div>
+
+                {item.badge && (
+                  <span
+                    className={`text-[10px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 transition-all ${
+                      item.isUrgent
+                        ? isActive
+                          ? "bg-white text-red-600 font-extrabold shadow-xs"
+                          : "bg-red-500 text-white shadow-xs animate-pulse font-black"
+                        : isActive
+                        ? "bg-white text-[#007eff] shadow-xs"
+                        : "bg-blue-50 text-[#007eff] border border-blue-200"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
-        <p className="text-[11px] text-slate-500 font-medium leading-snug">
-          4 Hubs Active • MongoDB Connected • Dispatch Engine Running
-        </p>
       </div>
-
-      {/* Navigation Links */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto py-5">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = checkIsActive(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen?.(false)}
-              className={`flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 gap-2 ${
-                isActive
-                  ? "bg-[#007eff] text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Icon
-                  className={`w-4 h-4 stroke-[2.5] flex-shrink-0 ${
-                    isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"
-                  }`}
-                />
-                <span className="truncate">{item.name}</span>
-              </div>
-
-              {item.badge && (
-                <span
-                  className={`text-[10px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 transition-all ${
-                    item.isUrgent
-                      ? isActive
-                        ? "bg-white text-red-600 font-extrabold shadow-xs"
-                        : "bg-red-500 text-white shadow-xs animate-pulse font-black"
-                      : isActive
-                      ? "bg-white text-[#007eff] shadow-xs"
-                      : "bg-blue-50 text-[#007eff] border border-blue-200"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </div>
-
     </div>
   );
 
   return (
     <>
       {/* Desktop Permanent Sidebar */}
-      <aside className="hidden lg:block h-screen sticky top-0 z-20">
+      <aside className="hidden lg:block h-screen sticky top-0 z-20 flex-shrink-0 overflow-hidden">
         {sidebarContent}
       </aside>
 
@@ -213,11 +239,11 @@ export default function AdminSidebarClientView({
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileOpen?.(false)}
           />
-          <div className="relative flex-1 max-w-xs w-full bg-white h-full shadow-2xl z-10">
+          <div className="relative flex-1 max-w-xs w-full bg-white h-full shadow-2xl z-10 overflow-hidden">
             <button
               type="button"
               onClick={() => setMobileOpen?.(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-500 hover:bg-slate-100 cursor-pointer"
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-500 hover:bg-slate-100 cursor-pointer z-20"
             >
               <X className="w-5 h-5" />
             </button>

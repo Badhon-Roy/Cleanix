@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import Lenis from "lenis";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -29,6 +30,34 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scrollWrapperRef.current || !scrollContentRef.current) return;
+
+    const sidebarLenis = new Lenis({
+      wrapper: scrollWrapperRef.current,
+      content: scrollContentRef.current,
+      duration: 0.8,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      sidebarLenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      sidebarLenis.destroy();
+    };
+  }, []);
 
   const isMobileOpen = externalSetMobileOpen ? externalMobileOpen : internalMobileOpen;
   const setMobileOpen = externalSetMobileOpen || setInternalMobileOpen;
@@ -57,9 +86,9 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
+    <div className="flex flex-col h-full max-h-screen bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none overflow-hidden">
       {/* Brand Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-6 border-b border-slate-100 flex-shrink-0">
         <Link href="/" className="flex items-center gap-3 group">
           <SwirlLogo />
           <div>
@@ -76,51 +105,63 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
         </Link>
       </div>
 
-      {/* Navigation Links */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto py-6">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = checkIsActive(item.href);
+      {/* Navigation Links with Lenis Smooth Scrolling */}
+      <div
+        ref={scrollWrapperRef}
+        data-lenis-prevent="true"
+        data-lenis-prevent-wheel="true"
+        data-lenis-prevent-touch="true"
+        className="flex-1 min-h-0 overflow-y-auto py-5 pr-1 overscroll-contain select-none"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#cbd5e1 transparent",
+        }}
+      >
+        <div ref={scrollContentRef} className="space-y-1.5 pb-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = checkIsActive(item.href);
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setMobileOpen && setMobileOpen(false)}
-              className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
-                isActive
-                  ? "bg-[#007eff] text-white"
-                  : item.highlight
-                  ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon
-                  className={`w-5 h-5 transition-transform group-hover:scale-110 ${
-                    isActive ? "text-white" : item.highlight ? "text-blue-600" : "text-slate-400 group-hover:text-blue-600"
-                  }`}
-                />
-                <span>{item.name}</span>
-              </div>
-              {item.badge && (
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-blue-100 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMobileOpen && setMobileOpen(false)}
+                className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
+                  isActive
+                    ? "bg-[#007eff] text-white"
+                    : item.highlight
+                    ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon
+                    className={`w-5 h-5 transition-transform group-hover:scale-110 ${
+                      isActive ? "text-white" : item.highlight ? "text-blue-600" : "text-slate-400 group-hover:text-blue-600"
+                    }`}
+                  />
+                  <span>{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-blue-100 text-blue-700 border border-blue-200"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Subscription Summary Card (Light Theme) */}
-      <div className="mt-auto pt-4 border-t border-slate-100">
+      <div className="mt-auto pt-4 border-t border-slate-100 flex-shrink-0">
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-xs">
           <div className="flex items-center justify-between mb-2">
             <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
