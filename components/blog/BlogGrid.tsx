@@ -104,6 +104,7 @@ export default function BlogGrid({ initialBlogs }: BlogGridProps) {
                       fill
                       unoptimized
                       className="object-cover object-center"
+                      sizes="36px"
                     />
                   ) : (
                     <div

@@ -316,6 +316,7 @@ export default function GalleryModal({
                           fill
                           unoptimized
                           className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 150px"
                         />
                         <button
                           type="button"

@@ -39,6 +39,7 @@ export default function BlogDetailsContent({ blog }: Props) {
                   fill
                   unoptimized
                   className="object-cover object-center"
+                  sizes="36px"
                 />
               ) : (
                 <div

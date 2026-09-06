@@ -106,6 +106,7 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
                       fill
                       unoptimized
                       className="object-cover"
+                      sizes="32px"
                     />
                   ) : (
                     <div

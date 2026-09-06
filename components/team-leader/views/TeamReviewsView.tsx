@@ -279,6 +279,7 @@ export default function TeamReviewsView({ teamSlug }: TeamReviewsViewProps) {
                         fill
                         unoptimized
                         className="object-cover"
+                        sizes="48px"
                       />
                     </div>
                     <div>

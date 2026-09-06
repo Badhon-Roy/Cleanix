@@ -421,6 +421,7 @@ export default function AdminReviewsClientView({
                           fill
                           unoptimized
                           className="object-cover"
+                          sizes="48px"
                         />
                       </div>
                       <div>

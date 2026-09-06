@@ -261,6 +261,7 @@ export default function AdminContentCMSPage() {
                         fill
                         unoptimized
                         className="object-cover object-center"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                       <span className="absolute top-3 left-3 bg-[#007eff] text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-xs">
                         {blog.category}
@@ -288,6 +289,7 @@ export default function AdminContentCMSPage() {
                             fill
                             unoptimized
                             className="object-cover"
+                            sizes="24px"
                           />
                         ) : (
                           <div

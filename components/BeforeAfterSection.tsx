@@ -120,6 +120,7 @@ export default function BeforeAfterSection() {
               unoptimized
               priority
               className="object-cover object-center"
+              sizes="(max-width: 1024px) 100vw, 60vw"
             />
 
             {/* 3. Before Image (Clipped Left Layer with Grime/Stain Filter & Clipped BEFORE Tag) */}
@@ -135,6 +136,7 @@ export default function BeforeAfterSection() {
                 priority
                 className="object-cover object-center max-w-none filter brightness-70 contrast-125 sepia-30 saturate-85"
                 style={{ width: "100%", height: "100%" }}
+                sizes="(max-width: 1024px) 100vw, 60vw"
               />
 
               {/* BEFORE Tag Pill inside clipped container with unclipped fixed wrapper */}

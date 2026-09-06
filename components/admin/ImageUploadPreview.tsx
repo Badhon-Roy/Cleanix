@@ -95,6 +95,7 @@ export default function ImageUploadPreview({
                 fill
                 unoptimized
                 className="object-cover"
+                sizes="180px"
               />
               <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button

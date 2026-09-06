@@ -444,6 +444,7 @@ export default function AdminProjectsManagementPage() {
                     fill
                     unoptimized
                     className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
                     <span className="bg-[#007eff] text-white font-extrabold text-[10px] uppercase px-3 py-1 rounded-full shadow-2xs">

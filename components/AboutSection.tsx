@@ -121,6 +121,7 @@ export default function AboutSection({ initialData }: AboutSectionProps) {
                         alt="User"
                         fill
                         className="object-cover"
+                        sizes="36px"
                       />
                     </div>
                     <div className="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-slate-300 relative overflow-hidden">
@@ -129,6 +130,7 @@ export default function AboutSection({ initialData }: AboutSectionProps) {
                         alt="User"
                         fill
                         className="object-cover"
+                        sizes="36px"
                       />
                     </div>
                     <div className="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-slate-300 relative overflow-hidden">
@@ -137,6 +139,7 @@ export default function AboutSection({ initialData }: AboutSectionProps) {
                         alt="User"
                         fill
                         className="object-cover"
+                        sizes="36px"
                       />
                     </div>
                   </div>

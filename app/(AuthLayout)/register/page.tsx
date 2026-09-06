@@ -1301,13 +1301,14 @@ export default function RegisterPage() {
                   {/* Avatar Upload Section */}
                   <div className="flex items-center gap-4 bg-blue-50/60 border border-blue-200/80 p-4 rounded-3xl">
                     <div className="relative flex-shrink-0">
-                      <div className="w-18 h-18 rounded-full overflow-hidden border-2 border-[#007eff] bg-white flex items-center justify-center shadow-md">
+                      <div className="relative w-18 h-18 rounded-full overflow-hidden border-2 border-[#007eff] bg-white flex items-center justify-center shadow-md">
                         {avatarPreview ? (
                           <Image
                             src={avatarPreview}
                             alt="Cleaner Avatar"
                             fill
                             className="object-cover"
+                            sizes="72px"
                           />
                         ) : (
                           <User className="w-9 h-9 text-slate-400" />

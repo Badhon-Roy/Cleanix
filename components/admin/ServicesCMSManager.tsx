@@ -759,6 +759,7 @@ export default function ServicesCMSManager() {
                         fill
                         unoptimized
                         className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 33vw"
                       />
                       <span className="absolute top-3 left-3 bg-[#007eff] text-white font-bold text-[10px] uppercase px-3 py-1 rounded-full shadow-xs">
                         {stepItem.step}

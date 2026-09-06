@@ -371,6 +371,7 @@ export default function GalleryCMSManager() {
                       fill
                       unoptimized
                       className="object-contain group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   ) : (
                     <div className="relative w-full h-full flex items-center justify-center bg-slate-950">
@@ -381,6 +382,7 @@ export default function GalleryCMSManager() {
                           fill
                           unoptimized
                           className="object-cover opacity-60"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       ) : null}
                       <div className="relative z-10 w-12 h-12 rounded-full bg-[#007eff] text-white flex items-center justify-center shadow-lg">

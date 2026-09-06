@@ -234,6 +234,7 @@ export default function LoginPage() {
                   alt="Certified Cleanix Professional"
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 144px, 176px"
                 />
               </div>
 
