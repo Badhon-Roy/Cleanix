@@ -27,6 +27,7 @@ import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
   fetchCleanerProfileMeAPI,
   toggleCleanerDutyStatusAPI,
+  ICleanerProfile,
 } from "@/services/cleanerService";
 import { fetchMyTeamAssignmentsAPI, fetchAvailableBookingsAPI } from "@/services/teamService";
 
@@ -45,6 +46,8 @@ export default function CleanerSidebar({
   const [isTogglingDuty, setIsTogglingDuty] = useState(false);
   const [activeJobsCount, setActiveJobsCount] = useState<number>(0);
   const [availableJobsCount, setAvailableJobsCount] = useState<number>(0);
+
+  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(null);
 
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -77,6 +80,7 @@ export default function CleanerSidebar({
   const loadDutyProfile = async () => {
     const prof = await fetchCleanerProfileMeAPI();
     if (prof) {
+      setCleanerProfile(prof);
       setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
     }
   };
@@ -236,8 +240,10 @@ export default function CleanerSidebar({
             <span>{isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}</span>
           </button>
         </div>
-        <p className="text-sm text-red-600 font-medium leading-snug">
-          Team Delta • Vehicle Unit #04 • Supervisor: Rahat Karim
+        <p className="text-xs text-slate-500 font-medium leading-snug">
+          {cleanerProfile?.coverageArea && cleanerProfile.coverageArea.length > 0
+            ? `Coverage: ${cleanerProfile.coverageArea.slice(0, 3).join(", ")}`
+            : "Cleanix Field Operations Staff"}
         </p>
       </div>
 

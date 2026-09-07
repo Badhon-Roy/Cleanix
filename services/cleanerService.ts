@@ -65,7 +65,7 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
   totalDutyMinutes: c.totalDutyMinutes ?? 0,
   isApproved: c.isApproved ?? false,
   isAvailable: c.isAvailable ?? false,
-  rating: c.rating ?? 5.0,
+  rating: c.rating ?? 0,
   totalJobsDone: c.totalJobsDone ?? 0,
   totalEarnings: c.totalEarnings ?? 0,
   coverageArea: Array.isArray(c.coverageArea) ? c.coverageArea : [],
@@ -76,7 +76,7 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
     totalEstimatedEarnings: c.totalEarnings ?? 0,
     totalEarnedWallet: c.totalEarnings ?? 0,
     pendingEstimatedEarnings: 0,
-    ratingValue: Number(c.rating || 5).toFixed(1),
+    ratingValue: c.rating && c.totalJobsDone > 0 ? Number(c.rating).toFixed(1) : "0.0",
     totalReviewsCount: 0,
   },
 });
