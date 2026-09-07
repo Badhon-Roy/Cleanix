@@ -187,7 +187,6 @@ export default function CleanerSidebar({
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
     { name: "Profile & Settings", href: "/cleaner/profile", icon: UserCheck },
-    { name: "Admin Control HQ", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
   const checkIsActive = (href: string) => {
