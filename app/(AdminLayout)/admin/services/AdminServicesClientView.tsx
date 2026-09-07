@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { io } from "socket.io-client";
+import { uploadImageAPI } from "@/services/uploadService";
 import { useForm } from "react-hook-form";
 
 export interface ServiceFormValues {
@@ -138,25 +139,54 @@ export default function AdminServicesClientView({
   const totalCommissionSplit = adminShareVal + teamLeaderShareVal + cleanerPoolShareVal;
   const isSplitValid = totalCommissionSplit === 100;
 
-  const handleHeroFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const [isUploadingContent, setIsUploadingContent] = useState(false);
+
+  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("heroImage", reader.result as string, { shouldValidate: true });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingHero(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_services");
+        if (res.success && res.url) {
+          setValue("heroImage", res.url, { shouldValidate: true });
+          toast.success("Hero image uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading hero image.");
+      } finally {
+        setIsUploadingHero(false);
+      }
     }
   };
 
-  const handleContentFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleContentFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("contentImage", reader.result as string, { shouldValidate: true });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingContent(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_services");
+        if (res.success && res.url) {
+          setValue("contentImage", res.url, { shouldValidate: true });
+          toast.success("Content image uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading content image.");
+      } finally {
+        setIsUploadingContent(false);
+      }
     }
   };
 
@@ -342,15 +372,29 @@ export default function AdminServicesClientView({
   const [addonFormTag, setAddonFormTag] = useState("ADD-ON");
   const [addonFormIconImage, setAddonFormIconImage] = useState("");
   const [isSubmittingAddon, setIsSubmittingAddon] = useState(false);
+  const [isUploadingAddonIcon, setIsUploadingAddonIcon] = useState(false);
 
-  const handleAddonIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddonIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAddonFormIconImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingAddonIcon(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_addons");
+        if (res.success && res.url) {
+          setAddonFormIconImage(res.url);
+          toast.success("Addon icon uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading addon icon.");
+      } finally {
+        setIsUploadingAddonIcon(false);
+      }
     }
   };
 

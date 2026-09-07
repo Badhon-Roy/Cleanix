@@ -33,6 +33,7 @@ import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import { fetchCustomerProfileAPI, updateCustomerProfileAPI } from "@/services/customerService";
 import { changePasswordAPI } from "@/services/authService";
+import { uploadImageAPI } from "@/services/uploadService";
 import {
   fetchMyLocationsAPI,
   createLocationAPI,
@@ -112,30 +113,43 @@ export default function SettingsClientView({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData?.avatar || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
   // Handle Avatar Image File Upload
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("ফাইল সাইজ ৫MB এর বড় হওয়া যাবে না। দয়া করে ছোট ছবি নির্বাচন করুন।");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("ফাইল সাইজ ১০MB এর বড় হওয়া যাবে না। দয়া করে ছোট ছবি নির্বাচন করুন।");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newAvatar = reader.result as string;
-        setAvatarUrl(newAvatar);
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem("cleanix_user_avatar", newAvatar);
-          } catch {}
-          window.dispatchEvent(
-            new CustomEvent("user-profile-updated", {
-              detail: { avatar: newAvatar },
-            })
-          );
+      setIsUploadingAvatar(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_avatars");
+        if (res.success && res.url) {
+          setAvatarUrl(res.url);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("cleanix_user_avatar", res.url);
+            } catch {}
+            window.dispatchEvent(
+              new CustomEvent("user-profile-updated", {
+                detail: { avatar: res.url },
+              })
+            );
+          }
+          toast.success("প্রোফাইল ছবি ক্লাউডে আপলোড হয়েছে! পরিবর্তন সেভ করতে 'Save Profile' ক্লিক করুন।");
+        } else {
+          toast.error(res.message || "ছবি আপলোড করতে ব্যর্থ হয়েছে।");
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        toast.error("ছবি আপলোড করার সময় ত্রুটি ঘটেছে।");
+      } finally {
+        setIsUploadingAvatar(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
   };
 

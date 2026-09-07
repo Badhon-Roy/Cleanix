@@ -32,6 +32,7 @@ import {
 } from "@/services/cleanerService";
 import { fetchAllTeamsAPI, TeamSquad } from "@/services/teamService";
 import { changePasswordAPI } from "@/services/authService";
+import { uploadImageAPI } from "@/services/uploadService";
 import { toast } from "sonner";
 
 interface PasswordFormData {
@@ -242,18 +243,32 @@ export default function CleanerProfilePage() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB.");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("ছবির সাইজ ১০MB এর কম হতে হবে (File size must be less than 10MB)");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingAvatar(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_avatars");
+        if (res.success && res.url) {
+          setAvatarUrl(res.url);
+          toast.success("ছবি ক্লাউডে সফলভাবে আপলোড হয়েছে! পরিবর্তন নিশ্চিত করতে 'প্রোফাইল আপডেট করুন' বাটনে ক্লিক করুন।");
+        } else {
+          toast.error(res.message || "ছবি আপলোড ব্যর্থ হয়েছে।");
+        }
+      } catch (err) {
+        toast.error("ছবি আপলোড করার সময় ত্রুটি ঘটেছে।");
+      } finally {
+        setIsUploadingAvatar(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
   };
 

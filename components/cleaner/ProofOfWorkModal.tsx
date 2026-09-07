@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImageAPI } from "@/services/uploadService";
 
 interface ProofOfWorkModalProps {
   isOpen: boolean;
@@ -93,37 +94,56 @@ export default function ProofOfWorkModal({
 
   if (!isOpen || !mounted) return null;
 
-  const handleBeforeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingBefore, setIsUploadingBefore] = useState(false);
+  const [isUploadingAfter, setIsUploadingAfter] = useState(false);
+
+  const handleBeforeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file) => {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error("ছবির সাইজ ৫MB এর কম হতে হবে");
-          return;
+      setIsUploadingBefore(true);
+      try {
+        const fileList = Array.from(files);
+        for (const file of fileList) {
+          if (file.size > 10 * 1024 * 1024) {
+            toast.error("ছবির সাইজ ১০MB এর কম হতে হবে");
+            continue;
+          }
+          const res = await uploadImageAPI(file, "cleanix_proof");
+          if (res.success && res.url) {
+            setBeforePhotos((prev) => [...prev, res.url]);
+          }
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setBeforePhotos((prev) => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
+        toast.success("Before photos uploaded to cloud!");
+      } catch (err) {
+        toast.error("Error uploading photos.");
+      } finally {
+        setIsUploadingBefore(false);
+      }
     }
   };
 
-  const handleAfterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAfterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file) => {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error("Photo size must be less than 5MB");
-          return;
+      setIsUploadingAfter(true);
+      try {
+        const fileList = Array.from(files);
+        for (const file of fileList) {
+          if (file.size > 10 * 1024 * 1024) {
+            toast.error("Photo size must be less than 10MB");
+            continue;
+          }
+          const res = await uploadImageAPI(file, "cleanix_proof");
+          if (res.success && res.url) {
+            setAfterPhotos((prev) => [...prev, res.url]);
+          }
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAfterPhotos((prev) => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
+        toast.success("After photos uploaded to cloud!");
+      } catch (err) {
+        toast.error("Error uploading photos.");
+      } finally {
+        setIsUploadingAfter(false);
+      }
     }
   };
 

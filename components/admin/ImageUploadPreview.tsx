@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { Upload, Trash2, ImageIcon, Link as LinkIcon } from "lucide-react";
-
-import { compressImageToWebP } from "@/utils/imageCompressor";
+import { Upload, Trash2, ImageIcon, Link as LinkIcon, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { uploadImageAPI, uploadMultipleImagesAPI } from "@/services/uploadService";
 
 interface ImageUploadPreviewProps {
   label: string;
@@ -26,33 +26,47 @@ export default function ImageUploadPreview({
   multiple = false,
 }: ImageUploadPreviewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (files.length > 1 && onMultipleChange) {
-      const results: string[] = [];
-      for (const file of Array.from(files)) {
-        if (file.size > 20 * 1024 * 1024) continue;
-        const compressed = await compressImageToWebP(file, 900, 900, 0.72);
-        if (compressed) results.push(compressed);
+    setIsUploading(true);
+    try {
+      if (files.length > 1 && onMultipleChange) {
+        const fileList = Array.from(files).filter(
+          (f) => f.size <= 20 * 1024 * 1024
+        );
+        const urls = await uploadMultipleImagesAPI(fileList, "cleanix_cms");
+        if (urls.length > 0) {
+          onMultipleChange(urls);
+          toast.success(`${urls.length} images uploaded successfully!`);
+        }
+        return;
       }
-      if (results.length > 0) {
-        onMultipleChange(results);
+
+      const file = files[0];
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
       }
-      return;
-    }
 
-    const file = files[0];
-    if (file.size > 20 * 1024 * 1024) {
-      alert("File size exceeds 20MB limit. Please choose a smaller image.");
-      return;
-    }
-
-    const compressed = await compressImageToWebP(file, 900, 900, 0.72);
-    if (compressed) {
-      onChange(compressed);
+      const res = await uploadImageAPI(file, "cleanix_cms");
+      if (res.success && res.url) {
+        onChange(res.url);
+        toast.success("Image uploaded successfully!");
+      } else {
+        toast.error(res.message || "Failed to upload image.");
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error("An error occurred while uploading image.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -143,11 +157,16 @@ export default function ImageUploadPreview({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#007eff] border border-blue-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#007eff] border border-blue-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60"
             >
-              <Upload className="w-4 h-4" />
-              <span>Choose Image File</span>
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+              ) : (
+                <Upload className="w-4 h-4" />
+              )}
+              <span>{isUploading ? "Uploading to cloud..." : "Choose Image File"}</span>
             </button>
 
             {value && (
