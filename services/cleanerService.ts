@@ -142,3 +142,23 @@ export const updateCleanerApprovalAPI = async (
   });
   return res.json();
 };
+
+export const updateCleanerProfileMeAPI = async (payload: {
+  name?: string;
+  phone?: string;
+  avatar?: string | null;
+}) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cleaners/profile/me`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error in updateCleanerProfileMeAPI:", error);
+    return { success: false, message: "Network or server error updating cleaner profile." };
+  }
+};
+
