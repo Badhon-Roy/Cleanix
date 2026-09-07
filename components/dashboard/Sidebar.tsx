@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import Lenis from "lenis";
 import { io } from "socket.io-client";
@@ -339,7 +340,7 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={() => {
-          alert("Logged out successfully!");
+          toast.success("লগআউট সফল হয়েছে!");
         }}
       />
     </>

@@ -98,7 +98,7 @@ export default function ProofOfWorkModal({
     if (files) {
       Array.from(files).forEach((file) => {
         if (file.size > 5 * 1024 * 1024) {
-          alert("Photo size must be less than 5MB.");
+          toast.error("ছবির সাইজ ৫MB এর কম হতে হবে");
           return;
         }
         const reader = new FileReader();
@@ -115,7 +115,7 @@ export default function ProofOfWorkModal({
     if (files) {
       Array.from(files).forEach((file) => {
         if (file.size > 5 * 1024 * 1024) {
-          alert("Photo size must be less than 5MB.");
+          toast.error("Photo size must be less than 5MB");
           return;
         }
         const reader = new FileReader();

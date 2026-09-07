@@ -1,27 +1,18 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Sparkles,
   MapPin,
-  Clock,
-  DollarSign,
   Send,
-  CheckCircle2,
   Hourglass,
-  ShieldCheck,
   Search,
-  Filter,
-  AlertCircle,
-  Building,
-  Home,
-  Check,
   Calendar,
-  ChevronDown,
   RefreshCw,
   Layers,
 } from "lucide-react";
 import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 import { fetchAvailableBookingsAPI, requestBookingForTeamAPI } from "@/services/teamService";
 
 interface AvailableJob {
@@ -172,12 +163,12 @@ export default function AvailableJobsPage() {
               : j
           )
         );
-        alert(`Application submitted for Job ${applyingJob.id}! Waiting for Admin approval.`);
+        toast.success(`Job #${applyingJob.id}-এ সফলভাবে আবেদন জমা হয়েছে! এডমিন অনুমোদনের অপেক্ষায় রয়েছে।`);
       } else {
-        alert(res?.message || "Failed to submit request for job.");
+        toast.error(res?.message || "কাজের আবেদন জমা দিতে সমস্যা হয়েছে।");
       }
     } catch (err: any) {
-      alert(err?.message || "Error submitting job application.");
+      toast.error(err?.message || "কাজের আবেদন জমা দেওয়ার সময় একটি ত্রুটি ঘটেছে।");
     } finally {
       setIsSubmitting(false);
       setApplyingJob(null);

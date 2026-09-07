@@ -32,6 +32,7 @@ import {
 } from "@/services/cleanerService";
 import { fetchAllTeamsAPI, TeamSquad } from "@/services/teamService";
 import { changePasswordAPI } from "@/services/authService";
+import { toast } from "sonner";
 
 interface PasswordFormData {
   currentPassword: string;
@@ -41,16 +42,24 @@ interface PasswordFormData {
 
 export default function CleanerProfilePage() {
   const [user, setUser] = useState<any>(null);
-  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(null);
+  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(
+    null,
+  );
   const [myTeam, setMyTeam] = useState<TeamSquad | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState<string>("");
   const [phoneInput, setPhoneInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState<boolean>(false);
-  const [profileFeedback, setProfileFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [profileFeedback, setProfileFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
-  const [passwordFeedback, setPasswordFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [passwordFeedback, setPasswordFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,7 +113,10 @@ export default function CleanerProfilePage() {
 
       if (Array.isArray(teams)) {
         const cleanerIdStr = prof?.id ? String(prof.id) : "";
-        const userIdStr = authUser?.id || authUser?._id ? String(authUser.id || authUser._id) : "";
+        const userIdStr =
+          authUser?.id || authUser?._id
+            ? String(authUser.id || authUser._id)
+            : "";
 
         const foundTeam = teams.find((t) => {
           const isLeader =
@@ -112,7 +124,11 @@ export default function CleanerProfilePage() {
             String(t.leader?.userId || "") === userIdStr;
           const isMember =
             Array.isArray(t.members) &&
-            t.members.some((m) => String(m.id || "") === cleanerIdStr || String(m.id || "") === userIdStr);
+            t.members.some(
+              (m) =>
+                String(m.id || "") === cleanerIdStr ||
+                String(m.id || "") === userIdStr,
+            );
           return isLeader || isMember;
         });
 
@@ -132,18 +148,25 @@ export default function CleanerProfilePage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameInput.trim()) {
-      setProfileFeedback({ type: "error", message: "নাম ফাঁকা রাখা যাবে না (Full Name is required)" });
+      setProfileFeedback({
+        type: "error",
+        message: "নাম ফাঁকা রাখা যাবে না (Full Name is required)",
+      });
       return;
     }
     if (!phoneInput.trim()) {
-      setProfileFeedback({ type: "error", message: "ফোন নম্বর ফাঁকা রাখা যাবে না (Phone Number is required)" });
+      setProfileFeedback({
+        type: "error",
+        message: "ফোন নম্বর ফাঁকা রাখা যাবে না (Phone Number is required)",
+      });
       return;
     }
 
     setIsUpdatingProfile(true);
     setProfileFeedback(null);
     try {
-      const { updateCleanerProfileMeAPI } = await import("@/services/cleanerService");
+      const { updateCleanerProfileMeAPI } =
+        await import("@/services/cleanerService");
       const res = await updateCleanerProfileMeAPI({
         name: nameInput.trim(),
         phone: phoneInput.trim(),
@@ -153,7 +176,8 @@ export default function CleanerProfilePage() {
       if (res?.success) {
         setProfileFeedback({
           type: "success",
-          message: "প্রোফাইল তথ্য সফলভাবে সংরক্ষণ করা হয়েছে! (Profile Updated Successfully)",
+          message:
+            "প্রোফাইল তথ্য সফলভাবে সংরক্ষণ করা হয়েছে! (Profile Updated Successfully)",
         });
         const currAuth = getAuthUser();
         if (currAuth) {
@@ -195,14 +219,17 @@ export default function CleanerProfilePage() {
       if (res?.success) {
         setPasswordFeedback({
           type: "success",
-          message: "পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে! (Password Updated Successfully)",
+          message:
+            "পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে! (Password Updated Successfully)",
         });
         resetPasswordForm();
         setTimeout(() => setPasswordFeedback(null), 5000);
       } else {
         setPasswordFeedback({
           type: "error",
-          message: res?.message || "পাসওয়ার্ড পরিবর্তন করতে ব্যর্থ হয়েছে। বর্তমান পাসওয়ার্ড সঠিক দিন।",
+          message:
+            res?.message ||
+            "পাসওয়ার্ড পরিবর্তন করতে ব্যর্থ হয়েছে। বর্তমান পাসওয়ার্ড সঠিক দিন।",
         });
       }
     } catch (err: any) {
@@ -230,9 +257,11 @@ export default function CleanerProfilePage() {
     }
   };
 
-  const displayName = nameInput || cleanerProfile?.name || user?.name || "Cleaner Staff";
+  const displayName =
+    nameInput || cleanerProfile?.name || user?.name || "Cleaner Staff";
   const displayEmail = cleanerProfile?.email || user?.email || "N/A";
-  const displayPhone = phoneInput || cleanerProfile?.phone || user?.phone || "N/A";
+  const displayPhone =
+    phoneInput || cleanerProfile?.phone || user?.phone || "N/A";
   const displayInitials = displayName
     .split(" ")
     .map((n: string) => n[0])
@@ -243,7 +272,11 @@ export default function CleanerProfilePage() {
     cleanerProfile?.coverageArea && cleanerProfile.coverageArea.length > 0
       ? cleanerProfile.coverageArea.join(", ")
       : "Gulshan, Banani, Dhanmondi, Uttara";
-  const cleanerIdSnippet = String(cleanerProfile?.id || user?.id || user?._id || "880").slice(-6).toUpperCase();
+  const cleanerIdSnippet = String(
+    cleanerProfile?.id || user?.id || user?._id || "880",
+  )
+    .slice(-6)
+    .toUpperCase();
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -258,11 +291,15 @@ export default function CleanerProfilePage() {
               Cleaner Staff Profile &amp; Security
             </h1>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ⚡ {cleanerProfile?.isApproved ? "VERIFIED CLEANER" : "CLEANIX STAFF"}
+              ⚡{" "}
+              {cleanerProfile?.isApproved
+                ? "VERIFIED CLEANER"
+                : "CLEANIX STAFF"}
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            আপনার ব্যক্তিগত তথ্য (নাম, ফোন, ছবি), পাসওয়ার্ড সিকিউরিটি, ফিল্ড কভারেজ এবং স্কোয়াড পরিচালনা করুন।
+            আপনার ব্যক্তিগত তথ্য (নাম, ফোন, ছবি), পাসওয়ার্ড সিকিউরিটি, ফিল্ড
+            কভারেজ এবং স্কোয়াড পরিচালনা করুন।
           </p>
         </div>
 
@@ -271,7 +308,9 @@ export default function CleanerProfilePage() {
           disabled={isLoading}
           className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer self-start sm:self-auto disabled:opacity-60"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#007eff]" : ""}`} />
+          <RefreshCw
+            className={`w-4 h-4 ${isLoading ? "animate-spin text-[#007eff]" : ""}`}
+          />
           <span>Sync Profile</span>
         </button>
       </div>
@@ -284,10 +323,12 @@ export default function CleanerProfilePage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-5">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-                  <UserCheck className="w-5 h-5 text-[#007eff]" /> Personal &amp; Duty Information
+                  <UserCheck className="w-5 h-5 text-[#007eff]" /> Personal
+                  &amp; Duty Information
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-                  প্রোফাইল ছবি, নাম এবং ফোন নম্বর পরিবর্তন করে সংরক্ষণ করতে পারেন।
+                  প্রোফাইল ছবি, নাম এবং ফোন নম্বর পরিবর্তন করে সংরক্ষণ করতে
+                  পারেন।
                 </p>
               </div>
               <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -326,7 +367,11 @@ export default function CleanerProfilePage() {
                 {avatarUrl ? (
                   <div className="relative w-20 h-20 rounded-3xl overflow-hidden border-2 border-white shadow-xs">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-blue-600 text-white flex items-center justify-center font-black text-2xl border-2 border-white shadow-xs">
@@ -358,7 +403,11 @@ export default function CleanerProfilePage() {
                     className="text-xs font-bold text-[#007eff] bg-white hover:bg-blue-50 px-3.5 py-1.5 rounded-xl border border-blue-200 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                   >
                     <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>{avatarUrl ? "নতুন ছবি নির্বাচন করুন" : "Upload New Photo"}</span>
+                    <span>
+                      {avatarUrl
+                        ? "নতুন ছবি নির্বাচন করুন"
+                        : "Upload New Photo"}
+                    </span>
                   </button>
                   {avatarUrl && (
                     <button
@@ -380,7 +429,9 @@ export default function CleanerProfilePage() {
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center justify-between">
                     <span>Full Name:</span>
-                    <span className="text-[11px] font-semibold text-[#007eff]">✏️ পরিবর্তনযোগ্য</span>
+                    <span className="text-[11px] font-semibold text-[#007eff]">
+                      ✏️ পরিবর্তনযোগ্য
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -395,7 +446,9 @@ export default function CleanerProfilePage() {
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center justify-between">
                     <span>Email Address:</span>
-                    <span className="text-[11px] font-semibold text-slate-400">🔒 অপরিবর্তনযোগ্য</span>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      🔒 অপরিবর্তনযোগ্য
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -408,7 +461,9 @@ export default function CleanerProfilePage() {
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center justify-between">
                     <span>Dispatch Phone:</span>
-                    <span className="text-[11px] font-semibold text-[#007eff]">✏️ পরিবর্তনযোগ্য</span>
+                    <span className="text-[11px] font-semibold text-[#007eff]">
+                      ✏️ পরিবর্তনযোগ্য
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -423,7 +478,9 @@ export default function CleanerProfilePage() {
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center justify-between">
                     <span>Assigned Coverage Area:</span>
-                    <span className="text-[11px] font-semibold text-slate-400">🔒 এডমিন নির্ধারিত</span>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      🔒 এডমিন নির্ধারিত
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -476,28 +533,47 @@ export default function CleanerProfilePage() {
                   <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
                     👑
                   </div>
-                  <p className="font-bold text-slate-900 text-sm">{myTeam.leader?.name || "Supervisor"}</p>
-                  <p className="text-xs text-[#007eff] font-bold">Team Leader</p>
-                  <p className="text-[11px] text-slate-600 font-semibold">{myTeam.leader?.phone || "N/A"}</p>
+                  <p className="font-bold text-slate-900 text-sm">
+                    {myTeam.leader?.name || "Supervisor"}
+                  </p>
+                  <p className="text-xs text-[#007eff] font-bold">
+                    Team Leader
+                  </p>
+                  <p className="text-[11px] text-slate-600 font-semibold">
+                    {myTeam.leader?.phone || "N/A"}
+                  </p>
                 </div>
 
                 {/* Team Members */}
                 {Array.isArray(myTeam.members) &&
                   myTeam.members.map((member, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1"
+                    >
                       <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#007eff] flex items-center justify-center font-bold text-xs">
-                        {member.name ? member.name.slice(0, 2).toUpperCase() : "ST"}
+                        {member.name
+                          ? member.name.slice(0, 2).toUpperCase()
+                          : "ST"}
                       </div>
-                      <p className="font-bold text-slate-900 text-sm">{member.name}</p>
-                      <p className="text-xs text-slate-500 font-semibold">{member.role || "Cleaning Staff"}</p>
-                      <p className="text-[11px] text-[#007eff] font-bold">{member.phone}</p>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {member.name}
+                      </p>
+                      <p className="text-xs text-slate-500 font-semibold">
+                        {member.role || "Cleaning Staff"}
+                      </p>
+                      <p className="text-[11px] text-[#007eff] font-bold">
+                        {member.phone}
+                      </p>
                     </div>
                   ))}
               </div>
             ) : (
               <div className="p-6 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
                 <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-md mx-auto">
-                  বর্তমানে আপনাকে কোনো নির্দিষ্ট স্কোয়াডে যুক্ত করা হয়নি। এডমিন আপনাকে স্কোয়াডে অ্যাসাইন করলে সাথে সাথে এখানে টিম মেম্বারদের তালিকা দেখতে পাবেন।
+                  বর্তমানে আপনাকে কোনো নির্দিষ্ট স্কোয়াডে যুক্ত করা হয়নি। এডমিন
+                  আপনাকে স্কোয়াডে অ্যাসাইন করলে সাথে সাথে এখানে টিম মেম্বারদের
+                  তালিকা দেখতে পাবেন।
                 </p>
               </div>
             )}
@@ -510,7 +586,8 @@ export default function CleanerProfilePage() {
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-xs">
             <div className="border-b border-slate-100 pb-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-[#007eff]" /> Password &amp; Security
+                <Lock className="w-5 h-5 text-[#007eff]" /> Password &amp;
+                Security
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 ক্লিনার একাউন্ট সুরক্ষার জন্য নতুন পাসওয়ার্ড সেট করুন।
@@ -534,10 +611,15 @@ export default function CleanerProfilePage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4 text-xs sm:text-sm">
+            <form
+              onSubmit={handleSubmitPassword(onPasswordSubmit)}
+              className="space-y-4 text-xs sm:text-sm"
+            >
               {/* Current Password Field */}
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-800">Current Password:</label>
+                <label className="font-bold text-slate-800">
+                  Current Password:
+                </label>
                 <div className="relative mt-2">
                   <input
                     type={showCurrentPassword ? "text" : "password"}
@@ -558,28 +640,40 @@ export default function CleanerProfilePage() {
                       setShowCurrentPassword((prev) => !prev);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5"
-                    title={showCurrentPassword ? "Hide password" : "Show password"}
+                    title={
+                      showCurrentPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showCurrentPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                    {showCurrentPassword ? (
+                      <EyeOff className="w-4 h-4 text-[#007eff]" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 {passwordErrors.currentPassword && (
                   <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.currentPassword.message}
+                    <AlertCircle className="w-3.5 h-3.5" />{" "}
+                    {passwordErrors.currentPassword.message}
                   </p>
                 )}
               </div>
 
               {/* New Password Field */}
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-800">New Password:</label>
+                <label className="font-bold text-slate-800">
+                  New Password:
+                </label>
                 <div className="relative mt-2">
                   <input
                     type={showNewPassword ? "text" : "password"}
                     placeholder="নতুন পাসওয়ার্ড লিখুন"
                     {...registerPassword("newPassword", {
                       required: "নতুন পাসওয়ার্ড আবশ্যক",
-                      minLength: { value: 6, message: "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে" },
+                      minLength: {
+                        value: 6,
+                        message: "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে",
+                      },
                     })}
                     className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
                       passwordErrors.newPassword
@@ -596,26 +690,34 @@ export default function CleanerProfilePage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5"
                     title={showNewPassword ? "Hide password" : "Show password"}
                   >
-                    {showNewPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                    {showNewPassword ? (
+                      <EyeOff className="w-4 h-4 text-[#007eff]" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 {passwordErrors.newPassword && (
                   <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.newPassword.message}
+                    <AlertCircle className="w-3.5 h-3.5" />{" "}
+                    {passwordErrors.newPassword.message}
                   </p>
                 )}
               </div>
 
               {/* Confirm Password Field */}
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-800">Confirm New Password:</label>
+                <label className="font-bold text-slate-800">
+                  Confirm New Password:
+                </label>
                 <div className="relative mt-2">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="নতুন পাসওয়ার্ডটি পুনরায় লিখুন"
                     {...registerPassword("confirmPassword", {
                       required: "পাসওয়ার্ড নিশ্চিতকরণ আবশ্যক",
-                      validate: (val) => val === newPasswordValue || "পাসওয়ার্ড দুটি মিলছে না",
+                      validate: (val) =>
+                        val === newPasswordValue || "পাসওয়ার্ড দুটি মিলছে না",
                     })}
                     className={`w-full bg-slate-50 border rounded-2xl p-3 pr-11 text-slate-900 font-medium focus:outline-none focus:bg-white ${
                       passwordErrors.confirmPassword
@@ -630,14 +732,21 @@ export default function CleanerProfilePage() {
                       setShowConfirmPassword((prev) => !prev);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#007eff] transition-colors cursor-pointer p-1.5"
-                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                    title={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4 text-[#007eff]" /> : <Eye className="w-4 h-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4 text-[#007eff]" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 {passwordErrors.confirmPassword && (
                   <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.confirmPassword.message}
+                    <AlertCircle className="w-3.5 h-3.5" />{" "}
+                    {passwordErrors.confirmPassword.message}
                   </p>
                 )}
               </div>
@@ -661,7 +770,8 @@ export default function CleanerProfilePage() {
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-xs">
             <div className="border-b border-slate-100 pb-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-[#007eff]" /> Standard Kit Checklist
+                <Wrench className="w-5 h-5 text-[#007eff]" /> Standard Kit
+                Checklist
               </h3>
               <p className="text-xs text-slate-500 font-medium">
                 ফিল্ড সার্ভিসে বহনকৃত প্রয়োজনীয় ইকুইপমেন্ট।
@@ -670,14 +780,33 @@ export default function CleanerProfilePage() {
 
             <div className="space-y-3 text-xs sm:text-sm">
               {[
-                { title: "Industrial Steam Extractor", desc: "Heavy Duty Steam Sanitizer Unit" },
-                { title: "HEPA Dry Vacuum Cleaner", desc: "Anti-Allergen Deep Suction Machine" },
-                { title: "Hospital-Grade Chemical Kit", desc: "Eco-Friendly Anti-Bacterial Disinfectant" },
-                { title: "Carpet & Sofa Wash Extractor", desc: "Fabric & Upholstery Deep Washer" },
+                {
+                  title: "Industrial Steam Extractor",
+                  desc: "Heavy Duty Steam Sanitizer Unit",
+                },
+                {
+                  title: "HEPA Dry Vacuum Cleaner",
+                  desc: "Anti-Allergen Deep Suction Machine",
+                },
+                {
+                  title: "Hospital-Grade Chemical Kit",
+                  desc: "Eco-Friendly Anti-Bacterial Disinfectant",
+                },
+                {
+                  title: "Carpet & Sofa Wash Extractor",
+                  desc: "Fabric & Upholstery Deep Washer",
+                },
               ].map((item, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
-                  <p className="font-bold text-slate-900 text-xs sm:text-sm">{item.title}</p>
-                  <p className="text-[11px] text-slate-500 font-medium">{item.desc}</p>
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5"
+                >
+                  <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                    {item.title}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {item.desc}
+                  </p>
                 </div>
               ))}
             </div>

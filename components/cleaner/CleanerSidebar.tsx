@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarCheck,
   Truck,
-  Camera,
   DollarSign,
   UserCheck,
   LogOut,
   Sparkles,
   Home,
-  CheckCircle2,
-  Sliders,
-  ShieldAlert,
-  ShieldCheck,
   Crown,
   Loader2,
 } from "lucide-react";
@@ -324,8 +319,10 @@ export default function CleanerSidebar({
       <LogoutConfirmModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
+        title="Confirm Staff Log Out"
+        description="Are you sure you want to log out of your Cleanix Cleaner portal? You will need to log back in to access your jobs and duty tracker."
         onConfirm={() => {
-          alert("Cleaner Team logged out successfully!");
+          toast.success("লগআউট সফল হয়েছে!");
         }}
       />
     </div>
