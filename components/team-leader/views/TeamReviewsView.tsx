@@ -18,6 +18,7 @@ import { io } from "socket.io-client";
 import {
   ReviewItem,
   fetchReviewsAPI,
+  fetchTeamReviewsAPI,
   updateReviewStatusAPI,
 } from "@/services/reviewService";
 
@@ -33,10 +34,14 @@ export default function TeamReviewsView({ teamSlug }: TeamReviewsViewProps) {
   const loadReviews = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
     try {
-      // Fetch all reviews and filter by squad or team assignments
-      const data = await fetchReviewsAPI();
+      // Fetch only reviews assigned to this squad
+      const data = teamSlug
+        ? await fetchTeamReviewsAPI(teamSlug)
+        : await fetchReviewsAPI();
       if (Array.isArray(data)) {
         setReviews(data);
+      } else {
+        setReviews([]);
       }
     } catch (err) {
       console.error("Error loading team reviews:", err);
@@ -104,7 +109,7 @@ export default function TeamReviewsView({ teamSlug }: TeamReviewsViewProps) {
           reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) /
           reviews.length
         ).toFixed(1)
-      : "5.0";
+      : "0.0";
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -150,7 +155,7 @@ export default function TeamReviewsView({ teamSlug }: TeamReviewsViewProps) {
                   <Star
                     key={i}
                     className={`w-4 h-4 ${
-                      i < Math.round(Number(avgRating))
+                      reviews.length > 0 && i < Math.round(Number(avgRating))
                         ? "fill-amber-400 text-amber-400"
                         : "text-slate-300"
                     }`}

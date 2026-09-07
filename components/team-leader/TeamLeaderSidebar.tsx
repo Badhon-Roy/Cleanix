@@ -22,7 +22,7 @@ import { io } from "socket.io-client";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import { fetchMyTeamAssignmentsAPI, fetchAvailableBookingsAPI } from "@/services/teamService";
-import { fetchReviewsAPI } from "@/services/reviewService";
+import { fetchTeamReviewsAPI } from "@/services/reviewService";
 import { fetchAllCleanersAPI } from "@/services/cleanerService";
 import { getAuthUser } from "@/utils/cookie";
 import { slugifyTeamName } from "@/utils/slug";
@@ -110,23 +110,23 @@ export default function TeamLeaderSidebar({
         setProofsCount(proofsPending);
       }
     } catch (err) {
-      console.error("Error fetching assigned count for sidebar:", err);
+      console.error("Error fetching assignments count for sidebar:", err);
     }
   }, [effectiveSlug]);
 
   // 2. Sync Available Bookings Count
   const loadAvailableCount = useCallback(async () => {
     try {
-      const avail = await fetchAvailableBookingsAPI();
-      if (Array.isArray(avail)) {
-        setAvailableCount(avail.length);
+      const available = await fetchAvailableBookingsAPI();
+      if (Array.isArray(available)) {
+        setAvailableCount(available.length);
       }
     } catch (err) {
-      console.error("Error fetching available bookings for sidebar:", err);
+      console.error("Error fetching available count for sidebar:", err);
     }
   }, []);
 
-  // 3. Sync Pending Requests Count
+  // 3. Sync Cleaner Requests Count
   const loadRequestsCount = useCallback(async () => {
     try {
       const cleaners = await fetchAllCleanersAPI("PENDING_APPROVAL");
@@ -138,17 +138,20 @@ export default function TeamLeaderSidebar({
     }
   }, []);
 
-  // 4. Sync Reviews Count
+  // 4. Sync Reviews Count for THIS team squad only
   const loadReviewsCount = useCallback(async () => {
+    if (!effectiveSlug) return;
     try {
-      const reviews = await fetchReviewsAPI();
+      const reviews = await fetchTeamReviewsAPI(effectiveSlug);
       if (Array.isArray(reviews)) {
         setReviewsCount(reviews.length);
+      } else {
+        setReviewsCount(0);
       }
     } catch (err) {
       console.error("Error fetching reviews count for sidebar:", err);
     }
-  }, []);
+  }, [effectiveSlug]);
 
   // Sync all live counts
   const syncAllLeaderCounts = useCallback(() => {
@@ -203,6 +206,8 @@ export default function TeamLeaderSidebar({
     };
   }, [syncAllLeaderCounts, loadAssignmentsCount, loadAvailableCount, loadRequestsCount, loadReviewsCount]);
 
+  const isUserAdmin = authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
+
   const navItems = [
     { name: "Overview & Roster", key: "", icon: LayoutDashboard },
     { name: "My Team Squad", key: "my-team", icon: Users, badge: "Squad" },
@@ -236,10 +241,10 @@ export default function TeamLeaderSidebar({
       name: "Squad Reviews & Ratings",
       key: "reviews",
       icon: Star,
-      badge: reviewsCount > 0 ? `${reviewsCount} Ratings` : "Ratings",
+      badge: reviewsCount > 0 ? `${reviewsCount} Ratings` : "0 Ratings",
     },
     { name: "Team Wallet & Earnings", key: "earnings", icon: Wallet, badge: "10% Cut" },
-    { name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" },
+    ...(isUserAdmin ? [{ name: "Admin Control HQ", key: "/admin", icon: ShieldCheck, badge: "ADMIN" }] : []),
   ];
 
   const getNavHref = (key: string) => {
