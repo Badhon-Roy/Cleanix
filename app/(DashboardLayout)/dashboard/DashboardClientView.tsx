@@ -178,7 +178,7 @@ export default function DashboardClientView({
   // Compute Active Subscription
   const activeSubscription = subscriptions.find(
     (s) => s.status === "ACTIVE" && !s.isDeleted
-  ) || subscriptions[0];
+  );
 
   // Active Running Bookings list (for all active jobs tracking!)
   const activeRunningBookings = bookings.filter(
@@ -197,10 +197,13 @@ export default function DashboardClientView({
 
   const totalBookingsCount = isAdmin ? adminBookings.length : bookings.length;
   const activePlanTitle = activeSubscription
-    ? activeSubscription.planTitle || activeSubscription.planId
-    : "Standard";
-  const totalVisits = activeSubscription?.totalVisitsPerMonth || 4;
-  const remainingVisits = activeSubscription?.remainingVisits ?? 1;
+    ? activeSubscription.planTitle || activeSubscription.planId || "Active Plan"
+    : "No Plan";
+  const totalVisits = activeSubscription?.totalVisitsPerMonth || 0;
+  const remainingVisits = activeSubscription?.remainingVisits ?? 0;
+  const usedVisits = activeSubscription
+    ? activeSubscription.usedVisits ?? (totalVisits - remainingVisits)
+    : 0;
 
   return (
     <div className="space-y-8 pb-12">
@@ -227,9 +230,11 @@ export default function DashboardClientView({
                 ? "Manage customer bookings, approve team assignments, and monitor live cleaning operations across Dhaka."
                 : isTeamLeader
                 ? "View assigned team jobs, request available unassigned bookings, and update live progress status."
-                : `Your monthly cleaning care is active. Next service: ${
+                : activeSubscription
+                ? `Your monthly cleaning care is active (${activePlanTitle}). Next service: ${
                     activeTrackerBooking?.scheduledDate || "Scheduled Date"
-                  }.`}
+                  }.`
+                : "Welcome to Cleanix Portal! Choose a subscription package or book on-demand cleaning services."}
             </p>
           </div>
 
@@ -289,10 +294,12 @@ export default function DashboardClientView({
               Active Plan
             </p>
             <h3 className="text-3xl font-bold text-slate-900 mt-1">
-              {activePlanTitle}
+              {activeSubscription ? activePlanTitle : "None"}
             </h3>
             <span className="text-xs text-blue-600 font-bold mt-1 block">
-              ৳{(activeSubscription?.totalAmount || 14000).toLocaleString()} / Month ➔
+              {activeSubscription
+                ? `৳${(activeSubscription?.totalAmount || 0).toLocaleString()} / Month ➔`
+                : "No active plan ➔"}
             </span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -310,10 +317,10 @@ export default function DashboardClientView({
               Visits Credit
             </p>
             <h3 className="text-3xl font-bold text-slate-900 mt-1">
-              {remainingVisits} / {totalVisits} Left
+              {activeSubscription ? `${remainingVisits} / ${totalVisits} Left` : "0 Left"}
             </h3>
             <span className="text-xs text-amber-700 font-bold mt-1 block">
-              Active monthly cycle ➔
+              {activeSubscription ? "Active monthly cycle ➔" : "Subscribe to get credits ➔"}
             </span>
           </div>
           <div className="w-13 h-13 p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -508,60 +515,84 @@ export default function DashboardClientView({
                   : "Subscribe for weekly sanitization & deep cleaning."}
               </p>
             </div>
-            <span className="text-xl font-bold text-[#007eff]">
-              ৳{(activeSubscription?.totalAmount || 14000).toLocaleString()}{" "}
-              <span className="text-xs text-slate-400 font-normal">/mo</span>
-            </span>
+            {activeSubscription ? (
+              <span className="text-xl font-bold text-[#007eff]">
+                ৳{(activeSubscription?.totalAmount || 0).toLocaleString()}{" "}
+                <span className="text-xs text-slate-400 font-normal">/mo</span>
+              </span>
+            ) : (
+              <Link
+                href="/dashboard/subscription"
+                className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#007eff] border border-blue-200 transition-colors"
+              >
+                Choose Plan
+              </Link>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs sm:text-sm font-bold">
-                <span className="text-slate-700">
-                  Monthly Usage: {totalVisits - remainingVisits} of {totalVisits} visits used
-                </span>
-                <span className="text-[#007eff] font-bold">
-                  {Math.round(((totalVisits - remainingVisits) / totalVisits) * 100)}% Complete
-                </span>
+          {activeSubscription ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs sm:text-sm font-bold">
+                  <span className="text-slate-700">
+                    Monthly Usage: {usedVisits} of {totalVisits} visits used
+                  </span>
+                  <span className="text-[#007eff] font-bold">
+                    {totalVisits > 0 ? Math.round((usedVisits / totalVisits) * 100) : 0}% Complete
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                  <div
+                    className="bg-gradient-to-r from-[#007eff] to-cyan-400 h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${totalVisits > 0 ? Math.round((usedVisits / totalVisits) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden p-0.5 border border-slate-200">
-                <div
-                  className="bg-gradient-to-r from-[#007eff] to-cyan-400 h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.round(((totalVisits - remainingVisits) / totalVisits) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                <span className="text-slate-500 block text-xs font-semibold">Next Visit:</span>
-                <strong className="text-slate-900 font-bold">
-                  {activeTrackerBooking?.scheduledDate || "Scheduled Date"}
-                </strong>
-              </div>
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                <span className="text-slate-500 block text-xs font-semibold">Billing Renewal:</span>
-                <strong className="text-slate-900 font-bold">
-                  {activeSubscription?.endDate
-                    ? new Date(activeSubscription.endDate).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "30 Days Period"}
-                </strong>
+              <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  <span className="text-slate-500 block text-xs font-semibold">Next Visit:</span>
+                  <strong className="text-slate-900 font-bold">
+                    {activeTrackerBooking?.scheduledDate || "Scheduled Date"}
+                  </strong>
+                </div>
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  <span className="text-slate-500 block text-xs font-semibold">Billing Renewal:</span>
+                  <strong className="text-slate-900 font-bold">
+                    {activeSubscription?.endDate
+                      ? new Date(activeSubscription.endDate).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "30 Days Period"}
+                  </strong>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="py-6 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center space-y-3">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                You currently don&apos;t have an active subscription package. Choose a monthly recurring package for priority scheduling and free sanitization visits.
+              </p>
+              <Link
+                href="/dashboard/subscription"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007eff] text-white font-bold text-xs hover:bg-[#0066ee] transition-all shadow-xs"
+              >
+                <span>Browse Subscription Plans</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-2">
             <Link
               href="/dashboard/subscription"
               className="text-xs sm:text-sm text-[#007eff] hover:underline font-bold flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Manage Subscription & Upgrade Plan</span>
+              <span>{activeSubscription ? "Manage Subscription & Upgrade Plan" : "View All Subscription Plans"}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

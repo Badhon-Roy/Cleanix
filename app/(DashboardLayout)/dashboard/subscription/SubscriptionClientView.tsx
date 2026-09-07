@@ -68,7 +68,7 @@ export default function SubscriptionClientView({
   // Find active subscription if any
   const activeSubscription = subscriptions.find(
     (s) => s.status === "ACTIVE" && !s.isDeleted
-  ) || subscriptions[0];
+  );
 
   const handleCancelSubscription = async () => {
     if (!activeSubscription?._id) return;
@@ -159,7 +159,7 @@ export default function SubscriptionClientView({
             >
               {activeSubscription
                 ? `✓ ${activeSubscription.status}: ${currentPlanTitle} PLAN`
-                : "INACTIVE"}
+                : "NO ACTIVE SUBSCRIPTION"}
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
@@ -474,8 +474,8 @@ export default function SubscriptionClientView({
 
         <div className="pt-2">
           <PricingCardsGrid
-            currentPlanId={activeSubscription?.planId?.toLowerCase() || "standard"}
-            showCurrentPlanBadge={true}
+            currentPlanId={activeSubscription ? (activeSubscription.planId || activeSubscription.planTitle || "").toLowerCase() : undefined}
+            showCurrentPlanBadge={!!activeSubscription}
           />
         </div>
       </div>

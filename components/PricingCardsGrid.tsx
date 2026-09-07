@@ -98,6 +98,7 @@ export default function PricingCardsGrid({
         const normPlanTitle = (plan.title || "").toLowerCase();
 
         const isCurrentPlan =
+          showCurrentPlanBadge &&
           normCurrent !== "" &&
           (normCurrent === normPlanId || normCurrent === normPlanTitle);
         const isPopular = plan.isPopular;

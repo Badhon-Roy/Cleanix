@@ -7,6 +7,7 @@ import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import Lenis from "lenis";
 import { io } from "socket.io-client";
 import { fetchMyBookingsAPI } from "@/services/bookingService";
+import { fetchMySubscriptionsAPI } from "@/services/subscriptionService";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -19,6 +20,7 @@ import {
   Home,
   Bell,
   ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { SwirlLogo } from "@/components/Navbar";
 
@@ -33,6 +35,7 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const [activeBookingsCount, setActiveBookingsCount] = useState<number>(0);
+  const [activeSubscription, setActiveSubscription] = useState<any>(null);
 
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
@@ -80,8 +83,25 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
     }
   };
 
+  const loadUserSubscriptions = async () => {
+    try {
+      const res = await fetchMySubscriptionsAPI();
+      if (res?.success && Array.isArray(res?.data)) {
+        const active = res.data.find(
+          (s: any) => (s.status || "").toUpperCase() === "ACTIVE" && !s.isDeleted
+        );
+        setActiveSubscription(active || null);
+      } else {
+        setActiveSubscription(null);
+      }
+    } catch (err) {
+      console.error("Failed to load user subscriptions for sidebar:", err);
+    }
+  };
+
   useEffect(() => {
     loadUserBookings();
+    loadUserSubscriptions();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -95,11 +115,15 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
     socket.on("booking_created", loadUserBookings);
     socket.on("booking_updated", loadUserBookings);
     socket.on("team_assignment_updated", loadUserBookings);
+    socket.on("subscription_created", loadUserSubscriptions);
+    socket.on("subscription_updated", loadUserSubscriptions);
 
     return () => {
       socket.off("booking_created");
       socket.off("booking_updated");
       socket.off("team_assignment_updated");
+      socket.off("subscription_created");
+      socket.off("subscription_updated");
       socket.disconnect();
     };
   }, []);
@@ -120,7 +144,14 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
       icon: CalendarCheck,
       badge: activeBookingsCount > 0 ? `${activeBookingsCount} Active` : "0 Active",
     },
-    { name: "Subscription", href: "/dashboard/subscription", icon: CreditCard, badge: "Standard" },
+    {
+      name: "Subscription",
+      href: "/dashboard/subscription",
+      icon: CreditCard,
+      badge: activeSubscription
+        ? activeSubscription.planTitle || activeSubscription.planId || "Active"
+        : undefined,
+    },
     { name: "New Booking", href: "/dashboard/new-booking", icon: PlusCircle, highlight: true },
     { name: "Invoices & Receipts", href: "/dashboard/invoices", icon: FileText },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
@@ -209,23 +240,60 @@ export default function Sidebar({ user, mobileOpen: externalMobileOpen = false, 
 
       {/* Subscription Summary Card (Light Theme) */}
       <div className="mt-auto pt-4 border-t border-slate-100 flex-shrink-0">
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-xs">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-500" /> Standard Plan
-            </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Active
-            </span>
+        {activeSubscription ? (
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-extrabold text-slate-900 flex items-center gap-1.5 truncate">
+                <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <span className="truncate">{activeSubscription.planTitle || activeSubscription.planId || "Standard"} Plan</span>
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex-shrink-0">
+                Active
+              </span>
+            </div>
+            {(() => {
+              const totalVisits = activeSubscription.totalVisitsPerMonth || 4;
+              const remainingVisits = activeSubscription.remainingVisits ?? totalVisits;
+              const usedVisits = activeSubscription.usedVisits ?? (totalVisits - remainingVisits);
+              const percentDone = totalVisits > 0 ? Math.round((usedVisits / totalVisits) * 100) : 0;
+              return (
+                <>
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden mb-2">
+                    <div
+                      className="bg-[#007eff] h-full rounded-full transition-all duration-300"
+                      style={{ width: `${percentDone}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-600 font-bold">
+                    <span>Visits: {usedVisits} of {totalVisits} used</span>
+                    <span className="text-[#007eff]">{percentDone}%</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
-          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden mb-2">
-            <div className="bg-[#007eff] h-full w-3/4 rounded-full" />
+        ) : (
+          <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-100 text-slate-800 text-xs">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-blue-500" /> Subscription Plan
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                No Plan
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mb-2.5 leading-snug">
+              Subscribe for scheduled monthly visits & extra savings.
+            </p>
+            <Link
+              href="/dashboard/subscription"
+              className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-blue-50 text-[#007eff] font-bold text-[11px] flex items-center justify-center gap-1 border border-blue-200 transition-colors shadow-2xs"
+            >
+              <span>Choose Plan</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-          <div className="flex justify-between text-[11px] text-slate-600 font-bold">
-            <span>Visits: 3 of 4 used</span>
-            <span className="text-[#007eff]">75%</span>
-          </div>
-        </div>
+        )}
 
         {/* Back to Public Site */}
         <div className="mt-3 flex items-center gap-2">
