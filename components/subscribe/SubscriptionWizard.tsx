@@ -217,13 +217,13 @@ export default function SubscriptionWizard({
       selectedPlanId: initialPlanId.toLowerCase(),
       selectedAddonIds: [],
       selectedZone: initialCoverages && initialCoverages.length > 0 ? (initialCoverages[0].id || initialCoverages[0]._id || "") : "",
-      streetAddress: "House 42, Road 11, Block D, Flat 5B",
-      firstVisitDate: "2026-09-01",
+      streetAddress: "",
+      firstVisitDate: "",
       selectedSlotId: "morning",
       specialInstructions: "",
       paymentMethod: "BKASH",
-      bkashPhone: "01711223344",
-      bkashTrxId: "TRX9812401",
+      bkashPhone: "",
+      bkashTrxId: "",
     },
   });
 
