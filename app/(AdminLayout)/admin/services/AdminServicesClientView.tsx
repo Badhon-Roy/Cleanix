@@ -1355,10 +1355,16 @@ export default function AdminServicesClientView({
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isUploadingAddonIcon}
                     onChange={handleAddonIconUpload}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-600 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#007eff] file:text-white hover:file:bg-[#0066ee]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-600 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#007eff] file:text-white hover:file:bg-[#0066ee] disabled:opacity-50"
                   />
                 </div>
+                {isUploadingAddonIcon && (
+                  <p className="text-xs text-[#007eff] font-bold flex items-center gap-1 mt-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading icon to cloud...
+                  </p>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1371,7 +1377,7 @@ export default function AdminServicesClientView({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingAddon}
+                  disabled={isSubmittingAddon || isUploadingAddonIcon}
                   className="px-5 py-2.5 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white text-xs font-extrabold cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingAddon
@@ -2090,12 +2096,28 @@ export default function AdminServicesClientView({
                         {/* Action Controls & Input */}
                         <div className="flex-1 space-y-2.5 w-full">
                           <div className="flex items-center gap-2">
-                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
-                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
-                              <span>Choose Image File</span>
+                            <label
+                              className={`px-3.5 py-2 rounded-xl border font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-2xs ${
+                                isUploadingHero
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                  : "bg-blue-50 text-[#007eff] hover:bg-blue-100 border-blue-200 cursor-pointer"
+                              }`}
+                            >
+                              {isUploadingHero ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+                                  <span>Uploading Hero...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                                  <span>Choose Image File</span>
+                                </>
+                              )}
                               <input
                                 type="file"
                                 accept="image/*"
+                                disabled={isUploadingHero}
                                 onChange={handleHeroFileUpload}
                                 className="hidden"
                               />
@@ -2156,12 +2178,28 @@ export default function AdminServicesClientView({
                         {/* Action Controls & Input */}
                         <div className="flex-1 space-y-2.5 w-full">
                           <div className="flex items-center gap-2">
-                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
-                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
-                              <span>Choose Image File</span>
+                            <label
+                              className={`px-3.5 py-2 rounded-xl border font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-2xs ${
+                                isUploadingContent
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                  : "bg-blue-50 text-[#007eff] hover:bg-blue-100 border-blue-200 cursor-pointer"
+                              }`}
+                            >
+                              {isUploadingContent ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+                                  <span>Uploading Banner...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                                  <span>Choose Image File</span>
+                                </>
+                              )}
                               <input
                                 type="file"
                                 accept="image/*"
+                                disabled={isUploadingContent}
                                 onChange={handleContentFileUpload}
                                 className="hidden"
                               />
