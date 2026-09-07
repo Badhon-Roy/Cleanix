@@ -36,6 +36,7 @@ import {
 } from "recharts";
 import { ICoverageArea, fetchAllCoveragesAPI } from "@/services/coverageService";
 import { fetchAdminBookingsAPI } from "@/services/bookingService";
+import { fetchActiveServicesAPI } from "@/services/serviceCategoryService";
 
 // Custom Pill Hatched Bar Component (Switches to Primary Brand Blue on Hover)
 const CustomPillHatchedBar = (props: any) => {
@@ -155,13 +156,16 @@ export default function AdminAnalyticsPage() {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
   const [coverageAreas, setCoverageAreas] = useState<ICoverageArea[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const loadAnalyticsData = useCallback(async (showToast = false) => {
     try {
-      const [covData, bookData] = await Promise.all([
+      const [covData, bookData, srvData] = await Promise.all([
         fetchAllCoveragesAPI({ isActive: true }),
         fetchAdminBookingsAPI(),
+        fetchActiveServicesAPI(),
       ]);
 
       if (Array.isArray(covData)) {
@@ -171,6 +175,11 @@ export default function AdminAnalyticsPage() {
         setBookings(bookData.data);
       } else if (Array.isArray(bookData)) {
         setBookings(bookData);
+      }
+      if (srvData?.success && Array.isArray(srvData?.data)) {
+        setServiceCategories(srvData.data);
+      } else if (Array.isArray(srvData)) {
+        setServiceCategories(srvData);
       }
       if (showToast) toast.success("Analytics data synced!");
     } catch (err) {
@@ -200,30 +209,69 @@ export default function AdminAnalyticsPage() {
     socket.on("booking_updated", handleRefresh);
     socket.on("coverage_updated", handleRefresh);
     socket.on("team_assignment_updated", handleRefresh);
+    socket.on("service_category_created", handleRefresh);
+    socket.on("service_category_updated", handleRefresh);
 
     return () => {
       socket.off("booking_created", handleRefresh);
       socket.off("booking_updated", handleRefresh);
       socket.off("coverage_updated", handleRefresh);
       socket.off("team_assignment_updated", handleRefresh);
+      socket.off("service_category_created", handleRefresh);
+      socket.off("service_category_updated", handleRefresh);
       socket.disconnect();
     };
   }, [loadAnalyticsData]);
 
-  // Active bookings (non-cancelled)
-  const activeBookings = useMemo(() => {
-    return bookings.filter((b: any) => b.status !== "CANCELLED" && !b.isDeleted);
-  }, [bookings]);
+  // Active bookings (non-cancelled) filtered by selected time range
+  const filteredBookings = useMemo(() => {
+    const valid = bookings.filter((b: any) => b.status !== "CANCELLED" && !b.isDeleted);
+    const now = new Date();
 
-  // 1. Gross Revenue & KPIs
+    if (timeFilter === "1M") {
+      const past30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return valid.filter((b: any) => {
+        const d = new Date(b.scheduledDate || b.createdAt || 0);
+        return !isNaN(d.getTime()) && d >= past30Days;
+      });
+    }
+
+    if (timeFilter === "3M") {
+      const past90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      return valid.filter((b: any) => {
+        const d = new Date(b.scheduledDate || b.createdAt || 0);
+        return !isNaN(d.getTime()) && d >= past90Days;
+      });
+    }
+
+    if (timeFilter === "6M") {
+      const past180Days = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      return valid.filter((b: any) => {
+        const d = new Date(b.scheduledDate || b.createdAt || 0);
+        return !isNaN(d.getTime()) && d >= past180Days;
+      });
+    }
+
+    if (timeFilter === "YTD") {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      return valid.filter((b: any) => {
+        const d = new Date(b.scheduledDate || b.createdAt || 0);
+        return !isNaN(d.getTime()) && d >= startOfYear;
+      });
+    }
+
+    return valid;
+  }, [bookings, timeFilter]);
+
+  // 1. Gross Revenue & KPIs (Dynamically calculated based on timeFilter)
   const grossRevenue = useMemo(() => {
-    return activeBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
-  }, [activeBookings]);
+    return filteredBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
+  }, [filteredBookings]);
 
   const cleanerPayouts = Math.round(grossRevenue * 0.65);
   const netProfit = grossRevenue - cleanerPayouts;
   const avgOrderValue =
-    activeBookings.length > 0 ? Math.round(grossRevenue / activeBookings.length) : 0;
+    filteredBookings.length > 0 ? Math.round(grossRevenue / filteredBookings.length) : 0;
 
   // 2. Dynamic Dhaka Coverage Zones Breakdown (Consolidated Unique Zones)
   const dhakaZoneHatchedData = useMemo(() => {
@@ -265,9 +313,9 @@ export default function AdminAnalyticsPage() {
       }
     });
 
-    // Match bookings to each unique consolidated zone
+    // Match filtered bookings to each unique consolidated zone
     const data = Array.from(zoneMap.values()).map((z) => {
-      const zoneBookings = activeBookings.filter((b: any) => {
+      const zoneBookings = filteredBookings.filter((b: any) => {
         const bCovId = String(b.coverageArea?._id || b.coverageArea?.id || b.coverageArea || "");
         if (bCovId && z.zoneIds.has(bCovId)) return true;
 
@@ -314,30 +362,70 @@ export default function AdminAnalyticsPage() {
     }
 
     return data;
-  }, [coverageAreas, activeBookings, grossRevenue]);
+  }, [coverageAreas, filteredBookings, grossRevenue]);
 
-  // 3. Dynamic Revenue Distribution by Category (Donut Chart)
+  // Helper to extract full dynamic service category name strictly from database data
+  const getFullServiceName = useCallback(
+    (b: any): string => {
+      // 1. If populated object on booking
+      if (typeof b?.serviceType === "object" && b.serviceType !== null) {
+        if (b.serviceType.title) return b.serviceType.title;
+        if (b.serviceType.category) return b.serviceType.category;
+        if (b.serviceType.badge) return b.serviceType.badge;
+      }
+      // 2. If ID or slug string, lookup in dynamic database service categories
+      if (typeof b?.serviceType === "string" && b.serviceType.length > 0) {
+        const found = serviceCategories.find(
+          (s) =>
+            String(s._id) === String(b.serviceType) ||
+            s.slug === b.serviceType ||
+            s.category === b.serviceType
+        );
+        if (found?.title) return found.title;
+        if (found?.category) return found.category;
+        return b.serviceType;
+      }
+      // 3. Fallback to first available category from database if present
+      if (serviceCategories.length > 0 && serviceCategories[0].title) {
+        return serviceCategories[0].title;
+      }
+      return "General Cleaning";
+    },
+    [serviceCategories]
+  );
+
+  // 3. Dynamic Revenue Distribution by Category strictly based on Database Data (Donut Chart)
   const dynamicCategoryData = useMemo(() => {
     const categoryMap = new Map<string, number>();
-    const colors = ["#01BF7F", "#369BF3", "#F04862", "#FC9505", "#8B5CF6", "#EC4899"];
+    const colors = [
+      "#01BF7F",
+      "#369BF3",
+      "#F04862",
+      "#FC9505",
+      "#8B5CF6",
+      "#EC4899",
+      "#06B6D4",
+      "#14B8A6",
+      "#6366F1",
+    ];
 
-    activeBookings.forEach((b: any) => {
-      const catName =
-        b.serviceType?.title ||
-        b.serviceType?.category ||
-        b.serviceType?.badge ||
-        "General Cleaning";
+    // Seed map with all active service categories fetched from database
+    serviceCategories.forEach((s: any) => {
+      const name = s.title || s.category || s.badge;
+      if (name) {
+        categoryMap.set(name, 0);
+      }
+    });
+
+    // Sum revenue from all filtered bookings in the selected time range
+    filteredBookings.forEach((b: any) => {
+      const catName = getFullServiceName(b);
       const current = categoryMap.get(catName) || 0;
       categoryMap.set(catName, current + (Number(b.totalAmount) || 0));
     });
 
     if (categoryMap.size === 0) {
-      return [
-        { name: "Commercial Office", value: 0, color: "#01BF7F" },
-        { name: "Residential Deep Clean", value: 0, color: "#369BF3" },
-        { name: "Move-Out Turnover", value: 0, color: "#F04862" },
-        { name: "Add-On Specials", value: 0, color: "#FC9505" },
-      ];
+      return [];
     }
 
     let colorIdx = 0;
@@ -352,52 +440,107 @@ export default function AdminAnalyticsPage() {
     });
 
     return result;
-  }, [activeBookings]);
+  }, [serviceCategories, filteredBookings, getFullServiceName]);
 
-  // 4. Dynamic Monthly Trend Data
+  // 4. Dynamic Time Trend Data based on timeFilter
   const dynamicMonthlyTrendData = useMemo(() => {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
     const trendMap = new Map<string, number>();
 
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      trendMap.set(key, 0);
-    }
+    if (timeFilter === "1M") {
+      // 4 discrete weeks of the last 30 days
+      trendMap.set("Week 1", 0);
+      trendMap.set("Week 2", 0);
+      trendMap.set("Week 3", 0);
+      trendMap.set("Week 4", 0);
 
-    activeBookings.forEach((b: any) => {
-      const dateStr = b.scheduledDate || b.createdAt;
-      if (dateStr) {
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) {
-          const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-          if (trendMap.has(key)) {
-            trendMap.set(key, (trendMap.get(key) || 0) + (Number(b.totalAmount) || 0));
+      const past30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).getTime();
+      filteredBookings.forEach((b: any) => {
+        const d = new Date(b.scheduledDate || b.createdAt || 0).getTime();
+        if (!isNaN(d) && d >= past30Days) {
+          const diffDays = Math.floor((now.getTime() - d) / (1000 * 60 * 60 * 24));
+          const weekIdx = Math.max(1, 4 - Math.min(3, Math.floor(diffDays / 7)));
+          const key = `Week ${weekIdx}`;
+          trendMap.set(key, (trendMap.get(key) || 0) + (Number(b.totalAmount) || 0));
+        }
+      });
+    } else if (timeFilter === "3M") {
+      // Last 3 months
+      for (let i = 2; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        trendMap.set(key, 0);
+      }
+      filteredBookings.forEach((b: any) => {
+        const dateStr = b.scheduledDate || b.createdAt;
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+            if (trendMap.has(key)) {
+              trendMap.set(key, (trendMap.get(key) || 0) + (Number(b.totalAmount) || 0));
+            }
           }
         }
+      });
+    } else if (timeFilter === "YTD") {
+      // From Jan of current year to current month
+      for (let m = 0; m <= now.getMonth(); m++) {
+        const key = `${monthNames[m]} ${now.getFullYear()}`;
+        trendMap.set(key, 0);
       }
-    });
+      filteredBookings.forEach((b: any) => {
+        const dateStr = b.scheduledDate || b.createdAt;
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime()) && d.getFullYear() === now.getFullYear()) {
+            const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+            if (trendMap.has(key)) {
+              trendMap.set(key, (trendMap.get(key) || 0) + (Number(b.totalAmount) || 0));
+            }
+          }
+        }
+      });
+    } else {
+      // Default: 6M
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        trendMap.set(key, 0);
+      }
+      filteredBookings.forEach((b: any) => {
+        const dateStr = b.scheduledDate || b.createdAt;
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+            if (trendMap.has(key)) {
+              trendMap.set(key, (trendMap.get(key) || 0) + (Number(b.totalAmount) || 0));
+            }
+          }
+        }
+      });
+    }
 
-    const result: { month: string; gross: number; payout: number; net: number }[] = [];
-    trendMap.forEach((gross, month) => {
+    const result: { period: string; gross: number; payout: number; net: number }[] = [];
+    trendMap.forEach((gross, period) => {
       const payout = Math.round(gross * 0.65);
       const net = gross - payout;
-      result.push({ month, gross, payout, net });
+      result.push({ period, gross, payout, net });
     });
 
     return result;
-  }, [activeBookings]);
+  }, [filteredBookings, timeFilter]);
 
-  // 5. Recent Dynamic Transactions Ledger
+  // 5. Recent Dynamic Transactions Ledger (Filtered by time range)
   const recentDynamicLedger = useMemo(() => {
-    if (activeBookings.length === 0) return [];
-    return activeBookings.slice(0, 8).map((b: any) => {
+    if (filteredBookings.length === 0) return [];
+    return filteredBookings.slice(0, 10).map((b: any) => {
       const ref = b.bookingRef || `#CLN-${String(b._id).slice(-4)}`;
       const clientName = b.user?.name || "Registered Customer";
       const zone = b.coverageArea?.zoneName ? ` (${b.coverageArea.zoneName.split(" ")[0]})` : "";
-      const type = b.serviceType?.title || "Home Deep Clean";
+      const type = getFullServiceName(b);
       const amount = `৳${(Number(b.totalAmount) || 0).toLocaleString()} BDT`;
       const method = b.paymentMethod || "bKash";
       const date = b.scheduledDate
@@ -419,11 +562,201 @@ export default function AdminAnalyticsPage() {
         status,
       };
     });
-  }, [activeBookings]);
+  }, [filteredBookings, getFullServiceName]);
 
-  const handleDownloadReport = () => {
-    toast.success("Financial Statement PDF Report generated and downloaded!");
+  // Workable Dynamic PDF Exporter (Vector jsPDF + autoTable)
+  const handleDownloadReport = async () => {
+    setIsExportingPdf(true);
+    const toastId = toast.loading("Generating Cleanix Financial Statement PDF...");
+
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // Helper to clean Bengali / Unicode symbols for jsPDF standard font rendering
+      const cleanPdfText = (str: any): string => {
+        if (!str) return "";
+        return String(str)
+          .replace(/[৳]/g, "BDT ")
+          .replace(/[\u0980-\u09FF]/g, "") // Strip Bengali Unicode range so Helvetica renders clean Latin text
+          .replace(/\(\s*\)/g, "") // Strip empty parentheses
+          .replace(/\s{2,}/g, " ")
+          .trim();
+      };
+
+      const periodLabel =
+        timeFilter === "1M"
+          ? "Past 1 Month (30 Days)"
+          : timeFilter === "3M"
+          ? "Past 3 Months (90 Days)"
+          : timeFilter === "YTD"
+          ? `Year-to-Date (${new Date().getFullYear()})`
+          : "Past 6 Months (180 Days)";
+
+      // Top Header Banner
+      doc.setFillColor(0, 24, 55); // Brand Navy
+      doc.rect(0, 0, 210, 34, "F");
+
+      // Cleanix Logo Title
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("CLEANIX", 14, 18);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(147, 197, 253);
+      doc.text("Professional Cleaning & Financial Analytics Center", 14, 26);
+
+      // Report Sub-header meta on right
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("FINANCIAL STATEMENT REPORT", 196, 16, { align: "right" });
+
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(203, 213, 225);
+      doc.text(`Time Filter: ${periodLabel}`, 196, 23, { align: "right" });
+      doc.text(`Generated: ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`, 196, 29, {
+        align: "right",
+      });
+
+      // Executive KPI Highlights Box
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, 40, 182, 28, 3, 3, "FD");
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(100, 116, 139);
+      doc.text("GROSS REVENUE", 20, 48);
+      doc.text("STAFF PAYOUT (65%)", 66, 48);
+      doc.text("NET PROFIT (35%)", 114, 48);
+      doc.text("ACTIVE BOOKINGS", 158, 48);
+
+      doc.setFontSize(12.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.text(`BDT ${grossRevenue.toLocaleString()}`, 20, 59);
+      doc.text(`BDT ${cleanerPayouts.toLocaleString()}`, 66, 59);
+      doc.setTextColor(5, 150, 105);
+      doc.text(`BDT ${netProfit.toLocaleString()}`, 114, 59);
+      doc.setTextColor(0, 126, 255);
+      doc.text(`${filteredBookings.length} Bookings`, 158, 59);
+
+      // Section 1: Coverage Zones Breakdown Table
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 24, 55);
+      doc.text("1. Dhaka Coverage Zones Revenue Breakdown", 14, 76);
+
+      const zoneRows = dhakaZoneHatchedData.map((z, idx) => [
+        `${idx + 1}`,
+        cleanPdfText(z.zone),
+        cleanPdfText(z.areasText) || "All Sub-areas",
+        `${z.bookingsCount}`,
+        `BDT ${Number(z.revenue).toLocaleString()}`,
+        z.growth,
+      ]);
+
+      autoTable(doc, {
+        startY: 80,
+        head: [["#", "Coverage Zone", "Included Sub-areas", "Orders", "Total Revenue", "Share"]],
+        body: zoneRows,
+        theme: "striped",
+        headStyles: {
+          fillColor: [0, 24, 55],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          textColor: [30, 41, 59],
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Section 2: Recent Transactions Settlement Ledger
+      const currentY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 170;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 24, 55);
+      doc.text("2. Settlement Transaction Ledger", 14, currentY);
+
+      const txnRows = recentDynamicLedger.map((t) => [
+        cleanPdfText(t.id),
+        cleanPdfText(t.client),
+        cleanPdfText(t.type) || "COMMERCIAL OFFICE CLEANING",
+        cleanPdfText(t.method).toUpperCase(),
+        `BDT ${cleanPdfText(t.amount).replace(/BDT/g, "").trim()}`,
+        cleanPdfText(t.date),
+        cleanPdfText(t.status),
+      ]);
+
+      autoTable(doc, {
+        startY: currentY + 4,
+        head: [["Txn Ref", "Client & Zone", "Full Service Category Name", "Channel", "Amount", "Date", "Status"]],
+        body: txnRows.length > 0 ? txnRows : [["-", "No transactions in this period", "-", "-", "-", "-", "-"]],
+        theme: "grid",
+        headStyles: {
+          fillColor: [0, 126, 255],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          textColor: [30, 41, 59],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Footer with Branding & Page Numbers
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          "Cleanix Services Bangladesh Ltd. | Official Financial & Revenue Analytics Statement | support@cleanix.com | +880 1774-500815",
+          14,
+          290
+        );
+        doc.text(`Page ${i} of ${pageCount}`, 196, 290, { align: "right" });
+      }
+
+      // Save and trigger file download
+      doc.save(`Cleanix_Financial_Statement_${timeFilter}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("Financial Statement PDF downloaded successfully!", { id: toastId });
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      toast.error("Failed to generate Financial PDF report", { id: toastId });
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
+
+  const trendPeriodLabel =
+    timeFilter === "1M"
+      ? "Past 30 Days (Weekly)"
+      : timeFilter === "3M"
+      ? "Past 3 Months"
+      : timeFilter === "YTD"
+      ? `Year-to-Date (${new Date().getFullYear()})`
+      : "Past 6 Months";
 
   return (
     <div className="space-y-8 pb-12 w-full select-none">
@@ -497,10 +830,11 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleDownloadReport}
-            className="px-5 py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+            disabled={isExportingPdf}
+            className="px-5 py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-60"
           >
             <Download className="w-4 h-4 text-blue-400" />
-            <span>Export Financial PDF</span>
+            <span>{isExportingPdf ? "Generating PDF..." : "Export Financial PDF"}</span>
           </button>
         </div>
       </div>
@@ -523,7 +857,7 @@ export default function AdminAnalyticsPage() {
             </p>
             <div className="pt-1">
               <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-flex items-center gap-1">
-                <ArrowUpRight className="w-3.5 h-3.5" /> {activeBookings.length} Active Bookings
+                <ArrowUpRight className="w-3.5 h-3.5" /> {filteredBookings.length} Active Bookings ({timeFilter})
               </span>
             </div>
           </div>
@@ -601,10 +935,10 @@ export default function AdminAnalyticsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-              <TrendingUp className="w-5 h-5 text-[#007eff]" /> Gross Revenue &amp; Net Profit Trend (2026)
+              <TrendingUp className="w-5 h-5 text-[#007eff]" /> Gross Revenue &amp; Net Profit Trend ({trendPeriodLabel})
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              Monthly breakdown comparing gross platform revenue, cleaner payouts, and cleanix net margins.
+              Breakdown comparing gross platform revenue, cleaner payouts, and cleanix net margins for the selected {timeFilter} period.
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs font-bold">
@@ -634,11 +968,11 @@ export default function AdminAnalyticsPage() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+              <XAxis dataKey="period" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(val) => `৳${val / 1000}k`}
+                tickFormatter={(val) => `৳${val >= 1000 ? `${val / 1000}k` : val}`}
                 tick={{ fill: "#64748b", fontSize: 12 }}
               />
               <Tooltip
@@ -692,32 +1026,45 @@ export default function AdminAnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center pt-2">
           {/* Donut Chart (col-span-5) */}
           <div className="md:col-span-5 h-[260px] relative flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={dynamicCategoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={105}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {dynamicCategoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(val: any) => [`৳${Number(val).toLocaleString()} BDT`, "Revenue"]}
-                  contentStyle={{
-                    backgroundColor: "#0f172a",
-                    borderColor: "#334155",
-                    borderRadius: "12px",
-                    color: "#fff",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {dynamicCategoryData.length === 0 ? (
+              <div className="text-center text-slate-400 font-medium text-xs">
+                No active service categories found in database.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={
+                      dynamicCategoryData.every((d) => d.value === 0)
+                        ? dynamicCategoryData.map((d) => ({ ...d, value: 1 }))
+                        : dynamicCategoryData
+                    }
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={105}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {dynamicCategoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: any, name: any, item: any) => [
+                      `৳${Number(item?.payload?.value !== undefined && !dynamicCategoryData.every((d) => d.value === 0) ? item.payload.value : 0).toLocaleString()} BDT`,
+                      "Revenue",
+                    ]}
+                    contentStyle={{
+                      backgroundColor: "#0f172a",
+                      borderColor: "#334155",
+                      borderRadius: "12px",
+                      color: "#fff",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
 
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-xl sm:text-2xl font-black text-slate-900">
@@ -731,15 +1078,23 @@ export default function AdminAnalyticsPage() {
 
           {/* Legend Cards Grid (col-span-7) */}
           <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {dynamicCategoryData.map((item) => (
-              <div key={item.name} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-xs font-extrabold text-slate-700 uppercase truncate">{item.name}</span>
-                </div>
-                <p className="text-lg sm:text-xl font-black text-slate-900">৳{item.value.toLocaleString()} BDT</p>
+            {dynamicCategoryData.length === 0 ? (
+              <div className="col-span-2 p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center text-slate-400 font-medium text-xs">
+                No category records available in database.
               </div>
-            ))}
+            ) : (
+              dynamicCategoryData.map((item) => (
+                <div key={item.name} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-extrabold text-slate-700 uppercase truncate" title={item.name}>
+                      {item.name}
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-black text-slate-900">৳{item.value.toLocaleString()} BDT</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -889,18 +1244,19 @@ export default function AdminAnalyticsPage() {
           <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b border-slate-100 text-[11px] font-extrabold uppercase text-slate-400">
-                <th className="py-3 px-4">Txn ID</th>
-                <th className="py-3 px-4">Client Name</th>
-                <th className="py-3 px-4">Service Category</th>
-                <th className="py-3 px-4">Gateway / Channel</th>
+                <th className="py-3 px-4">Txn Ref</th>
+                <th className="py-3 px-4">Client &amp; Zone</th>
+                <th className="py-3 px-4">Full Service Category Name</th>
+                <th className="py-3 px-4">Channel</th>
                 <th className="py-3 px-4">Amount</th>
+                <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
               {recentDynamicLedger.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
                     No transaction records yet. New bookings will appear here in real time.
                   </td>
                 </tr>
@@ -909,9 +1265,21 @@ export default function AdminAnalyticsPage() {
                   <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-4 px-4 font-mono font-bold text-slate-900">{row.id}</td>
                     <td className="py-4 px-4 font-bold text-slate-900">{row.client}</td>
-                    <td className="py-4 px-4">{row.type}</td>
-                    <td className="py-4 px-4 text-slate-600">{row.method}</td>
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 uppercase">
+                          {row.type.includes("(") ? row.type.split("(")[0].trim() : row.type}
+                        </span>
+                        {row.type.includes("(") && (
+                          <span className="text-[11px] text-[#007eff] font-medium">
+                            ({row.type.split("(")[1]}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-slate-600 font-semibold uppercase">{row.method}</td>
                     <td className="py-4 px-4 font-extrabold text-emerald-600">{row.amount}</td>
+                    <td className="py-4 px-4 text-slate-500 font-medium whitespace-nowrap">{row.date}</td>
                     <td className="py-4 px-4">
                       <span
                         className={`font-extrabold text-[10px] uppercase px-3 py-1 rounded-full border ${
