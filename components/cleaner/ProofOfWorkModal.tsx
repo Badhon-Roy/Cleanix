@@ -42,6 +42,8 @@ export default function ProofOfWorkModal({
 }: ProofOfWorkModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingBefore, setIsUploadingBefore] = useState(false);
+  const [isUploadingAfter, setIsUploadingAfter] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Photos State
@@ -91,11 +93,6 @@ export default function ProofOfWorkModal({
       lenis.destroy();
     };
   }, [isOpen, mounted]);
-
-  if (!isOpen || !mounted) return null;
-
-  const [isUploadingBefore, setIsUploadingBefore] = useState(false);
-  const [isUploadingAfter, setIsUploadingAfter] = useState(false);
 
   const handleBeforeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -179,6 +176,8 @@ export default function ProofOfWorkModal({
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen || !mounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150 overflow-hidden">
