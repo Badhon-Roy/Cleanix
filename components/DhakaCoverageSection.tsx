@@ -193,7 +193,7 @@ export default function DhakaCoverageSection({
                     >
                       <span>Book in {zoneTitle}</span>
                       <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-xs bg-[#007eff] text-white group-hover:bg-white group-hover:text-[#007eff] transition-colors">
-                        <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                        <Navigation className="w-2.5 h-2.5 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                       </div>
                     </Link>
                   </div>

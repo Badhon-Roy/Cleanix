@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Star } from "lucide-react";
+import { CheckCircle2, Navigation, Star } from "lucide-react";
 import { defaultAboutData, AboutContent } from "@/lib/aboutData";
 import { io } from "socket.io-client";
 
@@ -217,11 +217,11 @@ export default function AboutSection({ initialData }: AboutSectionProps) {
             <div>
               <Link
                 href="/about"
-                className="bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-6 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03]"
+                className="group bg-[#007eff] hover:bg-[#0066ee] text-white font-semibold text-sm pl-6 pr-1.5 py-1.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03]"
               >
                 <span>Get in Touch</span>
                 <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#007eff] shadow-sm">
-                  <ChevronRight className="w-4 h-4 stroke-[3]" />
+                  <Navigation className="w-3.5 h-3.5 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                 </div>
               </Link>
             </div>

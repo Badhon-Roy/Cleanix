@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Navigation } from "lucide-react";
 import { BlogDetail, defaultBlogsList, getAuthorInitial, getAuthorBgColor } from "@/lib/blogsData";
 import { io } from "socket.io-client";
 
@@ -133,10 +134,8 @@ export default function BlogSection({ initialBlogs }: BlogSectionProps) {
             className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#007eff] hover:bg-[#0066ee] text-white font-extrabold text-sm tracking-wide shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 hover:scale-[1.03]"
           >
             <span>View All Blogs</span>
-            <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center transition-transform duration-300 group-hover:translate-x-0.5">
-              <svg className="w-4 h-4 text-[#007eff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
+            <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#007eff] transition-transform duration-300 group-hover:translate-x-0.5">
+              <Navigation className="w-3.5 h-3.5 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
             </div>
           </Link>
         </div>

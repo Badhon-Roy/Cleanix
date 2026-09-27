@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Home, Building2, Sparkles, Wrench } from "lucide-react";
+import { Navigation, Home, Building2, Sparkles, Wrench } from "lucide-react";
 
 const servicesList = [
   {
@@ -151,11 +151,11 @@ export default function OurServices({ initialData }: OurServicesProps) {
               {/* View Details Button */}
               <Link
                 href={`/services/${activeService.slug}`}
-                className="bg-[#007eff] hover:bg-[#0062ee] text-white font-bold text-xs uppercase tracking-wider pl-5 pr-1.5 py-2.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg hover:scale-105 flex-shrink-0 self-start sm:self-auto"
+                className="group bg-[#007eff] hover:bg-[#0062ee] text-white font-bold text-xs uppercase tracking-wider pl-5 pr-1.5 py-2.5 rounded-full inline-flex items-center gap-3 transition-all duration-300 shadow-lg hover:scale-105 flex-shrink-0 self-start sm:self-auto"
               >
                 <span>View Details</span>
                 <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[#007eff]">
-                  <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                  <Navigation className="w-3.5 h-3.5 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                 </div>
               </Link>
             </div>
@@ -211,7 +211,7 @@ export default function OurServices({ initialData }: OurServicesProps) {
                         : "bg-white text-[#031837] group-hover:bg-[#007eff] group-hover:text-white"
                     }`}
                   >
-                    <ChevronRight className="w-5 h-5 stroke-[3]" />
+                    <Navigation className="w-4 h-4 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                   </Link>
                 </div>
               );

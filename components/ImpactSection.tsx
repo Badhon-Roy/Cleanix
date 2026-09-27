@@ -184,7 +184,7 @@ export default function ImpactSection({ initialData }: ImpactSectionProps) {
           {data?.impactSubtitle && (
             <div className="lg:max-w-md">
               <div
-                className="text-slate-600 text-sm sm:text-base leading-relaxed [&_p]:mb-2"
+                className="text-slate-600 text-sm sm:text-xl leading-relaxed [&_p]:mb-2"
                 dangerouslySetInnerHTML={{ __html: data?.impactSubtitle }}
               />
             </div>
