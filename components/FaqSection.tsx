@@ -97,7 +97,7 @@ export default function FaqSection({ initialData }: FaqSectionProps) {
                 >
                   {/* Question Header */}
                   <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-[#001837] font-extrabold text-base sm:text-lg leading-snug">
+                    <h3 className="text-[#001837] font-extrabold text-base sm:text-xl leading-snug">
                       {formattedNumber}. {faq.question}
                     </h3>
                     <motion.div
@@ -131,7 +131,7 @@ export default function FaqSection({ initialData }: FaqSectionProps) {
                         }}
                         className="overflow-hidden"
                       >
-                        <div className="pt-3 border-t border-slate-100 text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">
+                        <div className="pt-3 border-t border-slate-100 text-slate-500 font-medium text-sm sm:text-base leading-relaxed">
                           {faq.answer}
                         </div>
                       </motion.div>

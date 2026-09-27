@@ -179,7 +179,7 @@ export default function TestimonialsSection({
             {displayLeft.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-full hover:shadow-md transition-shadow"
+                className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-fit hover:shadow-md transition-shadow"
               >
                 <div>
                   {/* Quote Icon */}
@@ -275,7 +275,7 @@ export default function TestimonialsSection({
             {displayRight.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-full hover:shadow-md transition-shadow"
+                className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/80 flex flex-col justify-between h-fit hover:shadow-md transition-shadow"
               >
                 <div>
                   {/* Quote Icon */}

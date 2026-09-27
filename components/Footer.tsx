@@ -59,7 +59,7 @@ export default function Footer() {
               </span>
             </Link>
 
-            <p className="text-slate-300 text-sm leading-relaxed mb-6">
+            <p className="text-slate-300 text-sm lg:text-lg leading-relaxed mb-6">
               বাংলাদেশের ১ নম্বর অন-ডিমান্ড প্রিমিয়াম হোম ও কর্পোরেট ক্লিনিং প্ল্যাটফর্ম। আপনার বাসা এবং অফিসকে ঝকঝকে ও জীবাণুমুক্ত রাখার সহজ ডিজিটাল সমাধান।
             </p>
 
@@ -90,10 +90,10 @@ export default function Footer() {
 
           {/* Column 2: Quick Links (lg:col-span-2) */}
           <div className="lg:col-span-2">
-            <h3 className="text-white font-extrabold text-sm tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
+            <h3 className="text-white font-bold text-sm lg:text-base tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
               QUICK LINKS
             </h3>
-            <ul className="space-y-3 text-slate-300 text-sm font-medium">
+            <ul className="space-y-3 text-slate-300 text-sm lg:text-base font-medium">
               {[
                 { name: "Home", href: "/" },
                 { name: "About Us", href: "/about" },
@@ -120,10 +120,10 @@ export default function Footer() {
 
           {/* Column 3: Our Services (lg:col-span-3) */}
           <div className="lg:col-span-3">
-            <h3 className="text-white font-extrabold text-sm tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
+            <h3 className="text-white font-bold text-sm lg:text-base tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
               OUR SERVICES
             </h3>
-            <ul className="space-y-3 text-slate-300 text-sm font-medium">
+            <ul className="space-y-3 text-slate-300 text-sm lg:text-base font-medium">
               {[
                 { name: "Residential Deep Cleaning", href: "/services/residential-deep-cleaning" },
                 { name: "Commercial Office Cleaning", href: "/services/commercial-office-cleaning" },
@@ -145,10 +145,10 @@ export default function Footer() {
 
           {/* Column 4: Newsletter Subscribe (lg:col-span-3) */}
           <div className="lg:col-span-3">
-            <h3 className="text-white font-extrabold text-sm tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
+            <h3 className="text-white font-bold text-sm lg:text-base tracking-wider uppercase mb-6 pb-2 border-b border-white/10 inline-block">
               NEWSLETTER
             </h3>
-            <p className="text-slate-300 text-sm leading-relaxed mb-4">
+            <p className="text-slate-300 text-sm lg:text-base leading-relaxed mb-4">
               Subscribe to get exclusive cleaning discounts, seasonal tips, and
               updates directly in your inbox.
             </p>
@@ -171,7 +171,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer Bar */}
-        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs lg:text-sm text-slate-400">
           <p>© {new Date().getFullYear()} Claeanix. All rights reserved.</p>
 
           {/* Social Media Icons */}

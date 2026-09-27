@@ -89,11 +89,11 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 lg:gap-6 items-stretch">
             {/* Feature Card 1 */}
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
-              <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
+              <div className="flex items-center gap-3.5 sm:gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white flex-shrink-0">
                   <Users className="w-6 h-6 stroke-[2]" />
                 </div>
-                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
+                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug">
                   {data?.whyUsCard1Title || "Verified Professional Cleaners"}
                 </h3>
               </div>
@@ -108,7 +108,7 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
                       unoptimized
                       className="w-[17px] h-[15px] object-contain flex-shrink-0"
                     />
-                    <span className="text-slate-600 font-medium text-xs sm:text-sm">
+                    <span className="text-slate-600 font-medium text-sm sm:text-base">
                       {item}
                     </span>
                   </div>
@@ -118,11 +118,11 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
 
             {/* Feature Card 2 */}
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
-              <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
+              <div className="flex items-center gap-3.5 sm:gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white flex-shrink-0">
                   <ShieldCheck className="w-6 h-6 stroke-[2]" />
                 </div>
-                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
+                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug">
                   {data?.whyUsCard2Title || "Safe & Eco-Friendly Solutions"}
                 </h3>
               </div>
@@ -137,7 +137,7 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
                       unoptimized
                       className="w-[17px] h-[15px] object-contain flex-shrink-0"
                     />
-                    <span className="text-slate-600 font-medium text-xs sm:text-sm">
+                    <span className="text-slate-600 font-medium text-sm sm:text-base">
                       {item}
                     </span>
                   </div>
@@ -147,11 +147,11 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
 
             {/* Feature Card 3 */}
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
-              <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
+              <div className="flex items-center gap-3.5 sm:gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white flex-shrink-0">
                   <CalendarCheck className="w-6 h-6 stroke-[2]" />
                 </div>
-                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
+                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug">
                   {data?.whyUsCard3Title || "Flexible Subscriptions & Slots"}
                 </h3>
               </div>
@@ -166,7 +166,7 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
                       unoptimized
                       className="w-[17px] h-[15px] object-contain flex-shrink-0"
                     />
-                    <span className="text-slate-600 font-medium text-xs sm:text-sm">
+                    <span className="text-slate-600 font-medium text-sm sm:text-base">
                       {item}
                     </span>
                   </div>
@@ -176,11 +176,11 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
 
             {/* Feature Card 4 */}
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 flex flex-col justify-start h-full">
-              <div>
-                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white mb-4">
+              <div className="flex items-center gap-3.5 sm:gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-[#007eff] flex items-center justify-center text-white flex-shrink-0">
                   <Headset className="w-6 h-6 stroke-[2]" />
                 </div>
-                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug mb-4">
+                <h3 className="text-[#001837] font-extrabold text-lg md:text-xl leading-snug">
                   {data?.whyUsCard4Title || "24/7 Dedicated Support"}
                 </h3>
               </div>
@@ -195,7 +195,7 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
                       unoptimized
                       className="w-[17px] h-[15px] object-contain flex-shrink-0"
                     />
-                    <span className="text-slate-600 font-medium text-xs sm:text-sm">
+                    <span className="text-slate-600 font-medium text-sm sm:text-base">
                       {item}
                     </span>
                   </div>
