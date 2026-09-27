@@ -189,25 +189,25 @@ export default function AboutSection({ initialData }: AboutSectionProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
-                <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
+                <span className="text-[#001837] font-medium text-sm sm:text-lg tracking-wide uppercase">
                   {data?.whoWeAreCheck1 || "98% ON-TIME ARRIVAL IN DHAKA"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
-                <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
+                <span className="text-[#001837] font-medium text-sm sm:text-lg tracking-wide uppercase">
                   {data?.whoWeAreCheck2 || "1,250+ SATISFIED CLIENTS"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
-                <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
+                <span className="text-[#001837] font-medium text-sm sm:text-lg tracking-wide uppercase">
                   {data?.whoWeAreCheck3 || "100% VERIFIED CLEANER TEAMS"}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-[#007eff] fill-[#007eff] text-white flex-shrink-0" />
-                <span className="text-[#001837] font-bold text-xs sm:text-sm tracking-wide uppercase">
+                <span className="text-[#001837] font-medium text-sm sm:text-lg tracking-wide uppercase">
                   {data?.whoWeAreCheck4 || "24/7 DEDICATED SUPPORT"}
                 </span>
               </div>
