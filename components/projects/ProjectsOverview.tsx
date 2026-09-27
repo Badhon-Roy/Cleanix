@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, Navigation } from "lucide-react";
 import {
   defaultProjectsCMSData,
   ProjectsCMSContent,
@@ -111,11 +111,11 @@ export default function ProjectsOverview({ initialData }: ProjectsOverviewProps)
             <div>
               <Link
                 href="/contact"
-                className="bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm md:text-base pl-6 pr-2 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-[0_0_20px_rgba(0,126,255,0.4)] hover:shadow-[0_0_30px_rgba(0,126,255,0.7)] hover:scale-105"
+                className="group bg-[#007eff] hover:bg-[#0066ee] text-white font-bold text-sm md:text-base pl-6 pr-2 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-[0_0_20px_rgba(0,126,255,0.4)] hover:shadow-[0_0_30px_rgba(0,126,255,0.7)] hover:scale-105"
               >
                 <span>Start A Project</span>
                 <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center text-[#007eff] shadow-sm">
-                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 stroke-[3]" />
+                  <Navigation className="w-3.5 h-3.5 md:w-4 md:h-4 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                 </div>
               </Link>
             </div>

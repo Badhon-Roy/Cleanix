@@ -15,10 +15,9 @@ import {
   Calendar,
   Sparkles,
   ShieldCheck,
-  ArrowRight,
-  SlidersHorizontal,
   ChevronRight,
 } from "lucide-react";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 interface NotificationItem {
   id: number;
@@ -35,6 +34,7 @@ interface NotificationItem {
 export default function NotificationsPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
@@ -121,9 +121,8 @@ export default function NotificationsPage() {
   };
 
   const clearAllNotifications = () => {
-    if (confirm("Are you sure you want to clear all notifications?")) {
-      setNotifications([]);
-    }
+    setNotifications([]);
+    setIsClearModalOpen(false);
   };
 
   // Filtered List
@@ -180,13 +179,12 @@ export default function NotificationsPage() {
 
           <button
             type="button"
-            onClick={clearAllNotifications}
+            onClick={() => setIsClearModalOpen(true)}
             disabled={notifications.length === 0}
-            className="px-3.5 py-2.5 rounded-2xl bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 hover:border-red-200 font-medium text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Clear All Notifications"
+            className="px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-xs transition-colors flex items-center gap-1.5 border border-rose-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear</span>
+            <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Clear All</span>
           </button>
         </div>
       </div>
@@ -424,6 +422,15 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
+      {/* Clear All Notifications Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={isClearModalOpen}
+        title="Clear All Notifications?"
+        message="Are you sure you want to permanently clear all notifications from your activity log? This cannot be undone."
+        confirmText="Yes, Clear All"
+        onClose={() => setIsClearModalOpen(false)}
+        onConfirm={clearAllNotifications}
+      />
     </div>
   );
 }

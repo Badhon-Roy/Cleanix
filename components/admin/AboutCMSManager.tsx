@@ -854,6 +854,7 @@ export default function AboutCMSManager() {
                       fill
                       unoptimized
                       className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                     {member.nidVerified && (
                       <span className="absolute top-3 left-3 bg-emerald-600 text-white font-bold text-[10px] uppercase px-3 py-1 rounded-full border border-emerald-700">

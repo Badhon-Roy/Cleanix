@@ -131,7 +131,10 @@ export default function LoginPage() {
       } else if (role === "CLEANER") {
         targetPath = redirectUrl && redirectUrl.startsWith("/cleaner") ? redirectUrl : "/cleaner";
       } else {
-        targetPath = redirectUrl && redirectUrl.startsWith("/dashboard") ? redirectUrl : "/dashboard";
+        targetPath =
+          redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+            ? redirectUrl
+            : "/dashboard";
       }
 
       setTimeout(() => {
@@ -231,6 +234,7 @@ export default function LoginPage() {
                   alt="Certified Cleanix Professional"
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 144px, 176px"
                 />
               </div>
 
@@ -445,7 +449,11 @@ export default function LoginPage() {
             <div className="mt-8 text-center text-xs text-slate-600">
               Don&apos;t have an account yet?{" "}
               <Link
-                href="/register"
+                href={
+                  typeof window !== "undefined" && new URLSearchParams(window.location.search).get("redirect")
+                    ? `/register?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirect")!)}`
+                    : "/register"
+                }
                 className="text-[#007eff] hover:text-blue-700 font-bold hover:underline cursor-pointer"
               >
                 Create Account

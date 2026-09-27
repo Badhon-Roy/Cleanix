@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Phone, ChevronRight, Sparkles, Mail } from "lucide-react";
+import { Phone, Navigation, Sparkles, Mail } from "lucide-react";
 import { ProjectDetail } from "@/lib/projectsData";
 
 interface Props {
@@ -101,7 +101,7 @@ export default function ProjectDetailsSidebar({ project }: Props) {
           >
             <span>Request Estimate</span>
             <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#007eff] group-hover:translate-x-0.5 transition-transform">
-              <ChevronRight className="w-4 h-4 stroke-[3]" />
+              <Navigation className="w-3.5 h-3.5 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
             </div>
           </Link>
         </div>

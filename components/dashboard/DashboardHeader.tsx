@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
   Bell,
@@ -323,7 +324,7 @@ export default function DashboardHeader({ user, onToggleMobileMenu }: DashboardH
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={() => {
-          alert("Logged out successfully!");
+          toast.success("লগআউট সফল হয়েছে!");
         }}
       />
     </header>

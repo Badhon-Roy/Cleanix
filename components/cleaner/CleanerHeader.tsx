@@ -17,6 +17,7 @@ import {
   Timer,
 } from "lucide-react";
 import { io } from "socket.io-client";
+import { toast } from "sonner";
 import { getAuthUser } from "@/utils/cookie";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
@@ -348,8 +349,10 @@ export default function CleanerHeader({ onToggleMobileMenu }: CleanerHeaderProps
       <LogoutConfirmModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
+        title="Confirm Staff Log Out"
+        description="Are you sure you want to log out of your Cleanix Cleaner portal? You will need to log back in to access your jobs and duty tracker."
         onConfirm={() => {
-          alert("Cleaner Team logged out successfully!");
+          toast.success("লগআউট সফল হয়েছে!");
         }}
       />
     </header>

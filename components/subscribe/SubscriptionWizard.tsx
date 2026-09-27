@@ -33,6 +33,7 @@ import { fetchAllPlansAPI, IPlan } from "@/services/planService";
 import { fetchActiveAddonsAPI } from "@/services/addonService";
 import { fetchAllCoveragesAPI, ICoverageArea } from "@/services/coverageService";
 import { createSubscriptionAPI, downloadSubscriptionPDFAPI } from "@/services/subscriptionService";
+import { getAuthToken, getAuthUser } from "@/utils/cookie";
 import { io } from "socket.io-client";
 
 export interface ISubscriptionPlanOption {
@@ -216,13 +217,13 @@ export default function SubscriptionWizard({
       selectedPlanId: initialPlanId.toLowerCase(),
       selectedAddonIds: [],
       selectedZone: initialCoverages && initialCoverages.length > 0 ? (initialCoverages[0].id || initialCoverages[0]._id || "") : "",
-      streetAddress: "House 42, Road 11, Block D, Flat 5B",
-      firstVisitDate: "2026-09-01",
+      streetAddress: "",
+      firstVisitDate: "",
       selectedSlotId: "morning",
       specialInstructions: "",
       paymentMethod: "BKASH",
-      bkashPhone: "01711223344",
-      bkashTrxId: "TRX9812401",
+      bkashPhone: "",
+      bkashTrxId: "",
     },
   });
 
@@ -244,6 +245,18 @@ export default function SubscriptionWizard({
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [calMonth, setCalMonth] = useState<Date>(() => new Date(2026, 8, 1)); // Default Sep 2026
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Client-Side Authentication Check Safeguard
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = getAuthToken();
+      const user = getAuthUser();
+      if (!token || !user) {
+        const fullPath = window.location.pathname + window.location.search;
+        window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
+      }
+    }
+  }, []);
 
   // Close Popovers when clicking outside
   useEffect(() => {
@@ -467,9 +480,12 @@ export default function SubscriptionWizard({
           (errorMsg.toLowerCase().includes("authentication") ||
             errorMsg.toLowerCase().includes("login") ||
             errorMsg.toLowerCase().includes("401") ||
-            errorMsg.toLowerCase().includes("unauthorized"))
+            errorMsg.toLowerCase().includes("unauthorized") ||
+            errorMsg.toLowerCase().includes("token") ||
+            errorMsg.toLowerCase().includes("forbidden"))
         ) {
-          window.location.href = `/login?redirect=/subscribe`;
+          const fullPath = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
         }
       }
     } catch (err: any) {

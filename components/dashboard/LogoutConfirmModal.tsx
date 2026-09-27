@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { LogOut, X } from "lucide-react";
 import { logoutUser } from "@/utils/cookie";
@@ -9,12 +9,16 @@ interface LogoutConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: () => void;
+  title?: string;
+  description?: string;
 }
 
 export default function LogoutConfirmModal({
   isOpen,
   onClose,
   onConfirm,
+  title = "Confirm Log Out",
+  description = "Are you sure you want to log out of your Cleanix account? You will need to log back in to access your portal.",
 }: LogoutConfirmModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -44,9 +48,9 @@ export default function LogoutConfirmModal({
 
         {/* Content */}
         <div className="space-y-1.5">
-          <h3 className="text-xl font-bold text-slate-900">Confirm Log Out</h3>
+          <h3 className="text-xl font-bold text-slate-900">{title}</h3>
           <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-            Are you sure you want to log out of your Cleanix Customer Account? You will need to log back in to manage your bookings and service subscriptions.
+            {description}
           </p>
         </div>
 

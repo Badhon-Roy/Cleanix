@@ -37,11 +37,13 @@ import {
   updateTeamAPI,
   deleteTeamAPI,
 } from "@/services/teamService";
+import { uploadImageAPI } from "@/services/uploadService";
 
 import {
   ICoverageArea,
   fetchAllCoveragesAPI,
 } from "@/services/coverageService";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 interface AdminTeamsClientViewProps {
   initialTeams: TeamSquad[];
@@ -71,6 +73,7 @@ export default function AdminTeamsClientView({
 
   // Teams State (Dynamic API state via Props Drilling)
   const [teams, setTeams] = useState<TeamSquad[]>(initialTeams);
+  const [teamToDelete, setTeamToDelete] = useState<TeamSquad | null>(null);
 
   // UI & Form States
   const [isLoading, setIsLoading] = useState(false);
@@ -113,45 +116,32 @@ export default function AdminTeamsClientView({
 
   // File Upload Ref & Handler for Team Squad Image Preview
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height = Math.round((height * MAX_WIDTH) / width);
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width = Math.round((width * MAX_HEIGHT) / height);
-                height = MAX_HEIGHT;
-              }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx?.drawImage(img, 0, 0, width, height);
-
-            const compressedBase64 = canvas.toDataURL("image/webp", 0.72);
-            setValue("teamImage", compressedBase64);
-          };
-          img.src = reader.result;
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingImage(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_teams");
+        if (res.success && res.url) {
+          setValue("teamImage", res.url, { shouldValidate: true });
+          toast.success("Team squad image uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err: any) {
+        toast.error("Error uploading image to cloud.");
+      } finally {
+        setIsUploadingImage(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
   };
 
@@ -547,8 +537,9 @@ export default function AdminTeamsClientView({
     }
   };
 
-  const handleDeleteTeam = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this Team Squad?")) return;
+  const handleDeleteTeam = async () => {
+    if (!teamToDelete) return;
+    const id = teamToDelete.id;
 
     try {
       const res = await deleteTeamAPI(id);
@@ -561,6 +552,8 @@ export default function AdminTeamsClientView({
     } catch (err: any) {
       console.error("Failed to delete team:", err);
       toast.error(err?.message || "Failed to delete team squad");
+    } finally {
+      setTeamToDelete(null);
     }
   };
 
@@ -834,7 +827,7 @@ export default function AdminTeamsClientView({
                       {/* Delete Button */}
                       <button
                         type="button"
-                        onClick={() => handleDeleteTeam(team.id)}
+                        onClick={() => setTeamToDelete(team)}
                         className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                         title="Delete Squad"
                       >
@@ -1056,11 +1049,16 @@ export default function AdminTeamsClientView({
                       />
                       <button
                         type="button"
+                        disabled={isUploadingImage}
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100/80 text-[#007eff] font-extrabold text-xs border border-blue-200 flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                        className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100/80 text-[#007eff] font-extrabold text-xs border border-blue-200 flex items-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                       >
-                        <UploadCloud className="w-4 h-4 text-[#007eff]" />
-                        <span>Choose Image File</span>
+                        {isUploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+                        ) : (
+                          <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                        )}
+                        <span>{isUploadingImage ? "Uploading to cloud..." : "Choose Image File"}</span>
                       </button>
 
                       {formTeamImage && (
@@ -1473,6 +1471,18 @@ export default function AdminTeamsClientView({
             </form>
           </div>
         </div>
+      )}
+      {/* Delete Team Squad Confirmation Modal */}
+      {teamToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!teamToDelete}
+          title="Delete Team Squad?"
+          message="Are you sure you want to delete this operational cleaning squad? Cleaners and supervisors will be unassigned."
+          itemTitle={`👥 ${teamToDelete.teamName} (${teamToDelete.teamCode})`}
+          confirmText="Yes, Delete Squad"
+          onClose={() => setTeamToDelete(null)}
+          onConfirm={handleDeleteTeam}
+        />
       )}
     </div>
   );

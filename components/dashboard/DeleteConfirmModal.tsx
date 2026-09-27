@@ -9,15 +9,19 @@ interface DeleteConfirmModalProps {
   title?: string;
   message?: string;
   itemTitle?: string;
+  confirmText?: string;
+  cancelText?: string;
   onClose: () => void;
   onConfirm: () => void;
 }
 
 export default function DeleteConfirmModal({
   isOpen,
-  title = "Delete Saved Location",
-  message = "Are you sure you want to delete this address from your saved service locations? This action cannot be undone.",
+  title = "Are you sure?",
+  message = "This action cannot be undone. Are you sure you want to proceed?",
   itemTitle,
+  confirmText = "Yes, Delete",
+  cancelText = "Cancel",
   onClose,
   onConfirm,
 }: DeleteConfirmModalProps) {
@@ -30,7 +34,12 @@ export default function DeleteConfirmModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <div
+      data-lenis-prevent="true"
+      data-lenis-prevent-wheel="true"
+      data-lenis-prevent-touch="true"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150"
+    >
       <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-5 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -51,8 +60,8 @@ export default function DeleteConfirmModal({
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-slate-900">{title}</h3>
           {itemTitle && (
-            <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-xs font-bold text-slate-800">
-              📍 {itemTitle}
+            <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-xs font-bold text-slate-800 break-words">
+              {itemTitle}
             </div>
           )}
           <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
@@ -67,7 +76,7 @@ export default function DeleteConfirmModal({
             onClick={onClose}
             className="py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer transition-colors"
           >
-            Cancel
+            {cancelText}
           </button>
           <button
             type="button"
@@ -75,10 +84,10 @@ export default function DeleteConfirmModal({
               onConfirm();
               onClose();
             }}
-            className="py-3 px-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors flex items-center gap-1.5 border border-red-500"
+            className="py-3 px-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors flex items-center gap-1.5 border border-red-500 shadow-md shadow-red-500/10"
           >
             <Trash2 className="w-4 h-4 stroke-[2.5]" />
-            <span>Yes, Delete Location</span>
+            <span>{confirmText}</span>
           </button>
         </div>
       </div>

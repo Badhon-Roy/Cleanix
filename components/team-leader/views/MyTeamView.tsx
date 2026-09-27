@@ -147,11 +147,14 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
     if (!team) return [];
 
     const list: (TeamMember & { isLeader?: boolean })[] = [];
+    const leaderId = String(
+      team.leader?.id || (team.leader as any)?._id || team.leader?.userId || ""
+    );
 
     // Add Leader
     if (team.leader && team.leader.name) {
       list.push({
-        id: team.leader.id || team.leader.userId || "leader",
+        id: leaderId || "leader",
         name: team.leader.name,
         email: team.leader.email,
         phone: team.leader.phone,
@@ -163,11 +166,18 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
 
     // Add Cleaner Members
     if (Array.isArray(team.members)) {
-      team.members.forEach((m) => {
-        // avoid duplication if leader is also in members array
-        if (m.id !== team.leader?.id && m.phone !== team.leader?.phone) {
+      team.members.forEach((m: any) => {
+        const memberId = String(m.id || m._id || m.userId || "");
+        // Avoid duplication only if this cleaner member is the team leader itself (compare ID only)
+        if (!leaderId || !memberId || memberId !== leaderId) {
           list.push({
             ...m,
+            id: memberId || m.id || m._id || "",
+            name: m.name || "Cleaner Staff",
+            email: m.email || "",
+            phone: m.phone || "",
+            role: m.role || "CLEANER",
+            status: m.status || "APPROVED",
             isLeader: false,
           });
         }
@@ -176,6 +186,10 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
 
     return list;
   }, [team]);
+
+  const cleanersCount = useMemo(() => {
+    return allMembers.filter((m) => !m.isLeader).length;
+  }, [allMembers]);
 
   // Filtered members based on search and status
   const filteredMembers = useMemo(() => {
@@ -440,7 +454,7 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Cleaners ({team.members.length})
+                Cleaners ({cleanersCount})
               </button>
             </div>
           </div>
@@ -455,12 +469,12 @@ export default function MyTeamView({ teamSlug, initialTeam = null }: MyTeamViewP
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMembers.map((member) => {
+            {filteredMembers.map((member, mIdx) => {
               const isLeader = member.isLeader;
 
               return (
                 <div
-                  key={member.id || member.phone}
+                  key={member.id || `member-${mIdx}-${member.phone || member.name}`}
                   className={`rounded-2xl p-5 border transition-all duration-200 hover:shadow-md relative overflow-hidden ${
                     isLeader
                       ? "bg-gradient-to-br from-amber-50/70 to-slate-50 border-amber-200/80"

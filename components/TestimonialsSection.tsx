@@ -202,6 +202,7 @@ export default function TestimonialsSection({
                         alt={item.name}
                         fill
                         className="object-cover"
+                        sizes="40px"
                         unoptimized={item.avatar?.includes("dicebear") || item.avatar?.includes("http")}
                       />
                     </div>
@@ -297,6 +298,7 @@ export default function TestimonialsSection({
                         alt={item.name}
                         fill
                         className="object-cover"
+                        sizes="40px"
                         unoptimized={item.avatar?.includes("dicebear") || item.avatar?.includes("http")}
                       />
                     </div>

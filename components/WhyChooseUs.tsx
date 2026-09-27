@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Check, ShieldCheck, Users, CalendarCheck, Headset } from "lucide-react";
+import { ShieldCheck, Users, CalendarCheck, Headset } from "lucide-react";
 import {
   defaultHomeCMSData,
   HomeCMSContent,
@@ -100,7 +100,14 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 {card1Checks.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
-                    <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
+                    <Image
+                      src="https://framerusercontent.com/images/ofZYtLppL7swbDiIk1ujYGRxg0k.png?width=17&height=15"
+                      alt="icon"
+                      width={17}
+                      height={15}
+                      unoptimized
+                      className="w-[17px] h-[15px] object-contain flex-shrink-0"
+                    />
                     <span className="text-slate-600 font-medium text-xs sm:text-sm">
                       {item}
                     </span>
@@ -122,7 +129,14 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 {card2Checks.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
-                    <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
+                    <Image
+                      src="https://framerusercontent.com/images/ofZYtLppL7swbDiIk1ujYGRxg0k.png?width=17&height=15"
+                      alt="icon"
+                      width={17}
+                      height={15}
+                      unoptimized
+                      className="w-[17px] h-[15px] object-contain flex-shrink-0"
+                    />
                     <span className="text-slate-600 font-medium text-xs sm:text-sm">
                       {item}
                     </span>
@@ -144,7 +158,14 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 {card3Checks.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
-                    <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
+                    <Image
+                      src="https://framerusercontent.com/images/ofZYtLppL7swbDiIk1ujYGRxg0k.png?width=17&height=15"
+                      alt="icon"
+                      width={17}
+                      height={15}
+                      unoptimized
+                      className="w-[17px] h-[15px] object-contain flex-shrink-0"
+                    />
                     <span className="text-slate-600 font-medium text-xs sm:text-sm">
                       {item}
                     </span>
@@ -166,7 +187,14 @@ export default function WhyChooseUs({ initialData }: WhyChooseUsProps) {
               <div className="border-t border-slate-100 pt-4 space-y-2.5">
                 {card4Checks.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
-                    <Check className="w-4 h-4 text-[#007eff] stroke-[3] flex-shrink-0" />
+                    <Image
+                      src="https://framerusercontent.com/images/ofZYtLppL7swbDiIk1ujYGRxg0k.png?width=17&height=15"
+                      alt="icon"
+                      width={17}
+                      height={15}
+                      unoptimized
+                      className="w-[17px] h-[15px] object-contain flex-shrink-0"
+                    />
                     <span className="text-slate-600 font-medium text-xs sm:text-sm">
                       {item}
                     </span>

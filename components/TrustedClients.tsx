@@ -73,7 +73,7 @@ export default function TrustedClients() {
         {/* Header Text with Left/Right Dividers */}
         <div className="flex items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
           <div className="h-[1px] bg-slate-200 flex-1 max-w-[200px] sm:max-w-xs hidden sm:block" />
-          <p className="text-slate-700 text-sm sm:text-base lg:text-2xl font-semibold tracking-tight text-center">
+          <p className="text-slate-700 text-sm sm:text-base lg:text-3xl font-medium text-center">
             <span className="text-[#007eff] font-extrabold">10,000+</span>{" "}
             trusted customers all over the world
           </p>

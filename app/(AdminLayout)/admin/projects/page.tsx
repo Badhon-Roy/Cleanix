@@ -36,6 +36,7 @@ import {
   updateProjectAPI,
   deleteProjectAPI,
 } from "@/services/projectService";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 export interface ProjectFormData {
   slug: string;
@@ -62,6 +63,7 @@ export default function AdminProjectsManagementPage() {
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [projectToDelete, setProjectToDelete] = useState<ProjectDetail | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -268,23 +270,23 @@ export default function AdminProjectsManagementPage() {
     }
   };
 
-  const handleDelete = async (slug: string, title: string) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete project case study "${title}"?`
-    );
-    if (confirmDelete) {
-      try {
-        const res = await deleteProjectAPI(slug);
-        if (res && res.success) {
-          toast.success(`Project "${title}" deleted live from database.`);
-          setProjects((prev) => prev.filter((p) => p.slug !== slug));
-        } else {
-          toast.error(res?.message || "Failed to delete project");
-        }
-      } catch (err) {
-        console.error("Error deleting project:", err);
-        toast.error("Failed to delete project");
+  const handleDelete = async () => {
+    if (!projectToDelete) return;
+    const { slug, title } = projectToDelete;
+
+    try {
+      const res = await deleteProjectAPI(slug);
+      if (res && res.success) {
+        toast.success(`Project "${title}" deleted live from database.`);
+        setProjects((prev) => prev.filter((p) => p.slug !== slug));
+      } else {
+        toast.error(res?.message || "Failed to delete project");
       }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      toast.error("Failed to delete project");
+    } finally {
+      setProjectToDelete(null);
     }
   };
 
@@ -442,6 +444,7 @@ export default function AdminProjectsManagementPage() {
                     fill
                     unoptimized
                     className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
                     <span className="bg-[#007eff] text-white font-extrabold text-[10px] uppercase px-3 py-1 rounded-full shadow-2xs">
@@ -517,7 +520,7 @@ export default function AdminProjectsManagementPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleDelete(item.slug, item.title)}
+                    onClick={() => setProjectToDelete(item)}
                     className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
                     title="Delete Project"
                   >
@@ -862,6 +865,18 @@ export default function AdminProjectsManagementPage() {
             </form>
           </div>
         </div>
+      )}
+      {/* Delete Project Confirmation Modal */}
+      {projectToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!projectToDelete}
+          title="Delete Project Case Study?"
+          message="Are you sure you want to permanently delete this project case study? It will no longer appear on public showcases or portfolio listings."
+          itemTitle={`📁 ${projectToDelete.title} (${projectToDelete.category})`}
+          confirmText="Yes, Delete Project"
+          onClose={() => setProjectToDelete(null)}
+          onConfirm={handleDelete}
+        />
       )}
     </div>
   );

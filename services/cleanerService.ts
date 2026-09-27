@@ -65,7 +65,7 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
   totalDutyMinutes: c.totalDutyMinutes ?? 0,
   isApproved: c.isApproved ?? false,
   isAvailable: c.isAvailable ?? false,
-  rating: c.rating ?? 5.0,
+  rating: c.rating ?? 0,
   totalJobsDone: c.totalJobsDone ?? 0,
   totalEarnings: c.totalEarnings ?? 0,
   coverageArea: Array.isArray(c.coverageArea) ? c.coverageArea : [],
@@ -76,7 +76,7 @@ export const mapCleanerProfile = (c: any): ICleanerProfile => ({
     totalEstimatedEarnings: c.totalEarnings ?? 0,
     totalEarnedWallet: c.totalEarnings ?? 0,
     pendingEstimatedEarnings: 0,
-    ratingValue: Number(c.rating || 5).toFixed(1),
+    ratingValue: c.rating && c.totalJobsDone > 0 ? Number(c.rating).toFixed(1) : "0.0",
     totalReviewsCount: 0,
   },
 });
@@ -142,3 +142,23 @@ export const updateCleanerApprovalAPI = async (
   });
   return res.json();
 };
+
+export const updateCleanerProfileMeAPI = async (payload: {
+  name?: string;
+  phone?: string;
+  avatar?: string | null;
+}) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const res = await fetch(`${baseUrl}/cleaners/profile/me`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Error in updateCleanerProfileMeAPI:", error);
+    return { success: false, message: "Network or server error updating cleaner profile." };
+  }
+};
+

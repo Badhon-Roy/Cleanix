@@ -1,32 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarCheck,
   Truck,
-  Camera,
   DollarSign,
   UserCheck,
   LogOut,
   Sparkles,
   Home,
-  CheckCircle2,
-  Sliders,
-  ShieldAlert,
-  ShieldCheck,
   Crown,
   Loader2,
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
+import Lenis from "lenis";
 import { SwirlLogo } from "@/components/Navbar";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import {
   fetchCleanerProfileMeAPI,
   toggleCleanerDutyStatusAPI,
+  ICleanerProfile,
 } from "@/services/cleanerService";
+import { fetchMyTeamAssignmentsAPI, fetchAvailableBookingsAPI } from "@/services/teamService";
 
 interface CleanerSidebarProps {
   mobileOpen?: boolean;
@@ -41,16 +39,71 @@ export default function CleanerSidebar({
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isOnDuty, setIsOnDuty] = useState(false);
   const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+  const [activeJobsCount, setActiveJobsCount] = useState<number>(0);
+  const [availableJobsCount, setAvailableJobsCount] = useState<number>(0);
+
+  const [cleanerProfile, setCleanerProfile] = useState<ICleanerProfile | null>(null);
+
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scrollWrapperRef.current || !scrollContentRef.current) return;
+
+    const sidebarLenis = new Lenis({
+      wrapper: scrollWrapperRef.current,
+      content: scrollContentRef.current,
+      duration: 0.8,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 1.5,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      sidebarLenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      sidebarLenis.destroy();
+    };
+  }, []);
 
   const loadDutyProfile = async () => {
     const prof = await fetchCleanerProfileMeAPI();
     if (prof) {
+      setCleanerProfile(prof);
       setIsOnDuty(prof.dutyStatus === "ON_DUTY" || prof.dutyStatus === "IN_SERVICE");
+    }
+  };
+
+  const loadCleanerJobs = async () => {
+    try {
+      const [assignments, available] = await Promise.all([
+        fetchMyTeamAssignmentsAPI(),
+        fetchAvailableBookingsAPI(),
+      ]);
+      if (Array.isArray(assignments)) {
+        const active = assignments.filter((item: any) => {
+          const st = (item.status || item.booking?.status || "").toUpperCase();
+          return st !== "CANCELLED" && st !== "REJECTED";
+        }).length;
+        setActiveJobsCount(active);
+      }
+      if (Array.isArray(available)) {
+        setAvailableJobsCount(available.length);
+      }
+    } catch (err) {
+      console.error("Error loading cleaner sidebar counts:", err);
     }
   };
 
   useEffect(() => {
     loadDutyProfile();
+    loadCleanerJobs();
 
     const socketUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
@@ -63,10 +116,26 @@ export default function CleanerSidebar({
 
     socket.on("cleaner_updated", () => {
       loadDutyProfile();
+      loadCleanerJobs();
+    });
+
+    socket.on("booking_created", () => {
+      loadCleanerJobs();
+    });
+
+    socket.on("booking_updated", () => {
+      loadCleanerJobs();
+    });
+
+    socket.on("team_assignment_updated", () => {
+      loadCleanerJobs();
     });
 
     return () => {
       socket.off("cleaner_updated");
+      socket.off("booking_created");
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
       socket.disconnect();
     };
   }, []);
@@ -96,13 +165,23 @@ export default function CleanerSidebar({
   };
 
   const navItems = [
-    { name: "Today's Jobs", href: "/cleaner", icon: Truck, badge: "4 Active" },
+    {
+      name: "Today's Jobs",
+      href: "/cleaner",
+      icon: Truck,
+      badge: activeJobsCount > 0 ? `${activeJobsCount} Active` : "0 Active",
+      isUrgent: activeJobsCount > 0,
+    },
     { name: "Appointment Notice", href: "/cleaner/appointments", icon: Crown, badge: "NOTICE" },
-    { name: "Available Jobs", href: "/cleaner/available-jobs", icon: Sparkles, badge: "NEW" },
+    {
+      name: "Available Jobs",
+      href: "/cleaner/available-jobs",
+      icon: Sparkles,
+      badge: availableJobsCount > 0 ? `${availableJobsCount} New` : "0 New",
+    },
     { name: "Assigned Schedule", href: "/cleaner/schedule", icon: CalendarCheck },
     { name: "Earnings & Payouts", href: "/cleaner/earnings", icon: DollarSign },
     { name: "Profile & Settings", href: "/cleaner/profile", icon: UserCheck },
-    { name: "Admin Control HQ", href: "/admin", icon: ShieldCheck, badge: "ADMIN" },
   ];
 
   const checkIsActive = (href: string) => {
@@ -111,9 +190,9 @@ export default function CleanerSidebar({
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none">
+    <div className="flex flex-col h-full max-h-screen bg-white border-r border-slate-200 text-slate-800 w-72 p-5 flex-shrink-0 select-none overflow-hidden">
       {/* Brand Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-5 border-b border-slate-100 flex-shrink-0">
         <Link href="/cleaner" className="flex items-center gap-3 group">
           <SwirlLogo />
           <div>
@@ -131,7 +210,7 @@ export default function CleanerSidebar({
       </div>
 
       {/* Duty Status Quick Switcher Box */}
-      <div className="mt-5 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-emerald-50/80 border border-blue-100 space-y-2">
+      <div className="mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-emerald-50/80 border border-blue-100 space-y-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <span
@@ -155,54 +234,68 @@ export default function CleanerSidebar({
             <span>{isOnDuty ? "ONLINE / ON-DUTY" : "OFFLINE"}</span>
           </button>
         </div>
-        <p className="text-sm text-red-600 font-medium leading-snug">
-          Team Delta • Vehicle Unit #04 • Supervisor: Rahat Karim
+        <p className="text-xs text-slate-500 font-medium leading-snug">
+          {cleanerProfile?.coverageArea && cleanerProfile.coverageArea.length > 0
+            ? `Coverage: ${cleanerProfile.coverageArea.slice(0, 3).join(", ")}`
+            : "Cleanix Field Operations Staff"}
         </p>
       </div>
 
-      {/* Navigation Links */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto py-5">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = checkIsActive(item.href);
+      {/* Navigation Links with Lenis Smooth Scrolling */}
+      <div
+        ref={scrollWrapperRef}
+        data-lenis-prevent="true"
+        data-lenis-prevent-wheel="true"
+        data-lenis-prevent-touch="true"
+        className="flex-1 min-h-0 overflow-y-auto py-4 pr-1 mt-2 overscroll-contain select-none"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#cbd5e1 transparent",
+        }}
+      >
+        <div ref={scrollContentRef} className="space-y-1.5 pb-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = checkIsActive(item.href);
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setMobileOpen && setMobileOpen(false)}
-              className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
-                isActive
-                  ? "bg-[#007eff] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon
-                  className={`w-5 h-5 transition-transform group-hover:scale-110 ${
-                    isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"
-                  }`}
-                />
-                <span>{item.name}</span>
-              </div>
-              {item.badge && (
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-blue-100 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMobileOpen && setMobileOpen(false)}
+                className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 text-sm font-semibold ${
+                  isActive
+                    ? "bg-[#007eff] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon
+                    className={`w-5 h-5 transition-transform group-hover:scale-110 ${
+                      isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"
+                    }`}
+                  />
+                  <span>{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-blue-100 text-blue-700 border border-blue-200"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Bottom Footer Actions */}
-      <div className="mt-auto pt-4 border-t border-slate-100">
+      <div className="mt-auto pt-4 border-t border-slate-100 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Link
             href="/"
@@ -226,8 +319,10 @@ export default function CleanerSidebar({
       <LogoutConfirmModal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
+        title="Confirm Staff Log Out"
+        description="Are you sure you want to log out of your Cleanix Cleaner portal? You will need to log back in to access your jobs and duty tracker."
         onConfirm={() => {
-          alert("Cleaner Team logged out successfully!");
+          toast.success("লগআউট সফল হয়েছে!");
         }}
       />
     </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { Navigation } from "lucide-react";
 import {
   defaultHomeCMSData,
   HomeCMSContent,
@@ -76,11 +76,11 @@ export default function CtaBanner({ initialData }: CtaBannerProps) {
           <div className="z-10 flex-shrink-0">
             <Link
               href={cmsData?.ctaBtnHref || "/contact"}
-              className="bg-[#001837] hover:bg-[#031024] text-white font-extrabold text-sm sm:text-base pl-7 pr-2.5 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-2xl hover:scale-105"
+              className="group bg-[#001837] hover:bg-[#031024] text-white font-extrabold text-sm sm:text-base pl-7 pr-2.5 py-2.5 rounded-full inline-flex items-center gap-4 transition-all duration-300 shadow-2xl hover:scale-105"
             >
               <span>{cmsData?.ctaBtnText || "Book Service Now"}</span>
               <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center text-white shadow-sm">
-                <ChevronRight className="w-4 h-4 stroke-[3]" />
+                <Navigation className="w-4 h-4 fill-current rotate-45 group-hover:rotate-0 transition-transform duration-300" />
               </div>
             </Link>
           </div>

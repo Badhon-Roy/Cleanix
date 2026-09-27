@@ -19,8 +19,8 @@ import {
   updateGalleryAPI,
 } from "@/services/galleryService";
 import ImageUploadPreview from "@/components/admin/ImageUploadPreview";
-
-import { compressImageToWebP } from "@/utils/imageCompressor";
+import { uploadImageAPI } from "@/services/uploadService";
+import { toast } from "sonner";
 
 interface Props {
   isOpen: boolean;
@@ -88,24 +88,41 @@ export default function GalleryModal({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const fileList = Array.from(files);
-    const newItems: { title: string; url: string }[] = [];
-
-    for (const file of fileList) {
-      if (file.size > 20 * 1024 * 1024) continue;
-      const compressed = await compressImageToWebP(file, 900, 900, 0.72);
-      if (compressed) {
-        const rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-        const cleanName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-        newItems.push({
-          title: cleanName,
-          url: compressed,
-        });
-      }
+    const fileList = Array.from(files).filter((f) => f.size <= 20 * 1024 * 1024);
+    if (fileList.length === 0) {
+      toast.error("All selected files exceed 20MB limit.");
+      return;
     }
 
-    if (newItems.length > 0) {
-      setBatchItems((prev) => [...prev, ...newItems]);
+    setLoading(true);
+    try {
+      const uploadResults = await Promise.all(
+        fileList.map(async (file) => {
+          const res = await uploadImageAPI(file, "cleanix_gallery");
+          if (res.success && res.url) {
+            const rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            const cleanName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            return {
+              title: cleanName,
+              url: res.url,
+            };
+          }
+          return null;
+        })
+      );
+
+      const validItems = uploadResults.filter(Boolean) as { title: string; url: string }[];
+      if (validItems.length > 0) {
+        setBatchItems((prev) => [...prev, ...validItems]);
+        toast.success(`${validItems.length} photos uploaded to cloud successfully!`);
+      }
+    } catch (err) {
+      toast.error("Error uploading photos to cloud.");
+    } finally {
+      setLoading(false);
+      if (batchFileInputRef.current) {
+        batchFileInputRef.current.value = "";
+      }
     }
   };
 
@@ -316,6 +333,7 @@ export default function GalleryModal({
                           fill
                           unoptimized
                           className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 150px"
                         />
                         <button
                           type="button"

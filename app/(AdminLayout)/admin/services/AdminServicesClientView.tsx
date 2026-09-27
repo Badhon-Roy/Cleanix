@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { io } from "socket.io-client";
+import { uploadImageAPI } from "@/services/uploadService";
 import { useForm } from "react-hook-form";
 
 export interface ServiceFormValues {
@@ -138,25 +139,54 @@ export default function AdminServicesClientView({
   const totalCommissionSplit = adminShareVal + teamLeaderShareVal + cleanerPoolShareVal;
   const isSplitValid = totalCommissionSplit === 100;
 
-  const handleHeroFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const [isUploadingContent, setIsUploadingContent] = useState(false);
+
+  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("heroImage", reader.result as string, { shouldValidate: true });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingHero(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_services");
+        if (res.success && res.url) {
+          setValue("heroImage", res.url, { shouldValidate: true });
+          toast.success("Hero image uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading hero image.");
+      } finally {
+        setIsUploadingHero(false);
+      }
     }
   };
 
-  const handleContentFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleContentFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue("contentImage", reader.result as string, { shouldValidate: true });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingContent(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_services");
+        if (res.success && res.url) {
+          setValue("contentImage", res.url, { shouldValidate: true });
+          toast.success("Content image uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading content image.");
+      } finally {
+        setIsUploadingContent(false);
+      }
     }
   };
 
@@ -342,15 +372,29 @@ export default function AdminServicesClientView({
   const [addonFormTag, setAddonFormTag] = useState("ADD-ON");
   const [addonFormIconImage, setAddonFormIconImage] = useState("");
   const [isSubmittingAddon, setIsSubmittingAddon] = useState(false);
+  const [isUploadingAddonIcon, setIsUploadingAddonIcon] = useState(false);
 
-  const handleAddonIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddonIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAddonFormIconImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("File size exceeds 20MB limit. Please choose a smaller image.");
+        return;
+      }
+      setIsUploadingAddonIcon(true);
+      try {
+        const res = await uploadImageAPI(file, "cleanix_addons");
+        if (res.success && res.url) {
+          setAddonFormIconImage(res.url);
+          toast.success("Addon icon uploaded to cloud successfully!");
+        } else {
+          toast.error(res.message || "Failed to upload image.");
+        }
+      } catch (err: any) {
+        toast.error("Error uploading addon icon.");
+      } finally {
+        setIsUploadingAddonIcon(false);
+      }
     }
   };
 
@@ -1028,6 +1072,7 @@ export default function AdminServicesClientView({
                     fill
                     unoptimized
                     className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
                     <span className="bg-[#007eff] text-white font-extrabold text-[10px] uppercase px-3 py-1 rounded-full shadow-2xs">
@@ -1310,10 +1355,16 @@ export default function AdminServicesClientView({
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isUploadingAddonIcon}
                     onChange={handleAddonIconUpload}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-600 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#007eff] file:text-white hover:file:bg-[#0066ee]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-600 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#007eff] file:text-white hover:file:bg-[#0066ee] disabled:opacity-50"
                   />
                 </div>
+                {isUploadingAddonIcon && (
+                  <p className="text-xs text-[#007eff] font-bold flex items-center gap-1 mt-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading icon to cloud...
+                  </p>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1326,7 +1377,7 @@ export default function AdminServicesClientView({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingAddon}
+                  disabled={isSubmittingAddon || isUploadingAddonIcon}
                   className="px-5 py-2.5 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white text-xs font-extrabold cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingAddon
@@ -2045,12 +2096,28 @@ export default function AdminServicesClientView({
                         {/* Action Controls & Input */}
                         <div className="flex-1 space-y-2.5 w-full">
                           <div className="flex items-center gap-2">
-                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
-                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
-                              <span>Choose Image File</span>
+                            <label
+                              className={`px-3.5 py-2 rounded-xl border font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-2xs ${
+                                isUploadingHero
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                  : "bg-blue-50 text-[#007eff] hover:bg-blue-100 border-blue-200 cursor-pointer"
+                              }`}
+                            >
+                              {isUploadingHero ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+                                  <span>Uploading Hero...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                                  <span>Choose Image File</span>
+                                </>
+                              )}
                               <input
                                 type="file"
                                 accept="image/*"
+                                disabled={isUploadingHero}
                                 onChange={handleHeroFileUpload}
                                 className="hidden"
                               />
@@ -2111,12 +2178,28 @@ export default function AdminServicesClientView({
                         {/* Action Controls & Input */}
                         <div className="flex-1 space-y-2.5 w-full">
                           <div className="flex items-center gap-2">
-                            <label className="px-3.5 py-2 rounded-xl bg-blue-50 text-[#007eff] hover:bg-blue-100 border border-blue-200 font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
-                              <UploadCloud className="w-4 h-4 text-[#007eff]" />
-                              <span>Choose Image File</span>
+                            <label
+                              className={`px-3.5 py-2 rounded-xl border font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-2xs ${
+                                isUploadingContent
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                  : "bg-blue-50 text-[#007eff] hover:bg-blue-100 border-blue-200 cursor-pointer"
+                              }`}
+                            >
+                              {isUploadingContent ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin text-[#007eff]" />
+                                  <span>Uploading Banner...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-4 h-4 text-[#007eff]" />
+                                  <span>Choose Image File</span>
+                                </>
+                              )}
                               <input
                                 type="file"
                                 accept="image/*"
+                                disabled={isUploadingContent}
                                 onChange={handleContentFileUpload}
                                 className="hidden"
                               />

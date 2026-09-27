@@ -149,6 +149,7 @@ export default function ServiceReviewsSection({
                         fill
                         unoptimized
                         className="object-cover"
+                        sizes="44px"
                       />
                     </div>
                     <div>

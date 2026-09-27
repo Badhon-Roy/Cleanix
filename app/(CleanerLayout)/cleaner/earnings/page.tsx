@@ -1,59 +1,120 @@
 "use client";
 
-import React from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   DollarSign,
   TrendingUp,
   CreditCard,
   CheckCircle2,
-  Calendar,
-  Download,
-  ArrowUpRight,
+  RefreshCw,
+  Clock,
+  Star,
 } from "lucide-react";
+import { io, Socket } from "socket.io-client";
+import { fetchCleanerProfileMeAPI, ICleanerProfile } from "@/services/cleanerService";
+import { fetchMyTeamAssignmentsAPI } from "@/services/teamService";
+
+interface PayoutRecord {
+  id: string;
+  date: string;
+  jobId: string;
+  service: string;
+  gross: string;
+  share: string;
+  net: string;
+  status: "CREDITED" | "PENDING" | "PROCESSING";
+}
 
 export default function CleanerEarningsPage() {
-  const payouts = [
-    {
-      id: "PAY-2026-901",
-      date: "Aug 21, 2026",
-      jobId: "CLN-2026-8891",
-      service: "VIP Standard Deep Cleaning",
-      gross: "৳14,000",
-      share: "15%",
-      net: "৳2,100",
-      status: "CREDITED",
-    },
-    {
-      id: "PAY-2026-902",
-      date: "Aug 21, 2026",
-      jobId: "CLN-2026-8892",
-      service: "Commercial Office Cleaning",
-      gross: "৳22,000",
-      share: "16%",
-      net: "৳3,520",
-      status: "PENDING",
-    },
-    {
-      id: "PAY-2026-899",
-      date: "Aug 20, 2026",
-      jobId: "CLN-2026-8890",
-      service: "Move-In / Move-Out Deep Clean",
-      gross: "৳12,000",
-      share: "15%",
-      net: "৳1,800",
-      status: "CREDITED",
-    },
-    {
-      id: "PAY-2026-895",
-      date: "Aug 19, 2026",
-      jobId: "CLN-2026-8888",
-      service: "Residential Bi-Weekly Cleaning",
-      gross: "৳6,000",
-      share: "20%",
-      net: "৳1,200",
-      status: "CREDITED",
-    },
-  ];
+  const [profile, setProfile] = useState<ICleanerProfile | null>(null);
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const socketRef = useRef<Socket | null>(null);
+
+  const loadEarningsData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [profRes, assignmentsRes] = await Promise.all([
+        fetchCleanerProfileMeAPI(),
+        fetchMyTeamAssignmentsAPI(),
+      ]);
+
+      if (profRes) {
+        setProfile(profRes);
+      }
+
+      if (Array.isArray(assignmentsRes)) {
+        const cleanerIdStr = profRes?.id ? String(profRes.id) : "";
+        const mappedPayouts: PayoutRecord[] = assignmentsRes.map((item: any) => {
+          const booking = item.booking || {};
+          const serviceType = booking.serviceType || {};
+          const isCompleted = item.status === "COMPLETED" || booking.status === "COMPLETED";
+          const cleanerCount = item.assignedCleaners?.length || 1;
+          const poolPayout = Number(item.cleanerPoolPayout) || 0;
+          const cleanerShare = Math.round(poolPayout / cleanerCount);
+          const grossAmount = booking.totalAmount || (cleanerShare > 0 ? cleanerShare * 2 : 0);
+
+          const bookingRef = booking.bookingRef || `#CLN-${String(item._id).slice(-6).toUpperCase()}`;
+          const dateStr = booking.scheduledDate || item.scheduledDate || "Recent";
+
+          return {
+            id: `PAY-${bookingRef.replace(/#/g, "")}`,
+            date: dateStr,
+            jobId: bookingRef,
+            service: serviceType.title || "Cleaning Care Visit",
+            gross: `৳${grossAmount.toLocaleString()}`,
+            share: cleanerCount > 1 ? `${Math.round(100 / cleanerCount)}% (Split)` : "100% Staff",
+            net: `৳${cleanerShare.toLocaleString()}`,
+            status: isCompleted ? "CREDITED" : "PENDING",
+          };
+        });
+
+        setPayouts(mappedPayouts);
+      } else {
+        setPayouts([]);
+      }
+    } catch (err) {
+      console.error("Failed to load cleaner earnings:", err);
+      setPayouts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEarningsData();
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_URL?.replace("/api/v1", "") ||
+      "http://localhost:5000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+    socketRef.current = socket;
+
+    socket.on("booking_updated", loadEarningsData);
+    socket.on("team_assignment_updated", loadEarningsData);
+    socket.on("cleaner_updated", loadEarningsData);
+
+    return () => {
+      socket.off("booking_updated");
+      socket.off("team_assignment_updated");
+      socket.off("cleaner_updated");
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [loadEarningsData]);
+
+  const totalEarnedWallet =
+    profile?.dashboardStats?.totalEarnedWallet ??
+    profile?.dashboardStats?.totalEstimatedEarnings ??
+    0;
+  const completedCount = profile?.dashboardStats?.completedCount ?? 0;
+  const pendingEstimatedEarnings = profile?.dashboardStats?.pendingEstimatedEarnings ?? 0;
+  const ratingValue = profile?.dashboardStats?.ratingValue ?? "0.0";
+  const totalReviewsCount = profile?.dashboardStats?.totalReviewsCount ?? 0;
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -65,157 +126,190 @@ export default function CleanerEarningsPage() {
               <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="w-6 h-6 stroke-[2.5]" />
               </div>
-              Earnings & Payout Breakdown
+              Earnings &amp; Payout Breakdown
             </h1>
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#007eff] border border-blue-200">
-              ⚡ WEEKLY DISPATCH PAY
+              ⚡ LIVE WALLET
             </span>
           </div>
           <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium">
-            Track daily job commissions, supervisor bonuses, and bKash/Bank payout records.
+            সম্পন্ন করা ক্লিনিং সার্ভিসের অর্জিত পারিশ্রমিক ও সাপ্তাহিক পে-আউট স্টেটমেন্ট ট্র্যাক করুন।
           </p>
         </div>
+
+        <button
+          onClick={loadEarningsData}
+          disabled={isLoading}
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer self-start sm:self-auto disabled:opacity-60"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#007eff]" : ""}`} />
+          <span>Sync Earnings</span>
+        </button>
       </div>
 
-      {/* KPI Cards Grid - Modern Gradient & Dashed Border Design */}
+      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Monthly Earnings Card */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30 border-2 border-dashed border-emerald-300 rounded-3xl p-6 sm:p-7 space-y-3">
+        {/* Total Earned Wallet */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30 border-2 border-dashed border-emerald-300 rounded-3xl p-6 sm:p-7 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              Monthly Earnings
+            <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+              অর্জিত ওয়ালেট জমা
             </span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳42,500</p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              ৳{totalEarnedWallet.toLocaleString()}
+            </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full border border-emerald-300 inline-block">
-                 +18% vs last month
+                ✓ সম্পন্ন কাজের ব্যালেন্স
               </span>
             </div>
           </div>
         </div>
 
-        {/* Completed Jobs Card */}
-        <div className="bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 border-2 border-dashed border-blue-300 rounded-3xl p-6 sm:p-7 space-y-3">
+        {/* Completed Jobs */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 border-2 border-dashed border-blue-300 rounded-3xl p-6 sm:p-7 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              Completed Jobs
+            <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+              সম্পন্নকৃত কাজ
             </span>
             <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#007eff] border border-blue-200 flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">18 Jobs</p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {completedCount} টি কাজ
+            </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-blue-800 bg-blue-100/90 px-3 py-1 rounded-full border border-blue-300 inline-block">
-                ✓ 100% On-time Dispatch
+                ✓ সফল ডিসপ্যাচ রেকর্ড
               </span>
             </div>
           </div>
         </div>
 
-        {/* Pending Payout Card */}
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30 border-2 border-dashed border-amber-300 rounded-3xl p-6 sm:p-7 space-y-3">
+        {/* Pending Payout */}
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30 border-2 border-dashed border-amber-300 rounded-3xl p-6 sm:p-7 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              Pending Payout
+            <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+              চলতি কাজের পেন্ডিং আয়
             </span>
             <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-5 h-5 stroke-[2.5]" />
+              <Clock className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳3,520</p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              ৳{pendingEstimatedEarnings.toLocaleString()}
+            </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-amber-800 bg-amber-100/90 px-3 py-1 rounded-full border border-amber-300 inline-block">
-                ⏱ Processing Friday
+                ⏱ কাজ শেষ হলে যোগ হবে
               </span>
             </div>
           </div>
         </div>
 
-        {/* 5-Star VIP Bonus Card */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-purple-50/30 border-2 border-dashed border-purple-300 rounded-3xl p-6 sm:p-7 space-y-3">
+        {/* Performance Rating */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-purple-50/30 border-2 border-dashed border-purple-300 rounded-3xl p-6 sm:p-7 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
-              5-Star VIP Bonus
+            <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+              গড় রেটিং স্কোর
             </span>
             <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center flex-shrink-0">
-              <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+              <Star className="w-5 h-5 stroke-[2.5] fill-purple-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳3,500</p>
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {ratingValue} <span className="text-amber-500">★</span>
+            </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-purple-800 bg-purple-100/90 px-3 py-1 rounded-full border border-purple-300 inline-block">
-                ⭐ Performance Reward
+                {totalReviewsCount > 0 ? `${totalReviewsCount}টি রিভিউ` : "নতুন ক্লিনার"}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-5">
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-            <CreditCard className="w-5 h-5 text-[#007eff]" /> Recent Payout Records
-          </h2>
-          <button
-            type="button"
-            onClick={() => alert("Downloading Payout Statement PDF...")}
-            className="bg-blue-50 hover:bg-blue-100 text-[#007eff] font-bold text-xs sm:text-sm px-4 py-2 rounded-2xl border border-blue-200 flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download Statement PDF</span>
-          </button>
+      {/* Table Section */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+              <CreditCard className="w-5 h-5 text-[#007eff]" /> Recent Payout Records
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+              আপনার সম্পন্ন ও চলমান কাজের বিস্তারিত পারিশ্রমিক হিসাব।
+            </p>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] border-b border-slate-200">
-              <tr>
-                <th className="p-4">Payout ID</th>
-                <th className="p-4">Date</th>
-                <th className="p-4">Job Ref</th>
-                <th className="p-4">Service</th>
-                <th className="p-4">Gross Fee</th>
-                <th className="p-4">Comm. %</th>
-                <th className="p-4">Net Payout</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {payouts.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-extrabold text-slate-900">{row.id}</td>
-                  <td className="p-4 text-slate-600">{row.date}</td>
-                  <td className="p-4 font-bold text-[#007eff]">{row.jobId}</td>
-                  <td className="p-4 font-semibold text-slate-800">{row.service}</td>
-                  <td className="p-4 text-slate-600">{row.gross}</td>
-                  <td className="p-4 text-slate-600 font-bold">{row.share}</td>
-                  <td className="p-4 font-extrabold text-emerald-700">{row.net}</td>
-                  <td className="p-4">
-                    {row.status === "CREDITED" ? (
-                      <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Credited
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                        Pending
-                      </span>
-                    )}
-                  </td>
+        {isLoading ? (
+          <div className="py-16 text-center space-y-3">
+            <RefreshCw className="w-8 h-8 text-[#007eff] animate-spin mx-auto" />
+            <p className="text-xs sm:text-sm font-bold text-slate-500">পে-আউট স্টেটমেন্ট লোড হচ্ছে...</p>
+          </div>
+        ) : payouts.length > 0 ? (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-left text-xs sm:text-sm border-collapse">
+              <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] border-b border-slate-200">
+                <tr>
+                  <th className="p-4 pl-5">Payout Ref</th>
+                  <th className="p-4">Date</th>
+                  <th className="p-4">Job Ref</th>
+                  <th className="p-4">Service Package</th>
+                  <th className="p-4">Gross Fee</th>
+                  <th className="p-4">Share</th>
+                  <th className="p-4">Net Payout</th>
+                  <th className="p-4 pr-5 text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                {payouts.map((row) => (
+                  <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 pl-5 font-mono font-bold text-slate-900">{row.id}</td>
+                    <td className="p-4 text-slate-600">{row.date}</td>
+                    <td className="p-4 font-mono font-bold text-[#007eff]">{row.jobId}</td>
+                    <td className="p-4 font-semibold text-slate-900">{row.service}</td>
+                    <td className="p-4 text-slate-600">{row.gross}</td>
+                    <td className="p-4 text-slate-600 font-bold">{row.share}</td>
+                    <td className="p-4 font-bold text-emerald-700">{row.net}</td>
+                    <td className="p-4 pr-5 text-right">
+                      {row.status === "CREDITED" ? (
+                        <span className="text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Credited
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 px-6 text-center space-y-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+              <DollarSign className="w-8 h-8 stroke-[2]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-slate-900">এখনো কোনো পে-আউট রেকর্ড নেই</h3>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+                কাজ সফলভাবে সম্পন্ন হলে আপনার ওয়ালেটে আর্নিং ব্যালেন্স যুক্ত হবে এবং এখানে প্রতিটি পে-আউটের স্টেটমেন্ট দেখতে পাবেন।
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

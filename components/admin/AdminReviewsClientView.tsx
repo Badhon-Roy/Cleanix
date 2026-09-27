@@ -23,6 +23,7 @@ import {
   updateReviewStatusAPI,
   deleteReviewAPI,
 } from "@/services/reviewService";
+import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 
 interface AdminReviewsClientViewProps {
   initialReviews?: ReviewItem[];
@@ -36,6 +37,7 @@ export default function AdminReviewsClientView({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "APPROVED" | "PENDING" | "FEATURED">("ALL");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [reviewToDelete, setReviewToDelete] = useState<ReviewItem | null>(null);
 
   const loadReviews = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
@@ -142,10 +144,9 @@ export default function AdminReviewsClientView({
     }
   };
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this review?")) {
-      return;
-    }
+  const handleDeleteReview = async () => {
+    if (!reviewToDelete) return;
+    const reviewId = reviewToDelete._id;
     setUpdatingId(reviewId);
     try {
       const res = await deleteReviewAPI(reviewId);
@@ -160,6 +161,7 @@ export default function AdminReviewsClientView({
       toast.error("An error occurred while deleting review");
     } finally {
       setUpdatingId(null);
+      setReviewToDelete(null);
     }
   };
 
@@ -419,6 +421,7 @@ export default function AdminReviewsClientView({
                           fill
                           unoptimized
                           className="object-cover"
+                          sizes="48px"
                         />
                       </div>
                       <div>
@@ -512,7 +515,7 @@ export default function AdminReviewsClientView({
                       {/* Delete Review Button */}
                       <button
                         type="button"
-                        onClick={() => handleDeleteReview(rev._id)}
+                        onClick={() => setReviewToDelete(rev)}
                         disabled={isBusy}
                         className="p-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
                         title="Delete Review"
@@ -535,6 +538,19 @@ export default function AdminReviewsClientView({
           )}
         </div>
       </div>
+
+      {/* Delete Review Confirmation Modal */}
+      {reviewToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!reviewToDelete}
+          title="Delete Customer Review?"
+          message="Are you sure you want to permanently delete this verified review? This rating will be removed from calculating aggregate service scores."
+          itemTitle={`⭐ ${reviewToDelete.rating} Stars by ${reviewToDelete.customer?.name || "Customer"}`}
+          confirmText="Yes, Delete Review"
+          onClose={() => setReviewToDelete(null)}
+          onConfirm={handleDeleteReview}
+        />
+      )}
     </div>
   );
 }

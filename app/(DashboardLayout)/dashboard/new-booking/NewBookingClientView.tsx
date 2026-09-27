@@ -118,7 +118,7 @@ export default function NewBookingClientView({
         setSelectedLocationId(String(defaultLoc._id || defaultLoc.id));
       }
     } else {
-      setAddress("House 42, Road 11, Block D, Gulshan-2, Dhaka");
+      setAddress("");
     }
   }, [initialLocations]);
 
@@ -1797,7 +1797,7 @@ export default function NewBookingClientView({
                     setAddress(e.target.value);
                     setSelectedLocationId("");
                   }}
-                  placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন (যেমন: হাউস ৪২, রোড ১১, গুলশান-২, ঢাকা)"
+                  placeholder="House 42, Road 11, Block D, Gulshan-2, Dhaka"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 font-bold focus:outline-none focus:border-[#007eff] focus:bg-white"
                 />
               </div>

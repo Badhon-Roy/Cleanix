@@ -480,7 +480,8 @@ export default function CleanerDashboardPage() {
     cleanerProfile?.dashboardStats?.totalEstimatedEarnings ??
     0;
   const pendingEstimatedEarnings = cleanerProfile?.dashboardStats?.pendingEstimatedEarnings ?? 0;
-  const ratingValue = cleanerProfile?.dashboardStats?.ratingValue ?? "5.0";
+  const ratingValue = cleanerProfile?.dashboardStats?.ratingValue ?? "0.0";
+  const totalReviewsCount = cleanerProfile?.dashboardStats?.totalReviewsCount ?? 0;
 
   return (
     <div className="space-y-8 pb-12 w-full">
@@ -726,7 +727,9 @@ export default function CleanerDashboardPage() {
             </p>
             <div className="pt-2">
               <span className="text-xs font-bold text-purple-800 bg-purple-100/80 px-3 py-1.5 rounded-full border border-purple-300 inline-block">
-                ★ প্রফেশনাল গড় রেটিং
+                {totalReviewsCount > 0
+                  ? `★ প্রফেশনাল গড় রেটিং (${totalReviewsCount}টি রিভিউ)`
+                  : "★ নতুন জয়েনকৃত ক্লিনার"}
               </span>
             </div>
           </div>
