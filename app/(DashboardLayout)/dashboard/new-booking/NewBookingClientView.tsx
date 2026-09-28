@@ -67,7 +67,7 @@ export default function NewBookingClientView({
   const [serviceType, setServiceType] = useState<string>(
     initialCoreServices && initialCoreServices.length > 0
       ? initialCoreServices[0].slug || initialCoreServices[0].category || ""
-      : ""
+      : "",
   );
   const [sqft, setSqft] = useState<number>(1200);
   const [bedrooms, setBedrooms] = useState<number>(3);
@@ -82,26 +82,35 @@ export default function NewBookingClientView({
   const [paymentMethod, setPaymentMethod] = useState<string>("BKASH");
   const [address, setAddress] = useState<string>("");
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
-  const [coverageList, setCoverageList] = useState<any[]>(initialCoverages || []);
+  const [coverageList, setCoverageList] = useState<any[]>(
+    initialCoverages || [],
+  );
   const [selectedCoverageId, setSelectedCoverageId] = useState<string>("");
   const [coverageError, setCoverageError] = useState<string>("");
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<any>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const [customFieldValues, setCustomFieldValues] = useState<
+    Record<string, any>
+  >({});
 
   // Sync Coverage List & Selected Coverage ID
   useEffect(() => {
     if (initialCoverages && initialCoverages.length > 0) {
       setCoverageList(initialCoverages);
-      const activeCov = initialCoverages.find((c: any) => c.isActive !== false) || initialCoverages[0];
-      if (activeCov) setSelectedCoverageId(String(activeCov._id || activeCov.id));
+      const activeCov =
+        initialCoverages.find((c: any) => c.isActive !== false) ||
+        initialCoverages[0];
+      if (activeCov)
+        setSelectedCoverageId(String(activeCov._id || activeCov.id));
     } else {
       fetchAllCoveragesAPI({ isActive: true }).then((data) => {
         if (data && data.length > 0) {
           setCoverageList(data);
-          const activeCov = data.find((c: any) => c.isActive !== false) || data[0];
-          if (activeCov) setSelectedCoverageId(String(activeCov._id || activeCov.id));
+          const activeCov =
+            data.find((c: any) => c.isActive !== false) || data[0];
+          if (activeCov)
+            setSelectedCoverageId(String(activeCov._id || activeCov.id));
         }
       });
     }
@@ -125,10 +134,15 @@ export default function NewBookingClientView({
   // Custom Calendar, Time Slot & Coverage Area Dropdown States
   const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
   const [timeDropdownOpen, setTimeDropdownOpen] = useState<boolean>(false);
-  const [coverageDropdownOpen, setCoverageDropdownOpen] = useState<boolean>(false);
+  const [coverageDropdownOpen, setCoverageDropdownOpen] =
+    useState<boolean>(false);
   const [zoneSearchQuery, setZoneSearchQuery] = useState<string>("");
-  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(() => new Date().getFullYear());
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(() => new Date().getMonth()); // 0-indexed (7 = August)
+  const [currentCalendarYear, setCurrentCalendarYear] = useState<number>(() =>
+    new Date().getFullYear(),
+  );
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<number>(() =>
+    new Date().getMonth(),
+  ); // 0-indexed (7 = August)
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
@@ -143,7 +157,11 @@ export default function NewBookingClientView({
     const q = zoneSearchQuery.toLowerCase().trim();
     const nameMatch = (cov.zoneName || "").toLowerCase().includes(q);
     const districtMatch = (cov.district || "").toLowerCase().includes(q);
-    const areasMatch = Array.isArray(cov.areasIncluded) && cov.areasIncluded.some((a: string) => (a || "").toLowerCase().includes(q));
+    const areasMatch =
+      Array.isArray(cov.areasIncluded) &&
+      cov.areasIncluded.some((a: string) =>
+        (a || "").toLowerCase().includes(q),
+      );
     return nameMatch || districtMatch || areasMatch;
   });
 
@@ -426,7 +444,10 @@ export default function NewBookingClientView({
   useEffect(() => {
     if (coreServicesList && coreServicesList.length > 0) {
       const exists = coreServicesList.some(
-        (s) => s.slug === serviceType || s._id === serviceType || s.category === serviceType
+        (s) =>
+          s.slug === serviceType ||
+          s._id === serviceType ||
+          s.category === serviceType,
       );
       if (!serviceType || !exists) {
         const first = coreServicesList[0];
@@ -562,7 +583,10 @@ export default function NewBookingClientView({
 
   // Synchronize customFieldValues when serviceType or selectedServiceObj changes
   const selectedServiceObj = coreServicesList.find(
-    (s) => s.slug === serviceType || s.category === serviceType || s._id === serviceType,
+    (s) =>
+      s.slug === serviceType ||
+      s.category === serviceType ||
+      s._id === serviceType,
   );
 
   useEffect(() => {
@@ -573,7 +597,8 @@ export default function NewBookingClientView({
       fields.forEach((f: any) => {
         if (next[f.id] === undefined || next[f.id] === null) {
           if (f.fieldType === "NUMBER") {
-            next[f.id] = f.id === "sqft" ? (sqft || 1200) : (f.defaultValue ?? 100);
+            next[f.id] =
+              f.id === "sqft" ? sqft || 1200 : (f.defaultValue ?? 100);
           } else if (f.fieldType === "COUNTER") {
             if (f.id === "bedrooms") next[f.id] = bedrooms || 3;
             else if (f.id === "bathrooms") next[f.id] = bathrooms || 2;
@@ -604,7 +629,11 @@ export default function NewBookingClientView({
       return <BedDouble className="w-6 h-6 stroke-[2.5]" />;
     if (key.includes("bath") || key.includes("restroom"))
       return <Bath className="w-6 h-6 stroke-[2.5]" />;
-    if (key.includes("desk") || key.includes("workstation") || key.includes("office"))
+    if (
+      key.includes("desk") ||
+      key.includes("workstation") ||
+      key.includes("office")
+    )
       return <Building2 className="w-6 h-6 stroke-[2.5]" />;
     if (key.includes("floor"))
       return <Layers className="w-6 h-6 stroke-[2.5]" />;
@@ -627,13 +656,22 @@ export default function NewBookingClientView({
       customFieldValues: customFieldValues,
       selectedAddons: activeAddonSlugs,
     });
-  }, [serviceType, sqft, bedrooms, bathrooms, customFieldValues, selectedAddons]);
+  }, [
+    serviceType,
+    sqft,
+    bedrooms,
+    bathrooms,
+    customFieldValues,
+    selectedAddons,
+  ]);
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedCoverageId) {
-      setCoverageError("অনুগ্রহ করে সার্ভিস পাওয়ার জন্য আপনার কাভারেজ এলাকা (Coverage Area / Zone) নির্বাচন করুন।");
+      setCoverageError(
+        "অনুগ্রহ করে সার্ভিস পাওয়ার জন্য আপনার কাভারেজ এলাকা (Coverage Area / Zone) নির্বাচন করুন।",
+      );
       toast.error("Please select a Coverage Area / Service Zone");
       return;
     }
@@ -672,9 +710,16 @@ export default function NewBookingClientView({
     const payload = {
       serviceType: selectedServiceObj._id, // ObjectId
       coverageArea: selectedCoverageId, // ObjectId
-      sqft: enabledFieldIds.size === 0 || enabledFieldIds.has("sqft") ? (customFieldValues["sqft"] ?? sqft) : undefined,
-      bedrooms: enabledFieldIds.has("bedrooms") ? (customFieldValues["bedrooms"] ?? bedrooms) : undefined,
-      bathrooms: enabledFieldIds.has("bathrooms") ? (customFieldValues["bathrooms"] ?? bathrooms) : undefined,
+      sqft:
+        enabledFieldIds.size === 0 || enabledFieldIds.has("sqft")
+          ? (customFieldValues["sqft"] ?? sqft)
+          : undefined,
+      bedrooms: enabledFieldIds.has("bedrooms")
+        ? (customFieldValues["bedrooms"] ?? bedrooms)
+        : undefined,
+      bathrooms: enabledFieldIds.has("bathrooms")
+        ? (customFieldValues["bathrooms"] ?? bathrooms)
+        : undefined,
       customFieldValues: finalCustomValues,
       selectedAddons: activeAddonsList,
       scheduledDate,
@@ -773,7 +818,11 @@ export default function NewBookingClientView({
 
   const handleQuickPreset = (offsetDays: number) => {
     const today = new Date();
-    const target = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
+    const target = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + offsetDays,
+    );
     const mStr = String(target.getMonth() + 1).padStart(2, "0");
     const dStr = String(target.getDate()).padStart(2, "0");
     const dateFormatted = `${target.getFullYear()}-${mStr}-${dStr}`;
@@ -922,7 +971,9 @@ export default function NewBookingClientView({
       ) : (
         <form
           onSubmit={handleSubmitBooking}
-          onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
         >
           {/* Left Configuration Column (8 Cols) */}
@@ -1009,25 +1060,47 @@ export default function NewBookingClientView({
 
               {/* DYNAMIC FIELD RENDERING */}
               {(() => {
-                const activeFields = Array.isArray(selectedServiceObj?.fields) && selectedServiceObj.fields.length > 0
-                  ? selectedServiceObj.fields.filter((f: any) => f.enabled !== false)
-                  : [];
+                const activeFields =
+                  Array.isArray(selectedServiceObj?.fields) &&
+                  selectedServiceObj.fields.length > 0
+                    ? selectedServiceObj.fields.filter(
+                        (f: any) => f.enabled !== false,
+                      )
+                    : [];
 
                 if (activeFields.length > 0) {
-                  const numberFields = activeFields.filter((f: any) => f.fieldType === "NUMBER");
-                  const counterFields = activeFields.filter((f: any) => f.fieldType === "COUNTER");
-                  const selectFields = activeFields.filter((f: any) => f.fieldType === "SELECT" || f.fieldType === "RADIO");
-                  const textFields = activeFields.filter((f: any) => f.fieldType === "TEXT");
+                  const numberFields = activeFields.filter(
+                    (f: any) => f.fieldType === "NUMBER",
+                  );
+                  const counterFields = activeFields.filter(
+                    (f: any) => f.fieldType === "COUNTER",
+                  );
+                  const selectFields = activeFields.filter(
+                    (f: any) =>
+                      f.fieldType === "SELECT" || f.fieldType === "RADIO",
+                  );
+                  const textFields = activeFields.filter(
+                    (f: any) => f.fieldType === "TEXT",
+                  );
 
                   return (
                     <div className="space-y-6">
                       {/* NUMBER FIELDS (e.g. SqFt / Size with interactive slider) */}
                       {numberFields.map((field: any) => {
-                        const currentVal = Number(customFieldValues[field.id] ?? (field.id === "sqft" ? sqft : 100)) || 0;
-                        const isSqft = field.id === "sqft" || field.unit?.toLowerCase().includes("sqft");
+                        const currentVal =
+                          Number(
+                            customFieldValues[field.id] ??
+                              (field.id === "sqft" ? sqft : 100),
+                          ) || 0;
+                        const isSqft =
+                          field.id === "sqft" ||
+                          field.unit?.toLowerCase().includes("sqft");
 
                         return (
-                          <div key={field.id} className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
+                          <div
+                            key={field.id}
+                            className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5"
+                          >
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-2xl bg-white border border-blue-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
@@ -1038,7 +1111,11 @@ export default function NewBookingClientView({
                                     {field.label}
                                   </h4>
                                   <p className="text-sm text-slate-700 font-medium mt-1">
-                                    রেট: ৳{field.unitPrice ?? 2.5} {field.unit ? `প্রতি ${field.unit}` : "প্রতি ইউনিট"} (ইনপুট বা স্লাইডার ব্যবহার করুন)
+                                    রেট: ৳{field.unitPrice ?? 2.5}{" "}
+                                    {field.unit
+                                      ? `প্রতি ${field.unit}`
+                                      : "প্রতি ইউনিট"}{" "}
+                                    (ইনপুট বা স্লাইডার ব্যবহার করুন)
                                   </p>
                                 </div>
                               </div>
@@ -1050,9 +1127,15 @@ export default function NewBookingClientView({
                                   max={50000}
                                   value={currentVal === 0 ? "" : currentVal}
                                   onChange={(e) => {
-                                    const val = e.target.value === "" ? 0 : Number(e.target.value);
+                                    const val =
+                                      e.target.value === ""
+                                        ? 0
+                                        : Number(e.target.value);
                                     if (!isNaN(val)) {
-                                      handleCustomFieldValueChange(field.id, val);
+                                      handleCustomFieldValueChange(
+                                        field.id,
+                                        val,
+                                      );
                                     }
                                   }}
                                   className="w-28 text-2xl sm:text-3xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
@@ -1070,14 +1153,28 @@ export default function NewBookingClientView({
                                   min={300}
                                   max={8000}
                                   step={50}
-                                  value={Math.min(8000, Math.max(300, currentVal))}
-                                  onChange={(e) => handleCustomFieldValueChange(field.id, Number(e.target.value))}
+                                  value={Math.min(
+                                    8000,
+                                    Math.max(300, currentVal),
+                                  )}
+                                  onChange={(e) =>
+                                    handleCustomFieldValueChange(
+                                      field.id,
+                                      Number(e.target.value),
+                                    )
+                                  }
                                   className="w-full h-3.5 bg-slate-200 rounded-xl appearance-none cursor-pointer accent-[#007eff]"
                                 />
                                 <div className="flex justify-between text-xs font-extrabold text-slate-500">
-                                  <span>300 {field.unit || "SqFt"} (ছোট স্পেস)</span>
-                                  <span>4,000 {field.unit || "SqFt"} (মাঝারি অফিস)</span>
-                                  <span>8,000 {field.unit || "SqFt"} (বড় স্পেস)</span>
+                                  <span>
+                                    300 {field.unit || "SqFt"} (ছোট স্পেস)
+                                  </span>
+                                  <span>
+                                    4,000 {field.unit || "SqFt"} (মাঝারি অফিস)
+                                  </span>
+                                  <span>
+                                    8,000 {field.unit || "SqFt"} (বড় স্পেস)
+                                  </span>
                                 </div>
                               </div>
                             )}
@@ -1088,16 +1185,36 @@ export default function NewBookingClientView({
                                   দ্রুত নির্বাচন করুন:
                                 </span>
                                 {[
-                                  { label: `600 ${field.unit || "SqFt"}`, val: 600 },
-                                  { label: `1,200 ${field.unit || "SqFt"}`, val: 1200 },
-                                  { label: `2,000 ${field.unit || "SqFt"}`, val: 2000 },
-                                  { label: `3,500 ${field.unit || "SqFt"}`, val: 3500 },
-                                  { label: `5,000 ${field.unit || "SqFt"}`, val: 5000 },
+                                  {
+                                    label: `600 ${field.unit || "SqFt"}`,
+                                    val: 600,
+                                  },
+                                  {
+                                    label: `1,200 ${field.unit || "SqFt"}`,
+                                    val: 1200,
+                                  },
+                                  {
+                                    label: `2,000 ${field.unit || "SqFt"}`,
+                                    val: 2000,
+                                  },
+                                  {
+                                    label: `3,500 ${field.unit || "SqFt"}`,
+                                    val: 3500,
+                                  },
+                                  {
+                                    label: `5,000 ${field.unit || "SqFt"}`,
+                                    val: 5000,
+                                  },
                                 ].map((preset) => (
                                   <button
                                     key={preset.val}
                                     type="button"
-                                    onClick={() => handleCustomFieldValueChange(field.id, preset.val)}
+                                    onClick={() =>
+                                      handleCustomFieldValueChange(
+                                        field.id,
+                                        preset.val,
+                                      )
+                                    }
                                     className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
                                       currentVal === preset.val
                                         ? "bg-[#007eff] text-white border-[#007eff]"
@@ -1117,7 +1234,15 @@ export default function NewBookingClientView({
                       {counterFields.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                           {counterFields.map((field: any) => {
-                            const countVal = Number(customFieldValues[field.id] ?? (field.id === "bedrooms" ? bedrooms : (field.id === "bathrooms" ? bathrooms : 1))) || 0;
+                            const countVal =
+                              Number(
+                                customFieldValues[field.id] ??
+                                  (field.id === "bedrooms"
+                                    ? bedrooms
+                                    : field.id === "bathrooms"
+                                      ? bathrooms
+                                      : 1),
+                              ) || 0;
                             return (
                               <div
                                 key={field.id}
@@ -1128,9 +1253,12 @@ export default function NewBookingClientView({
                                     {getFieldIcon(field.id, field.label)}
                                   </div>
                                   <div>
-                                    <h4 className="text-base font-bold text-slate-900">{field.label}</h4>
+                                    <h4 className="text-base font-bold text-slate-900">
+                                      {field.label}
+                                    </h4>
                                     <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                                      ৳{field.unitPrice ?? 0} / {field.unit || "Unit"}
+                                      ৳{field.unitPrice ?? 0} /{" "}
+                                      {field.unit || "Unit"}
                                     </p>
                                   </div>
                                 </div>
@@ -1138,7 +1266,12 @@ export default function NewBookingClientView({
                                 <div className="flex items-center gap-2.5 bg-white p-1.5 rounded-2xl border border-slate-200">
                                   <button
                                     type="button"
-                                    onClick={() => handleCustomFieldValueChange(field.id, Math.max(0, countVal - 1))}
+                                    onClick={() =>
+                                      handleCustomFieldValueChange(
+                                        field.id,
+                                        Math.max(0, countVal - 1),
+                                      )
+                                    }
                                     className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-[#007eff] hover:text-white text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer"
                                   >
                                     <Minus className="w-4 h-4 stroke-[2.5]" />
@@ -1148,7 +1281,12 @@ export default function NewBookingClientView({
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => handleCustomFieldValueChange(field.id, countVal + 1)}
+                                    onClick={() =>
+                                      handleCustomFieldValueChange(
+                                        field.id,
+                                        countVal + 1,
+                                      )
+                                    }
                                     className="w-9 h-9 rounded-xl bg-[#007eff] hover:bg-[#0066ee] text-white flex items-center justify-center font-bold transition-colors cursor-pointer"
                                   >
                                     <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -1162,15 +1300,24 @@ export default function NewBookingClientView({
 
                       {/* SELECT / RADIO FIELDS (e.g. Cleaning Level, Property Status, Debris Level, Construction Stage) */}
                       {selectFields.map((field: any) => {
-                        const selectedOptVal = String(customFieldValues[field.id] ?? field.options?.[0]?.value ?? "");
+                        const selectedOptVal = String(
+                          customFieldValues[field.id] ??
+                            field.options?.[0]?.value ??
+                            "",
+                        );
                         return (
-                          <div key={field.id} className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl space-y-4">
+                          <div
+                            key={field.id}
+                            className="bg-slate-50/90 border border-slate-200/90 p-5 sm:p-6 rounded-3xl space-y-4"
+                          >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-[#007eff] flex items-center justify-center flex-shrink-0">
                                 <Tag className="w-5 h-5 stroke-[2.5]" />
                               </div>
                               <div>
-                                <h4 className="text-base font-bold text-slate-900">{field.label}</h4>
+                                <h4 className="text-base font-bold text-slate-900">
+                                  {field.label}
+                                </h4>
                                 <p className="text-xs text-slate-500 font-semibold mt-0.5">
                                   অপশন নির্বাচন করুন:
                                 </p>
@@ -1179,12 +1326,18 @@ export default function NewBookingClientView({
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               {(field.options || []).map((opt: any) => {
-                                const isOptSelected = selectedOptVal === String(opt.value);
+                                const isOptSelected =
+                                  selectedOptVal === String(opt.value);
                                 return (
                                   <button
                                     key={opt.value}
                                     type="button"
-                                    onClick={() => handleCustomFieldValueChange(field.id, opt.value)}
+                                    onClick={() =>
+                                      handleCustomFieldValueChange(
+                                        field.id,
+                                        opt.value,
+                                      )
+                                    }
                                     className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
                                       isOptSelected
                                         ? "bg-blue-50/90 border-2 border-[#007eff] text-[#007eff] font-bold shadow-sm"
@@ -1192,11 +1345,19 @@ export default function NewBookingClientView({
                                     }`}
                                   >
                                     <div className="flex items-center justify-between gap-2">
-                                      <span className="text-xs sm:text-sm font-bold truncate">{opt.label}</span>
-                                      {isOptSelected && <Check className="w-4 h-4 text-[#007eff] stroke-[3]" />}
+                                      <span className="text-xs sm:text-sm font-bold truncate">
+                                        {opt.label}
+                                      </span>
+                                      {isOptSelected && (
+                                        <Check className="w-4 h-4 text-[#007eff] stroke-[3]" />
+                                      )}
                                     </div>
-                                    <span className={`text-xs font-mono font-bold ${isOptSelected ? "text-[#007eff]" : "text-slate-500"}`}>
-                                      {opt.price > 0 ? `+৳${opt.price.toLocaleString()}` : "৳0 (Standard)"}
+                                    <span
+                                      className={`text-xs font-mono font-bold ${isOptSelected ? "text-[#007eff]" : "text-slate-500"}`}
+                                    >
+                                      {opt.price > 0
+                                        ? `+৳${opt.price.toLocaleString()}`
+                                        : "৳0 (Standard)"}
                                     </span>
                                   </button>
                                 );
@@ -1208,12 +1369,22 @@ export default function NewBookingClientView({
 
                       {/* TEXT FIELDS */}
                       {textFields.map((field: any) => (
-                        <div key={field.id} className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl space-y-2">
-                          <label className="text-xs font-bold text-slate-700 block">{field.label}:</label>
+                        <div
+                          key={field.id}
+                          className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl space-y-2"
+                        >
+                          <label className="text-xs font-bold text-slate-700 block">
+                            {field.label}:
+                          </label>
                           <input
                             type="text"
                             value={customFieldValues[field.id] || ""}
-                            onChange={(e) => handleCustomFieldValueChange(field.id, e.target.value)}
+                            onChange={(e) =>
+                              handleCustomFieldValueChange(
+                                field.id,
+                                e.target.value,
+                              )
+                            }
                             placeholder="এখানে লিখুন..."
                             className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:border-[#007eff]"
                           />
@@ -1223,7 +1394,9 @@ export default function NewBookingClientView({
                   );
                 }
 
-                {/* FALLBACK FOR LEGACY / UNCONFIGURED SERVICES */}
+                {
+                  /* FALLBACK FOR LEGACY / UNCONFIGURED SERVICES */
+                }
                 return (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 p-6 sm:p-7 rounded-3xl border border-blue-100/90 space-y-5">
@@ -1246,10 +1419,14 @@ export default function NewBookingClientView({
                           <input
                             type="number"
                             value={sqft === 0 ? "" : sqft}
-                            onChange={(e) => setSqft(Number(e.target.value) || 0)}
+                            onChange={(e) =>
+                              setSqft(Number(e.target.value) || 0)
+                            }
                             className="w-28 text-2xl font-bold text-[#007eff] bg-transparent text-right focus:outline-none font-mono"
                           />
-                          <span className="text-xs font-bold text-slate-500">SqFt</span>
+                          <span className="text-xs font-bold text-slate-500">
+                            SqFt
+                          </span>
                         </div>
                       </div>
 
@@ -1268,19 +1445,55 @@ export default function NewBookingClientView({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl flex items-center justify-between">
-                        <span className="font-bold text-slate-900">Bedrooms (বেডরুম)</span>
+                        <span className="font-bold text-slate-900">
+                          Bedrooms (বেডরুম)
+                        </span>
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setBedrooms(Math.max(1, bedrooms - 1))} className="w-8 h-8 bg-slate-200 rounded-xl font-bold">-</button>
-                          <span className="font-bold w-6 text-center">{bedrooms}</span>
-                          <button type="button" onClick={() => setBedrooms(bedrooms + 1)} className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold">+</button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBedrooms(Math.max(1, bedrooms - 1))
+                            }
+                            className="w-8 h-8 bg-slate-200 rounded-xl font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold w-6 text-center">
+                            {bedrooms}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setBedrooms(bedrooms + 1)}
+                            className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
                       <div className="bg-slate-50/90 border border-slate-200/90 p-5 rounded-3xl flex items-center justify-between">
-                        <span className="font-bold text-slate-900">Bathrooms (বাথরুম)</span>
+                        <span className="font-bold text-slate-900">
+                          Bathrooms (বাথরুম)
+                        </span>
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setBathrooms(Math.max(1, bathrooms - 1))} className="w-8 h-8 bg-slate-200 rounded-xl font-bold">-</button>
-                          <span className="font-bold w-6 text-center">{bathrooms}</span>
-                          <button type="button" onClick={() => setBathrooms(bathrooms + 1)} className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold">+</button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBathrooms(Math.max(1, bathrooms - 1))
+                            }
+                            className="w-8 h-8 bg-slate-200 rounded-xl font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold w-6 text-center">
+                            {bathrooms}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setBathrooms(bathrooms + 1)}
+                            className="w-8 h-8 bg-[#007eff] text-white rounded-xl font-bold"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1327,7 +1540,11 @@ export default function NewBookingClientView({
                           }`}
                         >
                           {item.iconImage ? (
-                            <img src={item.iconImage} alt={item.name} className="w-8 h-8 object-contain" />
+                            <img
+                              src={item.iconImage}
+                              alt={item.name}
+                              className="w-8 h-8 object-contain"
+                            />
                           ) : (
                             getAddonIcon(item.name, item.iconName)
                           )}
@@ -1463,7 +1680,8 @@ export default function NewBookingClientView({
                           ).padStart(2, "0");
                           const dStr = String(dayNum).padStart(2, "0");
                           const thisDateFormatted = `${currentCalendarYear}-${mStr}-${dStr}`;
-                          const isSelected = scheduledDate === thisDateFormatted;
+                          const isSelected =
+                            scheduledDate === thisDateFormatted;
                           const now = new Date();
                           const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
                           const isToday = thisDateFormatted === todayISO;
@@ -1604,7 +1822,9 @@ export default function NewBookingClientView({
               <div className="space-y-2 text-xs sm:text-sm pt-1">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-slate-800 flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-[#007eff]" /> কাভারেজ এলাকা / সার্ভিস জোন (Coverage Area) <span className="text-red-500">*</span>:
+                    <Truck className="w-4 h-4 text-[#007eff]" /> কাভারেজ এলাকা /
+                    সার্ভিস জোন (Coverage Area){" "}
+                    <span className="text-red-500">*</span>:
                   </label>
                   <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                     বাধ্যতামূলক নির্বাচন
@@ -1619,7 +1839,9 @@ export default function NewBookingClientView({
                       setTimeDropdownOpen(false);
                     }}
                     className={`relative bg-slate-50/90 hover:bg-white border rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition-all group ${
-                      coverageError ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/30" : "border-slate-200 hover:border-[#007eff]"
+                      coverageError
+                        ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/30"
+                        : "border-slate-200 hover:border-[#007eff]"
                     }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -1629,10 +1851,11 @@ export default function NewBookingClientView({
                       <div className="truncate">
                         <span className="font-bold text-slate-900 text-sm block truncate">
                           {selectedCoverageObj?.zoneName
-                            ? `${selectedCoverageObj.zoneName} (${selectedCoverageObj.district || 'Dhaka'})`
+                            ? `${selectedCoverageObj.zoneName} (${selectedCoverageObj.district || "Dhaka"})`
                             : "কাভারেজ এলাকা নির্বাচন করুন"}
                         </span>
-                        {selectedCoverageObj?.areasIncluded && selectedCoverageObj.areasIncluded.length > 0 ? (
+                        {selectedCoverageObj?.areasIncluded &&
+                        selectedCoverageObj.areasIncluded.length > 0 ? (
                           <span className="text-[11px] text-slate-500 font-medium block truncate">
                             {selectedCoverageObj.areasIncluded.join(", ")}
                           </span>
@@ -1644,7 +1867,9 @@ export default function NewBookingClientView({
                       </div>
                     </div>
 
-                    <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5] flex-shrink-0 transition-transform duration-200 ${coverageDropdownOpen ? "rotate-180 text-[#007eff]" : ""}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 group-hover:text-[#007eff] stroke-[2.5] flex-shrink-0 transition-transform duration-200 ${coverageDropdownOpen ? "rotate-180 text-[#007eff]" : ""}`}
+                    />
                   </div>
 
                   {coverageDropdownOpen && (
@@ -1656,7 +1881,9 @@ export default function NewBookingClientView({
                       <div className="sticky top-0 z-10 bg-white pt-1 pb-2 space-y-2 border-b border-slate-100">
                         <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider px-1 flex items-center justify-between">
                           <span>AVAILABLE SERVICE ZONES</span>
-                          <span className="text-[#007eff]">{filteredCoverages.length} Zones Available</span>
+                          <span className="text-[#007eff]">
+                            {filteredCoverages.length} Zones Available
+                          </span>
                         </div>
 
                         <div className="relative">
@@ -1713,14 +1940,19 @@ export default function NewBookingClientView({
                                     <MapPin className="w-4 h-4 stroke-[2.5]" />
                                   </div>
                                   <div>
-                                    <p className={`text-xs font-extrabold ${isSelected ? "text-white" : "text-slate-900"}`}>
+                                    <p
+                                      className={`text-xs font-extrabold ${isSelected ? "text-white" : "text-slate-900"}`}
+                                    >
                                       {cov.zoneName} ({cov.district || "Dhaka"})
                                     </p>
-                                    {Array.isArray(cov.areasIncluded) && cov.areasIncluded.length > 0 && (
-                                      <p className={`text-[10px] font-medium line-clamp-1 ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
-                                        {cov.areasIncluded.join(", ")}
-                                      </p>
-                                    )}
+                                    {Array.isArray(cov.areasIncluded) &&
+                                      cov.areasIncluded.length > 0 && (
+                                        <p
+                                          className={`text-[10px] font-medium line-clamp-1 ${isSelected ? "text-blue-100" : "text-slate-500"}`}
+                                        >
+                                          {cov.areasIncluded.join(", ")}
+                                        </p>
+                                      )}
                                   </div>
                                 </div>
 
@@ -1735,7 +1967,8 @@ export default function NewBookingClientView({
                         </div>
                       ) : (
                         <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-xs text-amber-800 text-center font-medium my-2">
-                          "{zoneSearchQuery}" নাম বা এরিয়া দিয়ে কোনো জোন খুঁজে পাওয়া যায়নি।
+                          "{zoneSearchQuery}" নাম বা এরিয়া দিয়ে কোনো জোন খুঁজে
+                          পাওয়া যায়নি।
                         </div>
                       )}
                     </div>
@@ -1842,9 +2075,13 @@ export default function NewBookingClientView({
                 </div>
 
                 {/* Dynamic Field Breakdown calculated from Backend */}
-                {Array.isArray(priceBreakdown.customFieldsBreakdown) && priceBreakdown.customFieldsBreakdown.length > 0 ? (
+                {Array.isArray(priceBreakdown.customFieldsBreakdown) &&
+                priceBreakdown.customFieldsBreakdown.length > 0 ? (
                   priceBreakdown.customFieldsBreakdown.map((item) => (
-                    <div key={item.fieldId} className="flex justify-between text-slate-600">
+                    <div
+                      key={item.fieldId}
+                      className="flex justify-between text-slate-600"
+                    >
                       <span>{item.detailLabel || item.label}:</span>
                       <span className="font-bold text-slate-900">
                         ৳{item.cost.toLocaleString()}
@@ -1855,20 +2092,35 @@ export default function NewBookingClientView({
                   <>
                     {priceBreakdown.sqftCost > 0 && (
                       <div className="flex justify-between text-slate-600">
-                        <span>SqFt চার্জ ({priceBreakdown.sqft} SqFt × ৳{priceBreakdown.sqftRate}):</span>
-                        <span className="font-bold text-slate-900">৳{priceBreakdown.sqftCost.toLocaleString()}</span>
+                        <span>
+                          SqFt চার্জ ({priceBreakdown.sqft} SqFt × ৳
+                          {priceBreakdown.sqftRate}):
+                        </span>
+                        <span className="font-bold text-slate-900">
+                          ৳{priceBreakdown.sqftCost.toLocaleString()}
+                        </span>
                       </div>
                     )}
                     {priceBreakdown.bedroomCost > 0 && (
                       <div className="flex justify-between text-slate-600">
-                        <span>বেডরুম ({priceBreakdown.bedrooms} × ৳{priceBreakdown.bedroomRate}):</span>
-                        <span className="font-bold text-slate-900">৳{priceBreakdown.bedroomCost.toLocaleString()}</span>
+                        <span>
+                          বেডরুম ({priceBreakdown.bedrooms} × ৳
+                          {priceBreakdown.bedroomRate}):
+                        </span>
+                        <span className="font-bold text-slate-900">
+                          ৳{priceBreakdown.bedroomCost.toLocaleString()}
+                        </span>
                       </div>
                     )}
                     {priceBreakdown.bathroomCost > 0 && (
                       <div className="flex justify-between text-slate-600">
-                        <span>বাথরুম ({priceBreakdown.bathrooms} × ৳{priceBreakdown.bathroomRate}):</span>
-                        <span className="font-bold text-slate-900">৳{priceBreakdown.bathroomCost.toLocaleString()}</span>
+                        <span>
+                          বাথরুম ({priceBreakdown.bathrooms} × ৳
+                          {priceBreakdown.bathroomRate}):
+                        </span>
+                        <span className="font-bold text-slate-900">
+                          ৳{priceBreakdown.bathroomCost.toLocaleString()}
+                        </span>
                       </div>
                     )}
                   </>
