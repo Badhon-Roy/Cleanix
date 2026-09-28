@@ -6,7 +6,13 @@ import { fetchActiveServicesServer } from "@/services/serviceCategoryServerServi
 import { fetchCoveragesServer } from "@/services/coverageServerService";
 
 export default async function NewBookingPage() {
-  const [initialLocations, initialAddons, initialPricing, initialCoreServices, initialCoverages] = await Promise.all([
+  const [
+    initialLocations,
+    initialAddons,
+    initialPricing,
+    initialCoreServices,
+    initialCoverages,
+  ] = await Promise.all([
     fetchMyLocationsServer(),
     fetchActiveAddonsServer(),
     fetchPricingConfigServer(),
