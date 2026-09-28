@@ -67,7 +67,7 @@ export default function HowItWorks({ initialData }: HowItWorksProps) {
           {/* Subtitle Description (Right) */}
           {data?.howItWorksRightDesc && (
             <div className="lg:max-w-md">
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-medium">
+              <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
                 {data?.howItWorksRightDesc}
               </p>
             </div>
@@ -79,7 +79,7 @@ export default function HowItWorks({ initialData }: HowItWorksProps) {
           {stepsList.map((item, index) => (
             <div key={item.id || index} className="flex flex-col group">
               {/* Top Image Card */}
-              <div className="relative w-full h-[240px] sm:h-[270px] overflow-hidden rounded-t-2xl bg-slate-100">
+              <div className="relative w-full h-[240px] sm:h-[270px] overflow-hidden rounded-t-2xl">
                 <Image
                   src={item.image}
                   alt={item.title}
